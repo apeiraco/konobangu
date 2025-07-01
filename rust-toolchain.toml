@@ -1,5 +1,5 @@
 [toolchain]
-channel = "nightly-2025-06-03"
+channel = "nightly-2025-07-24"
 # [simd not supported by cranelift](https://github.com/rust-lang/rustc_codegen_cranelift/issues/171)
 # components = ["rustfmt", "clippy", "rustc-codegen-cranelift"]
 components = ["rustfmt", "clippy"]

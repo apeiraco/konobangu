@@ -7,7 +7,6 @@
     async_fn_traits,
     error_generic_member_access,
     associated_type_defaults,
-    let_chains,
     impl_trait_in_fn_trait_return
 )]
 #![allow(clippy::enum_variant_names)]

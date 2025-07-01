@@ -21,6 +21,7 @@ test-utils = []
 name = "recorder"
 path = "src/lib.rs"
 
+
 [[bin]]
 name = "recorder_cli"
 path = "src/bin/main.rs"

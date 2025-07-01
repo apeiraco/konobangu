@@ -5,7 +5,7 @@ use url::Url;
 
 use crate::extract::media::extract_image_src_from_str;
 
-pub fn extract_style_from_attr(style_attr: &str) -> Option<DeclarationBlock> {
+pub fn extract_style_from_attr(style_attr: &'_ str) -> Option<DeclarationBlock<'_>> {
     let result = DeclarationBlock::parse_string(style_attr, Default::default()).ok()?;
     Some(result)
 }
