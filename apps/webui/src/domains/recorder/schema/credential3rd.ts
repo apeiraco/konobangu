@@ -1,10 +1,10 @@
+import { gql } from "@apollo/client";
+import { type } from "arktype";
 import {
-  Credential3rdTypeEnum,
-  type GetCredential3rdDetailQuery,
-  type GetCredential3rdQuery,
-} from '@/infra/graphql/gql/graphql';
-import { gql } from '@apollo/client';
-import { type } from 'arktype';
+	Credential3rdTypeEnum,
+	type GetCredential3rdDetailQuery,
+	type GetCredential3rdQuery,
+} from "@/infra/graphql/gql/graphql";
 
 export const GET_CREDENTIAL_3RD = gql`
   query GetCredential3rd($filter: Credential3rdFilterInput!, $orderBy: Credential3rdOrderInput, $pagination: PaginationInput) {
@@ -89,28 +89,28 @@ export const CHECK_CREDENTIAL_3RD_AVAILABLE = gql`
 `;
 
 export const Credential3rdTypedMikanSchema = type({
-  credentialType: `'${Credential3rdTypeEnum.Mikan}'`,
-  username: 'string > 0',
-  password: 'string > 0',
+	credentialType: `'${Credential3rdTypeEnum.Mikan}'`,
+	username: "string > 0",
+	password: "string > 0",
 });
 
 export type Credential3rdTypedMikan =
-  typeof Credential3rdTypedMikanSchema.infer;
+	typeof Credential3rdTypedMikanSchema.infer;
 
 const Credential3rdTypedSchema = Credential3rdTypedMikanSchema;
 
 export const Credential3rdInsertSchema = type({
-  userAgent: 'string?',
+	userAgent: "string?",
 }).and(Credential3rdTypedSchema);
 
 export type Credential3rdInsertDto = typeof Credential3rdInsertSchema.infer;
 
 export type Credential3rdQueryDto =
-  GetCredential3rdQuery['credential3rd']['nodes'][number];
+	GetCredential3rdQuery["credential3rd"]["nodes"][number];
 
 export const Credential3rdUpdateSchema = Credential3rdInsertSchema.partial();
 
 export type Credential3rdUpdateDto = typeof Credential3rdUpdateSchema.infer;
 
 export type Credential3rdDetailDto =
-  GetCredential3rdDetailQuery['credential3rd']['nodes'][number];
+	GetCredential3rdDetailQuery["credential3rd"]["nodes"][number];

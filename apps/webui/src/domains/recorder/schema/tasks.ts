@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client';
-import type { GetTasksQuery } from '@/infra/graphql/gql/graphql';
+import { gql } from "@apollo/client";
+import type { GetTasksQuery } from "@/infra/graphql/gql/graphql";
 
 export const GET_TASKS = gql`
   query GetTasks($filter: SubscriberTasksFilterInput!, $orderBy: SubscriberTasksOrderInput!, $pagination: PaginationInput!) {
@@ -83,4 +83,4 @@ export const RETRY_TASKS = gql`
   }
 `;
 
-export type TaskDto = GetTasksQuery['subscriberTasks']['nodes'][number];
+export type TaskDto = GetTasksQuery["subscriberTasks"]["nodes"][number];

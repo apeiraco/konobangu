@@ -1,0 +1,9 @@
+repos:
+    - repo: local
+      hooks:
+          - id: pnpm-lint
+            name: pnpm lint
+            entry: pnpm lint
+            language: system
+            pass_filenames: false
+            stages: [commit]

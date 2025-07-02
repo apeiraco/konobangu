@@ -1,6 +1,6 @@
-import { AppNotFoundComponent } from '@/components/layout/app-not-found';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute } from "@tanstack/react-router";
+import { AppNotFoundComponent } from "@/components/layout/app-not-found";
 
-export const Route = createFileRoute('/404')({
-  component: AppNotFoundComponent,
+export const Route = createFileRoute("/404")({
+	component: AppNotFoundComponent,
 });

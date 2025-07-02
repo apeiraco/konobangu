@@ -1,16 +1,16 @@
-import type { Injector, Provider } from '@outposts/injection-js';
-import { GraphQLService } from './graphql.service';
+import type { Injector, Provider } from "@outposts/injection-js";
+import { GraphQLService } from "./graphql.service";
 
 export function provideGraphql(): Provider[] {
-  return [GraphQLService];
+	return [GraphQLService];
 }
 
 export interface GraphQLContext {
-  graphqlService: GraphQLService;
+	graphqlService: GraphQLService;
 }
 
 export function graphqlContextFromInjector(injector: Injector): GraphQLContext {
-  return {
-    graphqlService: injector.get(GraphQLService),
-  };
+	return {
+		graphqlService: injector.get(GraphQLService),
+	};
 }

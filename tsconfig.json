@@ -1,23 +1,23 @@
 {
-  "extends": "./tsconfig.base.json",
-  "references": [
-    {
-      "path": "./apps/email-playground"
-    },
-    {
-      "path": "./apps/recorder"
-    },
-    {
-      "path": "./apps/webui"
-    },
-    {
-      "path": "./packages/email"
-    },
-    {
-      "path": "./packages/testing"
-    },
-    {
-      "path": "./packages/testing-torrents"
-    }
-  ]
+	"extends": "./tsconfig.base.json",
+	"references": [
+		{
+			"path": "./apps/email-playground"
+		},
+		{
+			"path": "./apps/recorder"
+		},
+		{
+			"path": "./apps/webui"
+		},
+		{
+			"path": "./packages/email"
+		},
+		{
+			"path": "./packages/testing"
+		},
+		{
+			"path": "./packages/testing-torrents"
+		}
+	]
 }

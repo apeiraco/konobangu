@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 export const INSERT_FEED = gql`
     mutation InsertFeed($data: FeedsInsertInput!) {

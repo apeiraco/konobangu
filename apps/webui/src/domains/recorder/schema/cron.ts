@@ -1,5 +1,5 @@
-import { gql } from '@apollo/client';
-import type { GetCronsQuery } from '@/infra/graphql/gql/graphql';
+import { gql } from "@apollo/client";
+import type { GetCronsQuery } from "@/infra/graphql/gql/graphql";
 
 export const GET_CRONS = gql`
 query GetCrons($filter: CronFilterInput!, $orderBy: CronOrderInput!, $pagination: PaginationInput!) {
@@ -51,7 +51,7 @@ query GetCrons($filter: CronFilterInput!, $orderBy: CronOrderInput!, $pagination
   }
 `;
 
-export type CronDto = GetCronsQuery['cron']['nodes'][number];
+export type CronDto = GetCronsQuery["cron"]["nodes"][number];
 
 export const DELETE_CRONS = gql`
     mutation DeleteCrons($filter: CronFilterInput!) {
