@@ -1,15 +1,11 @@
 {
-  "$schema": "https://biomejs.dev/schemas/1.9.4/schema.json",
-  "extends": ["ultracite"],
+  "$schema": "https://biomejs.dev/schemas/2.4.3/schema.json",
   "javascript": {
     "globals": ["Liveblocks"]
   },
-
   "linter": {
     "rules": {
-      "nursery": {
-        "noEnum": "off"
-      },
+      "nursery": {},
       "style": {
         "noParameterProperties": "off",
         "noNonNullAssertion": "off"
@@ -20,8 +16,7 @@
       "suspicious": {
         "noEmptyBlockStatements": "off",
         "noExplicitAny": "off",
-        "noConsole": "off",
-        "noConsoleLog": "off"
+        "noConsole": "off"
       },
       "a11y": {
         "noSvgWithoutTitle": "off"
@@ -45,7 +40,7 @@
   },
   "overrides": [
     {
-      "include": ["**/tsconfig.json", "**/tsconfig.*.json"],
+      "includes": ["**/tsconfig.json", "**/tsconfig.*.json"],
       "json": {
         "parser": {
           "allowComments": true
@@ -53,11 +48,10 @@
       }
     },
     {
-      "include": ["apps/webui/src/infra/graphql/gql/**/*"],
+      "includes": ["**/apps/webui/src/infra/graphql/gql/**/*"],
       "linter": {
         "rules": {
           "style": {
-            "useShorthandArrayType": "off",
             "useConsistentArrayType": "off",
             "useImportType": "off"
           }
@@ -65,7 +59,7 @@
       }
     },
     {
-      "include": ["apps/webui/src/components/ui/**/*"],
+      "includes": ["**/apps/webui/src/components/ui/**/*"],
       "javascript": {
         "formatter": {
           "quoteStyle": "double"
@@ -75,10 +69,10 @@
         "rules": {
           "style": {
             "useBlockStatements": "off",
-            "useImportType": "off"
+            "useImportType": "off",
+            "noNestedTernary": "off"
           },
           "nursery": {
-            "noNestedTernary": "off",
             "useSortedClasses": "off"
           },
           "a11y": {
@@ -94,6 +88,6 @@
     }
   ],
   "files": {
-    "ignore": [".vscode/*.json"]
+    "includes": ["**", "!**/.vscode/**/*.json"]
   }
 }

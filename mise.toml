@@ -1,0 +1,5 @@
+[tools]
+jq = "latest"
+node = "lts"
+pnpm = "latest"
+rust = "nightly"

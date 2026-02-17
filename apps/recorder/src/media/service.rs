@@ -134,7 +134,7 @@ impl MediaService {
             .and_then(|o| o.speed)
             .unwrap_or(self.config.jxl_speed);
         tokio::task::spawn_blocking(move || -> RecorderResult<Bytes> {
-            use jpegxl_rs::encode::{ColorEncoding, EncoderResult, EncoderSpeed};
+            use jxl_encoder::api::{LossyConfig, PixelLayout, Quality};
             let cursor = Cursor::new(data);
             let image_reader = ImageReader::new(cursor).with_guessed_format()?;
 
@@ -142,43 +142,26 @@ impl MediaService {
             let (width, height) = image.dimensions();
 
             let color = image.color();
-            let has_alpha = color.has_alpha();
-            let libjxl_speed = {
-                match speed {
-                    0 | 1 => EncoderSpeed::Lightning,
-                    2 => EncoderSpeed::Thunder,
-                    3 => EncoderSpeed::Falcon,
-                    4 => EncoderSpeed::Cheetah,
-                    5 => EncoderSpeed::Hare,
-                    6 => EncoderSpeed::Wombat,
-                    7 => EncoderSpeed::Squirrel,
-                    8 => EncoderSpeed::Kitten,
-                    _ => EncoderSpeed::Tortoise,
-                }
-            };
+            // jxl_encoder effort 1-10: higher = slower/better. Map speed 0-9 -> effort 1-10.
+            let effort = (speed + 1).clamp(1, 10);
+            let quality_spec = Quality::Percent((quality.round() as u32).min(100));
+            let config = LossyConfig::from_quality(quality_spec)?
+                .with_effort(effort);
 
-            let mut encoder_builder = jpegxl_rs::encoder_builder()
-                .lossless(false)
-                .has_alpha(has_alpha)
-                .color_encoding(ColorEncoding::Srgb)
-                .speed(libjxl_speed)
-                .jpeg_quality(quality)
-                .build()?;
-
-            let buffer: EncoderResult<u8> = if color.has_alpha() {
+            let jxl_bytes = if color.has_alpha() {
                 let sample = image.into_rgba8();
-                encoder_builder.encode(&sample, width, height)?
+                config.encode(sample.as_raw(), width, height, PixelLayout::Rgba8)?
             } else {
                 let sample = image.into_rgb8();
-                encoder_builder.encode(&sample, width, height)?
+                config.encode(sample.as_raw(), width, height, PixelLayout::Rgb8)?
             };
 
-            Ok(Bytes::from(buffer.data))
+            Ok(Bytes::from(jxl_bytes))
         })
         .await
         .with_whatever_context::<_, String, RecorderError>(|_| {
             format!(
-                "failed to spawn blocking task to optimize legacy image to avif: {}",
+                "failed to spawn blocking task to optimize image to jxl: {}",
                 path.as_ref().display()
             )
         })?

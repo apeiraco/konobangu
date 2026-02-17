@@ -8,7 +8,7 @@ clean-cargo-incremental:
 prepare-dev:
     cargo install cargo-binstall
     cargo binstall sea-orm-cli cargo-llvm-cov cargo-nextest
-    # <package-manager> install watchexec just zellij nasm libjxl netcat heaptrack
+    # <package-manager> install watchexec just zellij nasm netcat heaptrack
 
 prepare-dev-testcontainers:
     docker pull linuxserver/qbittorrent:latest

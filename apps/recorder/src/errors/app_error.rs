@@ -39,7 +39,7 @@ pub enum RecorderError {
     ImageError { source: image::ImageError },
     #[cfg(feature = "jxl")]
     #[snafu(transparent)]
-    JxlEncodeError { source: jpegxl_rs::EncodeError },
+    JxlEncodeError { source: jxl_encoder::api::EncodeError },
     #[snafu(transparent, context(false))]
     HttpError { source: http::Error },
     #[snafu(transparent, context(false))]

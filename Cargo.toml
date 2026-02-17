@@ -24,19 +24,18 @@ fetch = { path = "./packages/fetch" }
 downloader = { path = "./packages/downloader" }
 recorder = { path = "./apps/recorder" }
 
-reqwest = { version = "0.12.20", features = [
+reqwest = { version = "0.13", features = [
     "charset",
     "http2",
     "json",
-    "macos-system-configuration",
     "cookies",
 ] }
 moka = "0.12"
 futures = "0.3"
 quirks_path = "0.1"
 snafu = { version = "0.8", features = ["futures"] }
-testcontainers = { version = "0.24" }
-testcontainers-modules = { version = "0.12.1" }
+testcontainers = { version = "0.26" }
+testcontainers-modules = { version = "0.14" }
 testcontainers-ext = { version = "0.1.0", features = ["tracing"] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1.45.1", features = [
@@ -58,16 +57,16 @@ regex = "1.11"
 lazy_static = "1.5"
 axum = { version = "0.8.3", features = ["macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
-axum-extra = { version = "0.10", features = ["typed-header"] }
+axum-extra = { version = "0.12", features = ["typed-header"] }
 mockito = { version = "1.6.1" }
-convert_case = "0.8"
+convert_case = "0.11"
 color-eyre = "0.6.5"
-inquire = "0.7.5"
-image = "0.25.6"
+inquire = "0.9"
+image = "0.25"
 uuid = { version = "1.6.0", features = ["v7"] }
 maplit = "1.0.2"
 once_cell = "1.20.2"
-rand = "0.9.1"
+rand = "0.10"
 rust_decimal = "1.37.2"
 base64 = "0.22.1"
 nom = "8.0.0"
@@ -79,7 +78,7 @@ serde_variant = "0.1.3"
 tracing-appender = "0.2.3"
 clap = "4.5.40"
 ipnetwork = "0.21.1"
-typed-builder = "0.21.0"
+typed-builder = "0.23"
 nanoid = "0.4.0"
 webp = "0.3.0"
 
