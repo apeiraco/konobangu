@@ -12,6 +12,7 @@
 use std::{sync::Arc, time::Duration};
 
 use axum::Router;
+use http::StatusCode;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tower_http::timeout::TimeoutLayer;
@@ -62,6 +63,9 @@ impl MiddlewareLayer for TimeOut {
         &self,
         app: Router<Arc<dyn AppContextTrait>>,
     ) -> RecorderResult<Router<Arc<dyn AppContextTrait>>> {
-        Ok(app.layer(TimeoutLayer::new(Duration::from_millis(self.timeout))))
+        Ok(app.layer(TimeoutLayer::with_status_code(
+            StatusCode::REQUEST_TIMEOUT,
+            Duration::from_millis(self.timeout),
+        )))
     }
 }

@@ -71,11 +71,11 @@ where
 
     context.types.input_type_overwrites.insert(
         entity_column_name.clone(),
-        TypeRef::Named(system_tasks::SystemTask::ident().into()),
+        TypeRef::Named(system_tasks::SystemTask::ident(&ts_rs::Config::default()).into()),
     );
     context.types.output_type_overwrites.insert(
         entity_column_name.clone(),
-        TypeRef::Named(system_tasks::SystemTask::ident().into()),
+        TypeRef::Named(system_tasks::SystemTask::ident(&ts_rs::Config::default()).into()),
     );
     context.types.input_conversions.insert(
         entity_column_name.clone(),
@@ -117,8 +117,8 @@ pub fn register_system_tasks_to_schema_builder(
     mut builder: SeaographyBuilder,
 ) -> SeaographyBuilder {
     builder.schema = builder.schema.register(
-        Scalar::new(system_tasks::SystemTask::ident())
-            .description(system_tasks::SystemTask::decl()),
+        Scalar::new(system_tasks::SystemTask::ident(&ts_rs::Config::default()))
+            .description(system_tasks::SystemTask::decl(&ts_rs::Config::default())),
     );
     builder.register_enumeration::<system_tasks::SystemTaskType>();
     builder.register_enumeration::<system_tasks::SystemTaskStatus>();

@@ -62,11 +62,11 @@ where
 
     context.types.input_type_overwrites.insert(
         entity_column_name.clone(),
-        TypeRef::Named(subscriber_tasks::SubscriberTask::ident().into()),
+        TypeRef::Named(subscriber_tasks::SubscriberTask::ident(&ts_rs::Config::default()).into()),
     );
     context.types.output_type_overwrites.insert(
         entity_column_name.clone(),
-        TypeRef::Named(subscriber_tasks::SubscriberTask::ident().into()),
+        TypeRef::Named(subscriber_tasks::SubscriberTask::ident(&ts_rs::Config::default()).into()),
     );
     context.types.input_conversions.insert(
         entity_column_name.clone(),
@@ -111,8 +111,8 @@ pub fn register_subscriber_tasks_to_schema_builder(
     mut builder: SeaographyBuilder,
 ) -> SeaographyBuilder {
     builder.schema = builder.schema.register(
-        Scalar::new(subscriber_tasks::SubscriberTask::ident())
-            .description(subscriber_tasks::SubscriberTask::decl()),
+        Scalar::new(subscriber_tasks::SubscriberTask::ident(&ts_rs::Config::default()))
+            .description(subscriber_tasks::SubscriberTask::decl(&ts_rs::Config::default())),
     );
     builder.register_enumeration::<subscriber_tasks::SubscriberTaskType>();
     builder.register_enumeration::<subscriber_tasks::SubscriberTaskStatus>();

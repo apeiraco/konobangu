@@ -95,7 +95,7 @@ impl DownloadTaskTrait for RqbitTask {
         self.torrent
             .metadata
             .load_full()
-            .and_then(|m| m.name.to_owned())
+            .and_then(|m| m.info.name().map(|n| n.to_string()))
             .map(Cow::Owned)
             .unwrap_or_else(|| DownloadTaskTrait::name(self))
     }

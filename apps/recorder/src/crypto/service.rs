@@ -1,6 +1,6 @@
 use base64::prelude::{BASE64_URL_SAFE, *};
 use cocoon::Cocoon;
-use rand::Rng;
+use rand::RngExt;
 use serde::{Deserialize, Serialize};
 
 use super::CryptoConfig;

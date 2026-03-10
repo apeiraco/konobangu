@@ -564,7 +564,7 @@ impl TorrentDownloaderTrait for QBittorrentDownloader {
         &self,
         hashes: <Self as TorrentDownloaderTrait>::IdSelector,
     ) -> Result<Self::IdSelector, DownloaderError> {
-        self.client.pause_torrents(hashes.clone()).await?;
+        self.client.stop_torrents(hashes.clone()).await?;
         Ok(hashes)
     }
 
@@ -573,7 +573,7 @@ impl TorrentDownloaderTrait for QBittorrentDownloader {
         &self,
         hashes: <Self as TorrentDownloaderTrait>::IdSelector,
     ) -> Result<<Self as TorrentDownloaderTrait>::IdSelector, DownloaderError> {
-        self.client.resume_torrents(hashes.clone()).await?;
+        self.client.start_torrents(hashes.clone()).await?;
         Ok(hashes)
     }
 

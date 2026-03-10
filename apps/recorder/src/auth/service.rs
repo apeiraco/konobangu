@@ -64,11 +64,11 @@ impl AuthService {
                     CoreProviderMetadata::discover_async(issuer_url, &client).await
                 }?;
 
-                let jwk_verifier = RemoteJwksVerifier::new(
+                let jwk_verifier = RemoteJwksVerifier::builder(
                     provider_metadata.jwks_uri().to_string().clone(),
-                    None,
-                    Duration::from_secs(300),
-                );
+                )
+                .with_cache_duration(Duration::from_secs(300))
+                .build();
 
                 AuthService::Oidc(Box::new(OidcAuthService {
                     config,

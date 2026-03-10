@@ -12,7 +12,7 @@ prepare-dev:
 
 prepare-dev-testcontainers:
     docker pull linuxserver/qbittorrent:latest
-    docker pull ghcr.io/dumtruck/konobangu-testing-torrents:latest
+    docker pull ghcr.io/apeiraco/konobangu-testing-torrents:latest
     docker pull postgres:17-alpine
 
 export-recorder-ts-bindings:

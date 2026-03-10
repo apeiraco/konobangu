@@ -9,7 +9,7 @@ pub use core::{
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use croner::Cron;
+use croner::parser::{CronParser, Seconds};
 use sea_orm::{
     ActiveValue::{self, Set},
     Condition, DeriveActiveEnum, DeriveDisplay, DeriveEntityModel, EnumIter, QuerySelect,
@@ -441,7 +441,7 @@ impl Model {
 
         let user_tz_now = Utc::now().with_timezone(&user_tz);
 
-        let cron_expr = Cron::new(cron_expr).with_seconds_optional().parse()?;
+        let cron_expr = CronParser::builder().seconds(Seconds::Optional).build().parse(cron_expr)?;
 
         let next = cron_expr.find_next_occurrence(&user_tz_now, false)?;
 

@@ -766,8 +766,8 @@ where
 
         fn try_from(index: JsonIndex) -> Result<Self, Self::Error> {
             match index {
-                JsonIndex::Str(s) => s.try_into(),
-                JsonIndex::Num(n) => n.try_into(),
+                JsonIndex::Str(s) => JsonPathSegment::try_from(s),
+                JsonIndex::Num(n) => JsonPathSegment::try_from(n),
             }
         }
     }
@@ -1021,7 +1021,7 @@ pub fn convert_jsonb_output_for_entity<T>(
 
 #[cfg(test)]
 mod tests {
-    use std::assert_matches::assert_matches;
+    use std::assert_matches;
 
     use sea_orm::{
         DeriveIden,

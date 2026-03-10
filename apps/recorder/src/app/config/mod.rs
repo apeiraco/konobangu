@@ -14,10 +14,19 @@ use serde::{Deserialize, Serialize};
 
 use super::env::Environment;
 use crate::{
-    auth::AuthConfig, cache::CacheConfig, crypto::CryptoConfig, database::DatabaseConfig,
-    errors::RecorderResult, extract::mikan::MikanConfig, graphql::GraphQLConfig,
-    logger::LoggerConfig, media::MediaConfig, message::MessageConfig, storage::StorageConfig,
-    task::TaskConfig, web::WebServerConfig,
+    auth::AuthConfig,
+    cache::CacheConfig,
+    crypto::CryptoConfig,
+    database::DatabaseConfig,
+    errors::RecorderResult,
+    extract::mikan::MikanConfig,
+    graphql::GraphQLConfig,
+    logger::LoggerConfig,
+    media::MediaConfig,
+    message::MessageConfig,
+    storage::StorageConfig,
+    task::TaskConfig,
+    web::WebServerConfig,
 };
 
 const DEFAULT_CONFIG_MIXIN: &str = include_str!("./default_mixin.toml");

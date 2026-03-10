@@ -31,7 +31,7 @@ pub async fn create_testcontainers() -> Result<
     testcontainers::ContainerRequest<testcontainers::GenericImage>,
     testcontainers::TestcontainersError,
 > {
-    let container = GenericImage::new("ghcr.io/dumtruck/konobangu-testing-torrents", "latest")
+    let container = GenericImage::new("ghcr.io/apeiraco/konobangu-testing-torrents", "latest")
         .with_wait_for(WaitFor::message_on_stdout("Listening on"))
         .with_mapped_port(6080, ContainerPort::Tcp(6080))
         .with_mapped_port(6081, ContainerPort::Tcp(6081))

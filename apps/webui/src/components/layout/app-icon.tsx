@@ -25,7 +25,7 @@ export function AppIcon() {
           </div>
           <div className="grid flex-1 gap-1 py-1 text-left text-xs leading-tight">
             <span className="truncate font-semibold">Konobangu</span>
-            <span className="mt-1 truncate">@dumtruck</span>
+            <span className="mt-1 truncate">@apeiraco</span>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

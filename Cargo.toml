@@ -29,11 +29,12 @@ reqwest = { version = "0.13", features = [
     "http2",
     "json",
     "cookies",
+    "form",
 ] }
 moka = "0.12"
 futures = "0.3"
 quirks_path = "0.1"
-snafu = { version = "0.8", features = ["futures"] }
+snafu = { version = "0.9", features = ["futures"] }
 testcontainers = { version = "0.26" }
 testcontainers-modules = { version = "0.14" }
 testcontainers-ext = { version = "0.1.0", features = ["tracing"] }
@@ -84,4 +85,5 @@ webp = "0.3.0"
 
 
 [patch.crates-io]
-seaography = { git = "https://github.com/dumtruck/seaography.git", rev = "9f7fc7c" }
+seaography = { path = "./patches/seaography" }
+testcontainers-ext = { path = "./patches/testcontainers-ext" }

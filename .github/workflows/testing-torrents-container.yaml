@@ -4,16 +4,16 @@ on:
   workflow_dispatch:
 
 env:
-    REGISTRY: ghcr.io
-    ORG: dumtruck
-    PROJECT: konobangu
+  REGISTRY: ghcr.io
+  ORG: apeiraco
+  PROJECT: konobangu
 
 jobs:
   build-container:
     runs-on: ubuntu-latest
     permissions:
-        contents: read
-        packages: write
+      contents: read
+      packages: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -28,9 +28,9 @@ jobs:
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
-          context: 'packages/testing-torrents'
-          file: 'packages/testing-torrents/Dockerfile'
+          context: "packages/testing-torrents"
+          file: "packages/testing-torrents/Dockerfile"
           push: true
-          tags: '${{ env.REGISTRY }}/${{ env.ORG }}/${{ env.PROJECT }}-testing-torrents:latest'
+          tags: "${{ env.REGISTRY }}/${{ env.ORG }}/${{ env.PROJECT }}-testing-torrents:latest"
           cache-from: type=gha
           cache-to: type=gha,mode=max

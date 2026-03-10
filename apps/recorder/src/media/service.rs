@@ -142,11 +142,12 @@ impl MediaService {
             let (width, height) = image.dimensions();
 
             let color = image.color();
-            // jxl_encoder effort 1-10: higher = slower/better. Map speed 0-9 -> effort 1-10.
+            // jxl_encoder effort 1-10: higher = slower/better. Map speed 0-9 -> effort
+            // 1-10.
             let effort = (speed + 1).clamp(1, 10);
             let quality_spec = Quality::Percent((quality.round() as u32).min(100));
-            let config = LossyConfig::from_quality(quality_spec)?
-                .with_effort(effort);
+            let config =
+                LossyConfig::from_quality(quality_spec).map_err(jxl_encoder::at)?.with_effort(effort);
 
             let jxl_bytes = if color.has_alpha() {
                 let sample = image.into_rgba8();

@@ -99,7 +99,7 @@ ipnetwork = { workspace = true }
 typed-builder = { workspace = true }
 webp = { workspace = true }
 
-sea-orm = { version = "1.1", features = [
+sea-orm = { version = "1", features = [
     "sqlx-sqlite",
     "sqlx-postgres",
     "runtime-tokio",
@@ -107,7 +107,7 @@ sea-orm = { version = "1.1", features = [
     "debug-print",
 ] }
 figment = { version = "0.10", features = ["toml", "json", "env", "yaml"] }
-sea-orm-migration = { version = "1.1", features = ["runtime-tokio"] }
+sea-orm-migration = { version = "1", features = ["runtime-tokio"] }
 rss = { version = "2", features = ["builders", "with-serde"] }
 fancy-regex = "0.17"
 lightningcss = "1.0.0-alpha.70"
@@ -116,7 +116,7 @@ opendal = { version = "0.55", features = ["default", "services-fs"] }
 scraper = "0.25"
 async-graphql = { version = "7", features = ["dynamic-schema"] }
 async-graphql-axum = "7"
-seaography = { version = "1.1", features = [
+seaography = { version = "1", features = [
     "with-json",
     "with-chrono",
     "with-time",
@@ -141,14 +141,18 @@ tower-http = { version = "0.6", features = [
 tera = "1.20.0"
 openidconnect = { version = "4" }
 dotenvy = "0.15.7"
-# 非 macOS 使用默认 features（含 butteraugli-loop）；macOS 下用 target 覆盖为关闭 butteraugli 以规避 NEON 编译问题
-jxl-encoder = { version = "0.1", optional = true }
+# butteraugli 依赖含 NEON SIMD 代码，在 macOS aarch64 上编译失败
+# 因此全局关闭 default features，在非 macOS 平台上单独启用 butteraugli-loop
+jxl-encoder = { version = "0.1", optional = true, default-features = false, features = [
+    "std",
+    "safe-mode",
+] }
 
 apalis = { version = "0.7", features = ["limit", "tracing", "catch-panic"] }
 apalis-sql = { version = "0.7", features = ["postgres"] }
 cocoon = { version = "0.4.3", features = ["getrandom", "thiserror"] }
 reqwest_cookie_store = "0.10"
-jwtk = "0.4.0"
+jwtk = "0.5"
 mime_guess = "2.0.5"
 icu_properties = "2.0.1"
 icu = "2.0.0"
@@ -171,9 +175,11 @@ secrecy = { version = "0.10.3", features = ["serde"] }
 paste = "1.0.15"
 chrono-tz = "0.10.3"
 
-[target.'cfg(target_os = "macos")'.dependencies]
-# macOS（含 aarch64）上关闭 butteraugli-loop，避免 butteraugli 的 NEON 编译错误
-jxl-encoder = { version = "0.1", optional = true, default-features = false, features = ["std", "safe-mode"] }
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+# 非 macOS 平台启用 butteraugli-loop（完整图像质量优化）
+jxl-encoder = { version = "0.1", optional = true, features = [
+    "butteraugli-loop",
+] }
 
 [dev-dependencies]
 inquire = { workspace = true }
@@ -181,5 +187,5 @@ color-eyre = { workspace = true }
 serial_test = "3"
 insta = { version = "1", features = ["redactions", "toml", "filters"] }
 ctor = "0.6"
-tracing-test = "0.2.5"
+tracing-test = "0.2"
 rstest = "0.26"
