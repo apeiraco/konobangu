@@ -1,11 +1,11 @@
-import { ContactTemplate } from '@konobangu/email/templates/contact';
+import { ContactTemplate } from "@konobangu/email/templates/contact";
 
 const ExampleContactEmail = () => (
-  <ContactTemplate
-    name="Jane Smith"
-    email="jane.smith@example.com"
-    message="I'm interested in your services."
-  />
+	<ContactTemplate
+		name="Jane Smith"
+		email="jane.smith@example.com"
+		message="I'm interested in your services."
+	/>
 );
 
 export default ExampleContactEmail;

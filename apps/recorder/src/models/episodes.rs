@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use sea_orm::{
-    ActiveValue, IntoSimpleExpr, QuerySelect, entity::prelude::*, sea_query::OnConflict,
+    ActiveValue, IntoSimpleExpr, QuerySelect, entity::prelude::*, sea_query::{ExprTrait, OnConflict},
 };
 use serde::{Deserialize, Serialize};
 

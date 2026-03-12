@@ -4,7 +4,7 @@ use sea_orm::{
     ActiveValue, Condition, FromJsonQueryResult, FromQueryResult, IntoSimpleExpr, JoinType,
     QuerySelect,
     entity::prelude::*,
-    sea_query::{Alias, IntoCondition, OnConflict},
+    sea_query::{Alias, ExprTrait, IntoCondition, OnConflict},
 };
 use serde::{Deserialize, Serialize};
 

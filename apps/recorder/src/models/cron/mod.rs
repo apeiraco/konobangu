@@ -12,8 +12,7 @@ use chrono_tz::Tz;
 use croner::parser::{CronParser, Seconds};
 use sea_orm::{
     ActiveValue::{self, Set},
-    Condition, DeriveActiveEnum, DeriveDisplay, DeriveEntityModel, EnumIter, QuerySelect,
-    Statement, TransactionTrait,
+    Condition, DeriveActiveEnum, DeriveDisplay, DeriveEntityModel, EnumIter, QuerySelect, TransactionTrait,
     entity::prelude::*,
     sea_query::{ExprTrait, LockBehavior, LockType},
     sqlx::postgres::PgNotification,
@@ -370,10 +369,9 @@ impl Model {
     pub async fn check_and_trigger_due_crons(ctx: &dyn AppContextTrait) -> RecorderResult<()> {
         let db = ctx.db();
 
-        db.execute(Statement::from_string(
-            db.get_database_backend(),
-            format!("SELECT {CHECK_AND_TRIGGER_DUE_CRONS_FUNCTION_NAME}()"),
-        ))
+        db.execute_unprepared(
+            &format!("SELECT {CHECK_AND_TRIGGER_DUE_CRONS_FUNCTION_NAME}()"),
+        )
         .await?;
 
         Ok(())

@@ -1,45 +1,44 @@
 {
-    "npm.packageManager": "pnpm",
-    "[javascript]": {
-        "editor.defaultFormatter": "vscode.typescript-language-features",
-        "editor.formatOnSave": true
-    },
-    "[json]": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "editor.formatOnSave": true
-    },
-    "[jsonc]": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "editor.formatOnSave": true
-    },
-    "[typescript]": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "editor.formatOnSave": true
-    },
-    "[typescriptreact]": {
-        "editor.defaultFormatter": "biomejs.biome",
-        "editor.formatOnSave": true
-    },
-    "editor.codeActionsOnSave": {
-        "quickfix.biome": "explicit",
-        "source.organizeImports.biome": "explicit"
-    },
-    "emmet.showExpandedAbbreviation": "never",
-    "prettier.enable": false,
-    "typescript.tsdk": "node_modules/typescript/lib",
-    "rust-analyzer.showUnlinkedFileNotification": false,
-    "sqltools.connections": [
-        {
-            "previewLimit": 50,
-            "server": "localhost",
-            "port": 5432,
-            "driver": "PostgreSQL",
-            "name": "konobangu-dev",
-            "database": "konobangu",
-            "username": "konobangu"
-        }
-    ],
-    "rust-analyzer.cargo.features": "all",
-    "rust-analyzer.testExplorer": true,
-    "biome.lspBin": "./node_modules/.bin/biome"
+	"npm.packageManager": "pnpm",
+	"[javascript]": {
+		"editor.defaultFormatter": "vscode.typescript-language-features",
+		"editor.formatOnSave": true
+	},
+	"[json]": {
+		"editor.defaultFormatter": "biomejs.biome",
+		"editor.formatOnSave": true
+	},
+	"[jsonc]": {
+		"editor.defaultFormatter": "biomejs.biome",
+		"editor.formatOnSave": true
+	},
+	"[typescript]": {
+		"editor.defaultFormatter": "biomejs.biome",
+		"editor.formatOnSave": true
+	},
+	"[typescriptreact]": {
+		"editor.defaultFormatter": "biomejs.biome",
+		"editor.formatOnSave": true
+	},
+	"editor.codeActionsOnSave": {
+		"source.fixAll.biome": "explicit"
+	},
+	"emmet.showExpandedAbbreviation": "never",
+	"prettier.enable": false,
+	"typescript.tsdk": "node_modules/typescript/lib",
+	"rust-analyzer.showUnlinkedFileNotification": false,
+	"sqltools.connections": [
+		{
+			"previewLimit": 50,
+			"server": "localhost",
+			"port": 5432,
+			"driver": "PostgreSQL",
+			"name": "konobangu-dev",
+			"database": "konobangu",
+			"username": "konobangu"
+		}
+	],
+	"rust-analyzer.cargo.features": "all",
+	"rust-analyzer.testExplorer": true,
+	"biome.lspBin": "./node_modules/.bin/biome"
 }

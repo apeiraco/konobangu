@@ -1,6 +1,6 @@
 use async_trait::async_trait;
 use sea_orm::{
-    ActiveModelTrait, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, Insert, IntoActiveModel,
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DbErr, EntityTrait, InsertMany, IntoActiveModel,
     QueryResult, QueryTrait, sea_query::Query,
 };
 
@@ -21,7 +21,7 @@ where
 }
 
 #[async_trait]
-impl<A> InsertManyReturningExt<A> for Insert<A>
+impl<A> InsertManyReturningExt<A> for InsertMany<A>
 where
     <A::Entity as EntityTrait>::Model: IntoActiveModel<A>,
     A: ActiveModelTrait + Send,
@@ -46,6 +46,6 @@ where
 
         let statement = db_backend.build(&insert_statement);
 
-        db.query_all(statement).await
+        db.query_all_raw(statement).await
     }
 }

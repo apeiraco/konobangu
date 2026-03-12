@@ -34,22 +34,6 @@ impl DatabaseService {
 
         let db = Database::connect(opt).await?;
 
-        // only support postgres for now
-        // if db.get_database_backend() == DatabaseBackend::Sqlite {
-        //     db.execute(Statement::from_string(
-        //         DatabaseBackend::Sqlite,
-        //         "
-        //         PRAGMA foreign_keys = ON;
-        //         PRAGMA journal_mode = WAL;
-        //         PRAGMA synchronous = NORMAL;
-        //         PRAGMA mmap_size = 134217728;
-        //         PRAGMA journal_size_limit = 67108864;
-        //         PRAGMA cache_size = 2000;
-        //         ",
-        //     ))
-        //     .await?;
-        // }
-
         let me = Self {
             connection: db,
             #[cfg(feature = "testcontainers")]
@@ -103,27 +87,19 @@ impl ConnectionTrait for DatabaseService {
         self.deref().get_database_backend()
     }
 
-    async fn execute(&self, stmt: Statement) -> Result<ExecResult, DbErr> {
-        self.deref().execute(stmt).await
+    async fn execute_raw(&self, stmt: Statement) -> Result<ExecResult, DbErr> {
+        self.deref().execute_raw(stmt).await
     }
 
     async fn execute_unprepared(&self, sql: &str) -> Result<ExecResult, DbErr> {
         self.deref().execute_unprepared(sql).await
     }
 
-    async fn query_one(&self, stmt: Statement) -> Result<Option<QueryResult>, DbErr> {
-        self.deref().query_one(stmt).await
+    async fn query_one_raw(&self, stmt: Statement) -> Result<Option<QueryResult>, DbErr> {
+        self.deref().query_one_raw(stmt).await
     }
 
-    async fn query_all(&self, stmt: Statement) -> Result<Vec<QueryResult>, DbErr> {
-        self.deref().query_all(stmt).await
-    }
-
-    fn support_returning(&self) -> bool {
-        self.deref().support_returning()
-    }
-
-    fn is_mock_connection(&self) -> bool {
-        self.deref().is_mock_connection()
+    async fn query_all_raw(&self, stmt: Statement) -> Result<Vec<QueryResult>, DbErr> {
+        self.deref().query_all_raw(stmt).await
     }
 }

@@ -1,2 +1,2 @@
-export { IntlService } from './intl.service';
-export { intlContextFromInjector, provideIntl } from './context';
+export { intlContextFromInjector, provideIntl } from "./context";
+export { IntlService } from "./intl.service";

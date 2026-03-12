@@ -1,15 +1,15 @@
-import { AUTH_PROVIDER } from '@/infra/auth/auth.provider';
-import { Injectable, inject } from '@outposts/injection-js';
+import { Injectable, inject } from "@outposts/injection-js";
+import { AUTH_PROVIDER } from "@/infra/auth/auth.provider";
 
 @Injectable()
 export class AuthService {
-  private authProvider = inject(AUTH_PROVIDER);
+	private authProvider = inject(AUTH_PROVIDER);
 
-  isAuthenticated$ = this.authProvider.isAuthenticated$;
-  checkAuthResultEvent$ = this.authProvider.checkAuthResultEvent$;
-  authData$ = this.authProvider.authData$;
+	isAuthenticated$ = this.authProvider.isAuthenticated$;
+	checkAuthResultEvent$ = this.authProvider.checkAuthResultEvent$;
+	authData$ = this.authProvider.authData$;
 
-  setup() {
-    this.authProvider.setup();
-  }
+	setup() {
+		this.authProvider.setup();
+	}
 }

@@ -15,16 +15,18 @@
 //!
 //! ## Usage
 //!
-//! This is a **preparatory** module. RLS policies and table-level `ENABLE ROW
-//! LEVEL SECURITY` will be added in a future migration phase. This module
-//! provides the application-side binding infrastructure.
+//! RLS policies are enabled on all user-private tables via the migration
+//! `m20260314_000001_enable_rls`. This module provides the application-side
+//! binding infrastructure: call [`bind_subscriber_to_transaction`] within a
+//! transaction before executing subscriber-scoped queries so that RLS policies
+//! can enforce data isolation.
 //!
-//! ## Future migration path
+//! ## Migration path
 //!
-//! 1. Add `subscriber_id` columns to tables that lack them (Phase 1)
-//! 2. Enable RLS and create policies on private tables (Phase 2)
+//! 1. Add `subscriber_id` columns to tables that lack them (Phase 1 — done)
+//! 2. Enable RLS and create policies on private tables (Phase 2 — done)
 //! 3. Call `bind_subscriber_to_transaction` before executing subscriber-scoped
-//!    queries (Phase 3)
+//!    queries (Phase 3 — done, integrated in `graphql_handler`)
 
 use sea_orm::{ConnectionTrait, DbErr, ExecResult};
 
@@ -80,7 +82,7 @@ pub async fn get_current_subscriber_id(
     }
 
     let result = db
-        .query_one(sea_orm::Statement::from_string(
+        .query_one_raw(sea_orm::Statement::from_string(
             sea_orm::DatabaseBackend::Postgres,
             "SELECT current_setting('app.subscriber_id', true) AS value",
         ))

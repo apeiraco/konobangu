@@ -1,21 +1,21 @@
 {
-  "name": "email-playground",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "build": "email build",
-    "dev": "email dev --port 5003",
-    "export": "email export",
-    "clean": "git clean -xdf .cache dist node_modules",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
-  },
-  "dependencies": {
-    "@react-email/components": "^0.0.42",
-    "react": "^19.0.0",
-    "react-email": "^4.0.16",
-    "@konobangu/email": "workspace:*"
-  },
-  "devDependencies": {
-    "@types/react": "19.0.1"
-  }
+	"name": "email-playground",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"build": "email build",
+		"dev": "email dev --port 5003",
+		"export": "email export",
+		"clean": "git clean -xdf .cache dist node_modules",
+		"typecheck": "tsc --noEmit --emitDeclarationOnly false"
+	},
+	"dependencies": {
+		"@react-email/components": "^0.0.42",
+		"react": "^19.0.0",
+		"react-email": "^4.0.16",
+		"@konobangu/email": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/react": "19.0.1"
+	}
 }

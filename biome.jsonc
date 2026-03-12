@@ -3,6 +3,11 @@
 	"javascript": {
 		"globals": ["Liveblocks"]
 	},
+	"css": {
+		"parser": {
+			"tailwindDirectives": true
+		}
+	},
 	"linter": {
 		"rules": {
 			"nursery": {},
@@ -14,23 +19,30 @@
 				"noDangerouslySetInnerHtml": "off"
 			},
 			"suspicious": {
+				"noArrayIndexKey": "off",
 				"noEmptyBlockStatements": "off",
 				"noExplicitAny": "off",
 				"noConsole": "off"
 			},
 			"a11y": {
+				"useAltText": "off",
 				"noSvgWithoutTitle": "off"
 			},
 			"complexity": {
 				"noExcessiveCognitiveComplexity": {
 					"level": "warn",
 					"options": {
-						"maxAllowedComplexity": 20
+						"maxAllowedComplexity": 36
 					}
 				},
+				"noImportantStyles": "off",
 				"noBannedTypes": "off"
 			},
 			"correctness": {
+				"useParseIntRadix": {
+					"fix": "safe",
+					"level": "warn"
+				},
 				"noUnusedImports": {
 					"fix": "none",
 					"level": "warn"
@@ -40,10 +52,11 @@
 	},
 	"overrides": [
 		{
-			"includes": ["**/tsconfig.json", "**/tsconfig.*.json"],
+			"includes": [".vscode/**/*.json"],
 			"json": {
 				"parser": {
-					"allowComments": true
+					"allowComments": true,
+					"allowTrailingCommas": true
 				}
 			}
 		},
@@ -76,6 +89,7 @@
 						"useSortedClasses": "off"
 					},
 					"a11y": {
+						"useAriaPropsForRole": "off",
 						"noRedundantRoles": "off",
 						"useFocusableInteractive": "off",
 						"useSemanticElements": "off"
@@ -88,6 +102,28 @@
 		}
 	],
 	"files": {
-		"includes": ["**", "!**/.vscode/**/*.json"]
+		"includes": [
+			"**",
+			"!**/*.md",
+			"!dist",
+			"!**/dist",
+			"!webui",
+			"!apps/recorder/webui",
+			"!target",
+			"!**/target",
+			"!node_modules",
+			"!**/node_modules",
+			"!pnpm-lock.yaml",
+			"!**/pnpm-lock.yaml",
+			"!pnpm-workspace.yaml",
+			"!**/pnpm-workspace.yaml",
+			"!pnpm-workspace.yaml",
+			"!**/tests/resources",
+			"!**/.tanstack",
+			"!.vite",
+			"!.vitest",
+			"!assets",
+			"!**/*.local.*"
+		]
 	}
 }

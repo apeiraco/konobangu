@@ -3,4 +3,13 @@ import type { SyncOneSubscriptionFeedsFullTask } from "./SyncOneSubscriptionFeed
 import type { SyncOneSubscriptionFeedsIncrementalTask } from "./SyncOneSubscriptionFeedsIncrementalTask";
 import type { SyncOneSubscriptionSourcesTask } from "./SyncOneSubscriptionSourcesTask";
 
-export type SubscriberTaskType = { "taskType": "sync_one_subscription_feeds_incremental" } & SyncOneSubscriptionFeedsIncrementalTask | { "taskType": "sync_one_subscription_feeds_full" } & SyncOneSubscriptionFeedsFullTask | { "taskType": "sync_one_subscription_sources" } & SyncOneSubscriptionSourcesTask;
+export type SubscriberTaskType =
+	| ({
+			taskType: "sync_one_subscription_feeds_incremental";
+	  } & SyncOneSubscriptionFeedsIncrementalTask)
+	| ({
+			taskType: "sync_one_subscription_feeds_full";
+	  } & SyncOneSubscriptionFeedsFullTask)
+	| ({
+			taskType: "sync_one_subscription_sources";
+	  } & SyncOneSubscriptionSourcesTask);

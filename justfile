@@ -66,3 +66,27 @@ dev-all:
 [windows]
 dev-all:
     @echo "zellij is not supported on Windows, please use vscode tasks 'dev-all'"
+
+lint-rs:
+    cargo clippy --workspace
+
+lint-ts:
+    pnpm lint
+
+lint: lint-rs lint-ts
+
+fix-rs:
+    cargo clippy --workspace --fix --allow-dirty
+
+fix-ts:
+    pnpm lint-fix
+
+fix: fix-rs fix-ts
+
+test-rs:
+    cargo test --workspace
+
+test-ts:
+    pnpm test
+
+test: test-rs test-ts

@@ -1,1 +1,1 @@
-export { BasicAuthProvider } from './basic-auth.provider';
+export { BasicAuthProvider } from "./basic-auth.provider";

@@ -1,2 +1,2 @@
-export { GraphQLService } from './graphql.service';
-export { provideGraphql, graphqlContextFromInjector } from './context';
+export { graphqlContextFromInjector, provideGraphql } from "./context";
+export { GraphQLService } from "./graphql.service";

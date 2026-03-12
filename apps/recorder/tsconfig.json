@@ -1,10 +1,10 @@
 {
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "composite": true,
-    "module": "ESNext",
-    "moduleResolution": "bundler"
-  },
-  "include": ["bindings"]
+	"extends": "../../tsconfig.base.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"composite": true,
+		"module": "ESNext",
+		"moduleResolution": "bundler"
+	},
+	"include": ["bindings"]
 }

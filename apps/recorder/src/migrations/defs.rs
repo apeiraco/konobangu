@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 
 use async_trait::async_trait;
-use sea_orm::{DeriveIden, Statement};
+use sea_orm::Statement;
 use sea_orm_migration::{
     prelude::{extension::postgres::IntoTypeRef, *},
     schema::timestamp_with_time_zone,
@@ -361,7 +361,7 @@ impl CustomSchemaManagerExt for SchemaManager<'_> {
         );
 
         self.get_connection()
-            .execute(Statement::from_string(self.get_database_backend(), sql))
+            .execute_unprepared(&sql)
             .await?;
 
         Ok(())
@@ -377,7 +377,7 @@ impl CustomSchemaManagerExt for SchemaManager<'_> {
              ON {tab_name} FOR EACH ROW EXECUTE PROCEDURE update_{col_name}_column();"
         );
         self.get_connection()
-            .execute(Statement::from_string(self.get_database_backend(), sql))
+            .execute_unprepared(&sql)
             .await?;
         Ok(())
     }
@@ -385,7 +385,7 @@ impl CustomSchemaManagerExt for SchemaManager<'_> {
     async fn drop_postgres_auto_update_ts_fn(&self, col_name: &str) -> Result<(), DbErr> {
         let sql = format!("DROP FUNCTION IF EXISTS update_{col_name}_column();");
         self.get_connection()
-            .execute(Statement::from_string(self.get_database_backend(), sql))
+            .execute_unprepared(&sql)
             .await?;
         Ok(())
     }
@@ -399,7 +399,7 @@ impl CustomSchemaManagerExt for SchemaManager<'_> {
             "DROP TRIGGER IF EXISTS update_{tab_name}_{col_name}_column_trigger ON {tab_name};"
         );
         self.get_connection()
-            .execute(Statement::from_string(self.get_database_backend(), sql))
+            .execute_unprepared(&sql)
             .await?;
         Ok(())
     }
@@ -471,7 +471,7 @@ impl CustomSchemaManagerExt for SchemaManager<'_> {
         let sql = format!("SELECT 1 FROM pg_type WHERE typname = '{enum_name}'");
         let result = self
             .get_connection()
-            .query_one(Statement::from_string(self.get_database_backend(), sql))
+            .query_one_raw(Statement::from_string(self.get_database_backend(), sql))
             .await?;
         Ok(result.is_some())
     }
@@ -488,7 +488,7 @@ impl CustomSchemaManagerExt for SchemaManager<'_> {
 
         let results = self
             .get_connection()
-            .query_all(Statement::from_string(self.get_database_backend(), sql))
+            .query_all_raw(Statement::from_string(self.get_database_backend(), sql))
             .await?;
 
         let mut items = HashSet::new();

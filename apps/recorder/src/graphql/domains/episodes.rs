@@ -14,7 +14,7 @@ pub fn register_episodes_to_schema_context(context: &mut BuilderContext) {
 
 pub fn register_episodes_to_schema_builder(mut builder: SeaographyBuilder) -> SeaographyBuilder {
     builder.register_enumeration::<episodes::EpisodeType>();
-    builder = register_entity_default_writable!(builder, episodes, false);
+    builder = register_entity_default_writable!(builder, episodes);
 
     builder
 }

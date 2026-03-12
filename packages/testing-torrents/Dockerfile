@@ -1,4 +1,4 @@
-FROM node:23-slim AS nodebt
+FROM node:24-slim AS nodebt
 RUN npm install -g pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"

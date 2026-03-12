@@ -18,7 +18,7 @@ pub fn register_subscription_episode_to_schema_context(context: &mut BuilderCont
 pub fn register_subscription_episode_to_schema_builder(
     mut builder: SeaographyBuilder,
 ) -> SeaographyBuilder {
-    builder = register_entity_default_writable!(builder, subscription_episode, false);
+    builder = register_entity_default_writable!(builder, subscription_episode);
 
     builder
 }

@@ -99,15 +99,17 @@ ipnetwork = { workspace = true }
 typed-builder = { workspace = true }
 webp = { workspace = true }
 
-sea-orm = { version = "1", features = [
+sea-orm = { version = "~2.0.0-rc", features = [
     "sqlx-sqlite",
     "sqlx-postgres",
     "runtime-tokio",
     "macros",
     "debug-print",
+    "seaography",
+    "with-json",
 ] }
 figment = { version = "0.10", features = ["toml", "json", "env", "yaml"] }
-sea-orm-migration = { version = "1", features = ["runtime-tokio"] }
+sea-orm-migration = { version = "~2.0.0-rc", features = ["runtime-tokio"] }
 rss = { version = "2", features = ["builders", "with-serde"] }
 fancy-regex = "0.17"
 lightningcss = "1.0.0-alpha.70"
@@ -116,7 +118,7 @@ opendal = { version = "0.55", features = ["default", "services-fs"] }
 scraper = "0.25"
 async-graphql = { version = "7", features = ["dynamic-schema"] }
 async-graphql-axum = "7"
-seaography = { version = "1", features = [
+seaography = { version = "~2.0.0-rc", features = [
     "with-json",
     "with-chrono",
     "with-time",
@@ -124,8 +126,6 @@ seaography = { version = "1", features = [
     "with-decimal",
     "with-bigdecimal",
     "with-postgres-array",
-    "with-json-as-scalar",
-    "with-custom-as-json",
 ] }
 tower = { version = "0.5.2", features = ["util"] }
 tower-http = { version = "0.6", features = [
