@@ -3,20 +3,20 @@
 	"version": "0.0.1",
 	"description": "Kono bangumi? Testing Torrents",
 	"main": "main.ts",
-	"type": "commonjs",
+	"type": "module",
 	"scripts": {
-		"start": "tsx main.ts"
+		"start": "node main.ts"
 	},
 	"dependencies": {
-		"@fastify/static": "^8.2.0",
-		"bittorrent-tracker": "^11.2.1",
-		"fastify": "^5.4.0",
-		"tsx": "^4.20.2",
-		"webtorrent": "^2.6.8"
+		"@fastify/static": "^9.0.0",
+		"bittorrent-tracker": "^11.2.2",
+		"fastify": "^5.8.2",
+		"webtorrent": "^2.8.5"
 	},
 	"devDependencies": {
-		"@types/create-torrent": "^5.0.2",
-		"@types/webtorrent": "^0.110.0"
+		"@types/create-torrent": "^6.1.1",
+		"@types/webtorrent": "^0.110.1",
+		"typescript": "^5.9.3"
 	},
 	"pnpm": {
 		"onlyBuiltDependencies": [
