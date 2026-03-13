@@ -37,7 +37,7 @@ quirks_path = "0.1"
 snafu = { version = "0.9", features = ["futures"] }
 testcontainers = { version = "0.27" }
 testcontainers-modules = { version = "0.15" }
-testcontainers-ext = { version = "0.1.0", features = ["tracing"] }
+testcontainers-ext = { version = "0.2", features = ["tracing"] }
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1.45.1", features = [
     "macros",
@@ -59,7 +59,7 @@ lazy_static = "1.5"
 axum = { version = "0.8.3", features = ["macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 axum-extra = { version = "0.12", features = ["typed-header"] }
-mockito = { version = "1.6.1" }
+mockito = { version = "1.7" }
 convert_case = "0.11"
 color-eyre = "0.6.5"
 inquire = "0.9"
@@ -82,7 +82,3 @@ ipnetwork = "0.21.1"
 typed-builder = "0.23"
 nanoid = "0.4.0"
 webp = "0.3.0"
-
-
-[patch.crates-io]
-testcontainers-ext = { path = "./patches/testcontainers-ext" }

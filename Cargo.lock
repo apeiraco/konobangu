@@ -9959,7 +9959,9 @@ dependencies = [
 
 [[package]]
 name = "testcontainers-ext"
-version = "0.1.0"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a14259b63054b1d7eec1b9af885ac92839c34765a57a596bae65c667ff1ffc7"
 dependencies = [
  "bollard",
  "futures",
