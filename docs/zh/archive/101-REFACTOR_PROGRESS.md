@@ -61,7 +61,7 @@
 | ✅ 更新 sea-orm/seaography 到 2.0 | Cargo.toml 依赖更新，移除 fork | 低 |
 | ✅ 实现 `LifecycleHooksInterface` | `auth_hooks.rs` 实现 `SubscriberAuthHooks` trait（entity_guard + entity_filter）| 低 — 上轮已对齐接口设计 |
 | ✅ 迁移 `condition_functions` | 改为 `entity_filter` 返回 `Condition` | 低 |
-| ✅ 迁移 `input_none_conversions` | 改为 `insert_skips`（`feeds.rs` token 字段）| 低 |
+| ✅ 迁移 `input_none_conversions` | 改为 `insert_skips`（`feeds.rs` token 字段）| 低（**注**：迁移后发现名称格式 bug，见 Bug Fixes 章节）|
 | ✅ 迁移自定义 mutation | `subscriber_tasks.rs`/`system_tasks.rs` 手动 `Field::new` 构建 | **高** — 无现成宏，需手动实现 |
 | ✅ 迁移 types 相关 | 使用 `ColumnOptions`（input_type/output_type/input_conversion/output_conversion）| 中 |
 | ✅ 迁移 `TypesMapConfig` | per-column `ColumnOptions` BTreeMap 替代分散字段 | 中 |
@@ -89,7 +89,7 @@
 |--------|------|------|
 | `input_conversion` subscriber_id 注入 | ✅ 已修复 | 自定义 mutation 闭包中通过 `task.set_subscriber_id(auth_subscriber_id)` 直接注入（与旧行为等价） |
 | `entity_filter` 列引用 | ✅ 已修复 | `SubscriberAuthHooks` 使用 `HashMap<String, SubscriberIdFilterFn>` 存储类型安全的 column 引用闭包（与旧行为等价） |
-| `insert_skips`/`update_skips` 类型 | ⚠️ 低风险 | seaography 2.0 上游 API 变化：`Vec<EntityColumnId>` → `Vec<String>`。代码通过 `EntityColumnId::of::<T>().to_string()` 生成，无手写字符串 |
+| `insert_skips`/`update_skips` 名称格式 | ✅ 已修复 | **根本原因**：`EntityColumnId::to_string()` 返回数据库层格式（`"feeds.subscriber_id"`），但 `insert_skips` 检查使用 GraphQL 层格式（`"Feeds.subscriberId"`），导致所有 skip 静默失效。**修复**：统一改用 `get_entity_and_column_name<T>(context, column)` 生成正确格式（见 Bug Fixes 章节）|
 
 ### Phase 2: PostgreSQL RLS 实施 — ✅ 已完成
 
@@ -142,6 +142,60 @@
 
 - GraphQL handler: `web/controller/graphql/mod.rs`
 - Database infra: `database/rls.rs`（文档更新）
+
+---
+
+## Bug Fixes（迁移后发现）
+
+### BF-1: `insert_skips` / `update_skips` 名称格式不匹配导致 skip 静默失效
+
+**发现时间**：2026-03-17
+
+**现象**：GraphQL 前端 `FeedsInsertInput` 中 `token` 字段仍为 `NON_NULL`（必填），`SubscriptionsInsertInput`、`Credential3rdInsertInput` 等类型中 `subscriberId` 仍为 `NON_NULL`，导致前端 TypeScript 类型错误。
+
+**根本原因**：
+
+`insert_skips` / `update_skips` 是 `Vec<String>`，其检查逻辑（`seaography/src/inputs/entity_input.rs`）使用的是 **GraphQL 层格式**：
+
+```rust
+// seaography 内部检查
+let full_name = format!("{}.{}", entity_object_builder.type_name::<T>(), column_name);
+// 生成 "Feeds.subscriberId"（PascalCase 实体名 + camelCase 列名）
+self.context.entity_input.insert_skips.contains(&full_name)
+```
+
+但迁移后的代码错误地使用了 `EntityColumnId::to_string()`：
+
+```rust
+// ❌ 错误：返回数据库格式 "feeds.subscriber_id"（snake_case）
+context.entity_input.insert_skips.push(entity_column_id.to_string());
+```
+
+两者格式不匹配，所有 `push` 进去的 skip 永远无法被 `contains` 命中，skip 完全失效。
+
+**影响范围**：
+- `feeds.rs`：`token` 字段的 `insert_skips` 失效 → `FeedsInsertInput.token` 仍为 `NON_NULL`
+- `auth_hooks.rs`：`restrict_subscriber_for_entity` 中 `subscriberId` 的 `insert_skips` 和 `update_skips` 均失效 → 所有通过该函数注册的实体（Subscriptions、Credential3rd、Bangumi、Episodes、Downloaders、Downloads、Feeds 等）的 InsertInput 均包含 `NON_NULL subscriberId`
+- `subscriber_tasks.rs` / `system_tasks.rs`：`skip_columns_for_entity_input` 和 `restrict_*_for_entity` 中的 skips 均失效
+
+**修复方案**：
+
+统一改用 `get_entity_and_column_name<T>(context, column)` 函数，该函数通过 `context.entity_object.type_name` 和 `context.entity_object.column_name` 生成与 seaography 检查逻辑一致的 GraphQL 格式名称：
+
+```rust
+// ✅ 正确：返回 GraphQL 格式 "Feeds.subscriberId"
+let entity_column_key = get_entity_and_column_name::<T>(context, column);
+context.entity_input.insert_skips.push(entity_column_key.clone());
+context.entity_input.update_skips.push(entity_column_key);
+```
+
+**修改文件**：
+- `apps/recorder/src/graphql/infra/auth_hooks.rs`：`restrict_subscriber_for_entity`
+- `apps/recorder/src/graphql/domains/feeds.rs`：`register_feeds_to_schema_context`
+- `apps/recorder/src/graphql/domains/subscriber_tasks.rs`：`skip_columns_for_entity_input` + `restrict_subscriber_tasks_for_entity`
+- `apps/recorder/src/graphql/domains/system_tasks.rs`：`skip_columns_for_entity_input` + `restrict_system_tasks_for_entity`
+
+**验证**：修复后通过 GraphQL introspection 确认所有 `InsertInput` 类型中 `subscriberId` 和 `token` 已正确移除；`graphql-codegen` 重新生成的 TypeScript 类型通过 `tsc --noEmit` 零错误。
 
 ---
 

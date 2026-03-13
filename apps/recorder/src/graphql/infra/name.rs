@@ -22,28 +22,49 @@ where
     context.entity_object.column_name.as_ref()(&entity_name, column.as_str())
 }
 
-pub fn get_entity_and_column_name<T>(context: &BuilderContext, column: &T::Column) -> String
-where
-    T: EntityTrait,
-    <T as EntityTrait>::Model: Sync,
-{
-    let entity_name = get_entity_name::<T>(context);
-    let column_name = get_column_name::<T>(context, column);
+// ---------------------------------------------------------------------------
+// GraphqlColumnKey — type-safe wrapper for insert_skips / update_skips keys
+// ---------------------------------------------------------------------------
 
-    format!("{entity_name}.{column_name}")
-}
+/// A newtype guaranteeing the string is in GraphQL format
+/// "TypeName.columnName" (e.g. "Feeds.subscriberId"), suitable for
+/// `insert_skips` / `update_skips`.
+///
+/// # SAFETY CONTRACT
+/// - Construct ONLY via `GraphqlColumnKey::of::<T>(context, column)`.
+/// - Do NOT construct from arbitrary strings or `EntityColumnId::to_string()`.
+/// - `EntityColumnId::to_string()` returns the DATABASE format
+///   ("feeds.subscriber_id") which will silently fail the skip check.
+pub struct GraphqlColumnKey(String);
 
-pub fn get_entity_and_column_name_from_column_str<T>(
-    context: &BuilderContext,
-    column_str: &str,
-) -> String
-where
-    T: EntityTrait,
-    <T as EntityTrait>::Model: Sync,
-{
-    let entity_name = get_entity_name::<T>(context);
+impl GraphqlColumnKey {
+    /// Build a correctly-formatted skip key from a typed SeaORM column.
+    pub fn of<T>(context: &BuilderContext, column: &T::Column) -> Self
+    where
+        T: EntityTrait,
+        <T as EntityTrait>::Model: Sync,
+    {
+        let entity_name = get_entity_name::<T>(context);
+        let column_name = get_column_name::<T>(context, column);
+        Self(format!("{entity_name}.{column_name}"))
+    }
 
-    format!("{entity_name}.{column_str}")
+    /// Push this key into `insert_skips` on the given context.
+    pub fn push_insert_skip(self, context: &mut BuilderContext) {
+        context.entity_input.insert_skips.push(self.0);
+    }
+
+    /// Push this key into `update_skips` on the given context.
+    pub fn push_update_skip(self, context: &mut BuilderContext) {
+        context.entity_input.update_skips.push(self.0);
+    }
+
+    /// Push into both `insert_skips` and `update_skips` (common pattern for
+    /// subscriber_id and similar auto-injected fields).
+    pub fn push_skip_both(self, context: &mut BuilderContext) {
+        context.entity_input.insert_skips.push(self.0.clone());
+        context.entity_input.update_skips.push(self.0);
+    }
 }
 
 pub fn get_entity_basic_type_name<T>(context: &BuilderContext) -> String

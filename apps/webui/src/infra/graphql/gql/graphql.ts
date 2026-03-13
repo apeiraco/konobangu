@@ -169,7 +169,6 @@ export type BangumiInsertInput = {
   rssLink?: InputMaybe<Scalars["String"]["input"]>;
   season: Scalars["Int"]["input"];
   seasonRaw?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId: Scalars["Int"]["input"];
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -227,7 +226,6 @@ export type BangumiUpdateInput = {
   rssLink?: InputMaybe<Scalars["String"]["input"]>;
   season?: InputMaybe<Scalars["Int"]["input"]>;
   seasonRaw?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -339,7 +337,6 @@ export type Credential3rdInsertInput = {
   credentialType: Credential3rdTypeEnum;
   id?: InputMaybe<Scalars["Int"]["input"]>;
   password?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId: Scalars["Int"]["input"];
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
   userAgent?: InputMaybe<Scalars["String"]["input"]>;
   username?: InputMaybe<Scalars["String"]["input"]>;
@@ -381,7 +378,6 @@ export type Credential3rdUpdateInput = {
   credentialType?: InputMaybe<Credential3rdTypeEnum>;
   id?: InputMaybe<Scalars["Int"]["input"]>;
   password?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
   userAgent?: InputMaybe<Scalars["String"]["input"]>;
   username?: InputMaybe<Scalars["String"]["input"]>;
@@ -703,7 +699,6 @@ export type DownloadersInsertInput = {
   id?: InputMaybe<Scalars["Int"]["input"]>;
   password: Scalars["String"]["input"];
   savePath: Scalars["String"]["input"];
-  subscriberId: Scalars["Int"]["input"];
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
   username: Scalars["String"]["input"];
 };
@@ -727,7 +722,6 @@ export type DownloadersUpdateInput = {
   id?: InputMaybe<Scalars["Int"]["input"]>;
   password?: InputMaybe<Scalars["String"]["input"]>;
   savePath?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
   username?: InputMaybe<Scalars["String"]["input"]>;
 };
@@ -827,7 +821,6 @@ export type DownloadsInsertInput = {
   originName: Scalars["String"]["input"];
   savePath?: InputMaybe<Scalars["String"]["input"]>;
   status: DownloadStatusEnum;
-  subscriberId: Scalars["Int"]["input"];
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
   url: Scalars["String"]["input"];
 };
@@ -863,7 +856,6 @@ export type DownloadsUpdateInput = {
   originName?: InputMaybe<Scalars["String"]["input"]>;
   savePath?: InputMaybe<Scalars["String"]["input"]>;
   status?: InputMaybe<DownloadStatusEnum>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
   url?: InputMaybe<Scalars["String"]["input"]>;
 };
@@ -1041,7 +1033,6 @@ export type EpisodesInsertInput = {
   season: Scalars["Int"]["input"];
   seasonRaw?: InputMaybe<Scalars["String"]["input"]>;
   source?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId: Scalars["Int"]["input"];
   subtitle?: InputMaybe<Scalars["String"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
@@ -1093,7 +1084,6 @@ export type EpisodesUpdateInput = {
   season?: InputMaybe<Scalars["Int"]["input"]>;
   seasonRaw?: InputMaybe<Scalars["String"]["input"]>;
   source?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   subtitle?: InputMaybe<Scalars["String"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
@@ -1197,9 +1187,7 @@ export type FeedsInsertInput = {
   feedSource: FeedSourceEnum;
   feedType: FeedTypeEnum;
   id?: InputMaybe<Scalars["Int"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   subscriptionId?: InputMaybe<Scalars["Int"]["input"]>;
-  token: Scalars["String"]["input"];
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -1219,7 +1207,6 @@ export type FeedsUpdateInput = {
   feedSource?: InputMaybe<FeedSourceEnum>;
   feedType?: InputMaybe<FeedTypeEnum>;
   id?: InputMaybe<Scalars["Int"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   subscriptionId?: InputMaybe<Scalars["Int"]["input"]>;
   token?: InputMaybe<Scalars["String"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
@@ -1772,21 +1759,7 @@ export type SubscriberTasksHavingInput = {
 };
 
 export type SubscriberTasksInsertInput = {
-  attempts: Scalars["Int"]["input"];
-  cronId?: InputMaybe<Scalars["Int"]["input"]>;
-  doneAt?: InputMaybe<Scalars["String"]["input"]>;
-  id: Scalars["String"]["input"];
   job?: InputMaybe<Scalars["SubscriberTaskType"]["input"]>;
-  lastError?: InputMaybe<Scalars["String"]["input"]>;
-  lockAt?: InputMaybe<Scalars["String"]["input"]>;
-  lockBy?: InputMaybe<Scalars["String"]["input"]>;
-  maxAttempts: Scalars["Int"]["input"];
-  priority: Scalars["Int"]["input"];
-  runAt: Scalars["String"]["input"];
-  status: SubscriberTaskStatusEnum;
-  subscriberId: Scalars["Int"]["input"];
-  subscriptionId?: InputMaybe<Scalars["Int"]["input"]>;
-  taskType: SubscriberTaskTypeEnum;
 };
 
 export type SubscriberTasksOrderInput = {
@@ -1964,7 +1937,6 @@ export type SubscriptionBangumiHavingInput = {
 export type SubscriptionBangumiInsertInput = {
   bangumiId: Scalars["Int"]["input"];
   id?: InputMaybe<Scalars["Int"]["input"]>;
-  subscriberId: Scalars["Int"]["input"];
   subscriptionId: Scalars["Int"]["input"];
 };
 
@@ -1978,7 +1950,6 @@ export type SubscriptionBangumiOrderInput = {
 export type SubscriptionBangumiUpdateInput = {
   bangumiId?: InputMaybe<Scalars["Int"]["input"]>;
   id?: InputMaybe<Scalars["Int"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   subscriptionId?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
@@ -2054,7 +2025,6 @@ export type SubscriptionEpisodeHavingInput = {
 export type SubscriptionEpisodeInsertInput = {
   episodeId: Scalars["Int"]["input"];
   id?: InputMaybe<Scalars["Int"]["input"]>;
-  subscriberId: Scalars["Int"]["input"];
   subscriptionId: Scalars["Int"]["input"];
 };
 
@@ -2068,7 +2038,6 @@ export type SubscriptionEpisodeOrderInput = {
 export type SubscriptionEpisodeUpdateInput = {
   episodeId?: InputMaybe<Scalars["Int"]["input"]>;
   id?: InputMaybe<Scalars["Int"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   subscriptionId?: InputMaybe<Scalars["Int"]["input"]>;
 };
 
@@ -2198,7 +2167,6 @@ export type SubscriptionsInsertInput = {
   enabled: Scalars["Boolean"]["input"];
   id?: InputMaybe<Scalars["Int"]["input"]>;
   sourceUrl: Scalars["String"]["input"];
-  subscriberId: Scalars["Int"]["input"];
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -2222,7 +2190,6 @@ export type SubscriptionsUpdateInput = {
   enabled?: InputMaybe<Scalars["Boolean"]["input"]>;
   id?: InputMaybe<Scalars["Int"]["input"]>;
   sourceUrl?: InputMaybe<Scalars["String"]["input"]>;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
   updatedAt?: InputMaybe<Scalars["String"]["input"]>;
 };
 
@@ -2322,20 +2289,7 @@ export type SystemTasksHavingInput = {
 };
 
 export type SystemTasksInsertInput = {
-  attempts: Scalars["Int"]["input"];
-  cronId?: InputMaybe<Scalars["Int"]["input"]>;
-  doneAt?: InputMaybe<Scalars["String"]["input"]>;
-  id: Scalars["String"]["input"];
   job?: InputMaybe<Scalars["SystemTaskType"]["input"]>;
-  lastError?: InputMaybe<Scalars["String"]["input"]>;
-  lockAt?: InputMaybe<Scalars["String"]["input"]>;
-  lockBy?: InputMaybe<Scalars["String"]["input"]>;
-  maxAttempts: Scalars["Int"]["input"];
-  priority: Scalars["Int"]["input"];
-  runAt: Scalars["String"]["input"];
-  status: SystemTaskStatusEnum;
-  subscriberId?: InputMaybe<Scalars["Int"]["input"]>;
-  taskType: SystemTaskTypeEnum;
 };
 
 export type SystemTasksOrderInput = {
@@ -2862,10 +2816,7 @@ export type InsertSubscriberTaskMutationVariables = Exact<{
 
 export type InsertSubscriberTaskMutation = {
   __typename?: "Mutation";
-  subscriberTasksCreateOne: {
-    __typename?: "SubscriberTasksBasic";
-    id: string;
-  };
+  subscriberTasksCreateOne: { __typename?: "SubscriberTasksBasic"; id: string };
 };
 
 export type DeleteTasksMutationVariables = Exact<{
@@ -2918,10 +2869,7 @@ export const GetCredential3rdDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "Credential3rdFilterInput",
-              },
+              name: { kind: "Name", value: "Credential3rdFilterInput" },
             },
           },
         },
@@ -2933,10 +2881,7 @@ export const GetCredential3rdDocument = {
           },
           type: {
             kind: "NamedType",
-            name: {
-              kind: "Name",
-              value: "Credential3rdOrderInput",
-            },
+            name: { kind: "Name", value: "Credential3rdOrderInput" },
           },
         },
         {
@@ -2992,88 +2937,46 @@ export const GetCredential3rdDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "id",
-                        },
+                        name: { kind: "Name", value: "cookies" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "cookies",
-                        },
+                        name: { kind: "Name", value: "username" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "username",
-                        },
+                        name: { kind: "Name", value: "password" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "password",
-                        },
+                        name: { kind: "Name", value: "userAgent" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "userAgent",
-                        },
+                        name: { kind: "Name", value: "createdAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "createdAt",
-                        },
+                        name: { kind: "Name", value: "updatedAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "updatedAt",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "credentialType",
-                        },
+                        name: { kind: "Name", value: "credentialType" },
                       },
                     ],
                   },
                 },
                 {
                   kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "paginationInfo",
-                  },
+                  name: { kind: "Name", value: "paginationInfo" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "total",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "pages",
-                        },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "total" } },
+                      { kind: "Field", name: { kind: "Name", value: "pages" } },
                     ],
                   },
                 },
@@ -3098,18 +3001,12 @@ export const InsertCredential3rdDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "Credential3rdInsertInput",
-              },
+              name: { kind: "Name", value: "Credential3rdInsertInput" },
             },
           },
         },
@@ -3133,40 +3030,16 @@ export const InsertCredential3rdDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "cookies" } },
+                { kind: "Field", name: { kind: "Name", value: "username" } },
+                { kind: "Field", name: { kind: "Name", value: "password" } },
+                { kind: "Field", name: { kind: "Name", value: "userAgent" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "cookies" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "username" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "password" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "userAgent" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "credentialType",
-                  },
+                  name: { kind: "Name", value: "credentialType" },
                 },
               ],
             },
@@ -3189,18 +3062,12 @@ export const UpdateCredential3rdDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "Credential3rdUpdateInput",
-              },
+              name: { kind: "Name", value: "Credential3rdUpdateInput" },
             },
           },
         },
@@ -3214,10 +3081,7 @@ export const UpdateCredential3rdDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "Credential3rdFilterInput",
-              },
+              name: { kind: "Name", value: "Credential3rdFilterInput" },
             },
           },
         },
@@ -3249,40 +3113,16 @@ export const UpdateCredential3rdDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "cookies" } },
+                { kind: "Field", name: { kind: "Name", value: "username" } },
+                { kind: "Field", name: { kind: "Name", value: "password" } },
+                { kind: "Field", name: { kind: "Name", value: "userAgent" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "cookies" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "username" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "password" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "userAgent" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "credentialType",
-                  },
+                  name: { kind: "Name", value: "credentialType" },
                 },
               ],
             },
@@ -3313,10 +3153,7 @@ export const DeleteCredential3rdDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "Credential3rdFilterInput",
-              },
+              name: { kind: "Name", value: "Credential3rdFilterInput" },
             },
           },
         },
@@ -3356,16 +3193,10 @@ export const GetCredential3rdDetailDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "id" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "id" } },
           type: {
             kind: "NonNullType",
-            type: {
-              kind: "NamedType",
-              name: { kind: "Name", value: "Int" },
-            },
+            type: { kind: "NamedType", name: { kind: "Name", value: "Int" } },
           },
         },
       ],
@@ -3390,16 +3221,10 @@ export const GetCredential3rdDetailDocument = {
                         fields: [
                           {
                             kind: "ObjectField",
-                            name: {
-                              kind: "Name",
-                              value: "eq",
-                            },
+                            name: { kind: "Name", value: "eq" },
                             value: {
                               kind: "Variable",
-                              name: {
-                                kind: "Name",
-                                value: "id",
-                              },
+                              name: { kind: "Name", value: "id" },
                             },
                           },
                         ],
@@ -3418,61 +3243,34 @@ export const GetCredential3rdDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "id",
-                        },
+                        name: { kind: "Name", value: "cookies" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "cookies",
-                        },
+                        name: { kind: "Name", value: "username" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "username",
-                        },
+                        name: { kind: "Name", value: "password" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "password",
-                        },
+                        name: { kind: "Name", value: "userAgent" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "userAgent",
-                        },
+                        name: { kind: "Name", value: "createdAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "createdAt",
-                        },
+                        name: { kind: "Name", value: "updatedAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "updatedAt",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "credentialType",
-                        },
+                        name: { kind: "Name", value: "credentialType" },
                       },
                     ],
                   },
@@ -3506,10 +3304,7 @@ export const CheckCredential3rdAvailableDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "Credential3rdFilterInput",
-              },
+              name: { kind: "Name", value: "Credential3rdFilterInput" },
             },
           },
         },
@@ -3519,10 +3314,7 @@ export const CheckCredential3rdAvailableDocument = {
         selections: [
           {
             kind: "Field",
-            name: {
-              kind: "Name",
-              value: "credential3rdCheckAvailable",
-            },
+            name: { kind: "Name", value: "credential3rdCheckAvailable" },
             arguments: [
               {
                 kind: "Argument",
@@ -3536,10 +3328,7 @@ export const CheckCredential3rdAvailableDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "available" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "available" } },
               ],
             },
           },
@@ -3643,177 +3432,102 @@ export const GetCronsDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "id",
-                        },
+                        name: { kind: "Name", value: "cronExpr" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "cronExpr",
-                        },
+                        name: { kind: "Name", value: "cronTimezone" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "cronTimezone",
-                        },
+                        name: { kind: "Name", value: "nextRun" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "nextRun",
-                        },
+                        name: { kind: "Name", value: "lastRun" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lastRun",
-                        },
+                        name: { kind: "Name", value: "lastError" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lastError",
-                        },
+                        name: { kind: "Name", value: "status" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "status",
-                        },
+                        name: { kind: "Name", value: "lockedAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lockedAt",
-                        },
+                        name: { kind: "Name", value: "lockedBy" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lockedBy",
-                        },
+                        name: { kind: "Name", value: "createdAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "createdAt",
-                        },
+                        name: { kind: "Name", value: "updatedAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "updatedAt",
-                        },
+                        name: { kind: "Name", value: "timeoutMs" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "timeoutMs",
-                        },
+                        name: { kind: "Name", value: "maxAttempts" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "maxAttempts",
-                        },
+                        name: { kind: "Name", value: "priority" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "priority",
-                        },
+                        name: { kind: "Name", value: "attempts" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "attempts",
-                        },
+                        name: { kind: "Name", value: "enabled" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "enabled",
-                        },
+                        name: { kind: "Name", value: "subscriberTaskCron" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "subscriberTaskCron",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "subscriberTask",
-                        },
+                        name: { kind: "Name", value: "subscriberTask" },
                         selectionSet: {
                           kind: "SelectionSet",
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "nodes",
-                              },
+                              name: { kind: "Name", value: "nodes" },
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "id",
-                                    },
+                                    name: { kind: "Name", value: "id" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "job",
-                                    },
+                                    name: { kind: "Name", value: "job" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "taskType",
-                                    },
+                                    name: { kind: "Name", value: "taskType" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "status",
-                                    },
+                                    name: { kind: "Name", value: "status" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "attempts",
-                                    },
+                                    name: { kind: "Name", value: "attempts" },
                                   },
                                   {
                                     kind: "Field",
@@ -3824,45 +3538,27 @@ export const GetCronsDocument = {
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "runAt",
-                                    },
+                                    name: { kind: "Name", value: "runAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lastError",
-                                    },
+                                    name: { kind: "Name", value: "lastError" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lockAt",
-                                    },
+                                    name: { kind: "Name", value: "lockAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lockBy",
-                                    },
+                                    name: { kind: "Name", value: "lockBy" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "doneAt",
-                                    },
+                                    name: { kind: "Name", value: "doneAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "priority",
-                                    },
+                                    name: { kind: "Name", value: "priority" },
                                   },
                                   {
                                     kind: "Field",
@@ -3901,27 +3597,12 @@ export const GetCronsDocument = {
                 },
                 {
                   kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "paginationInfo",
-                  },
+                  name: { kind: "Name", value: "paginationInfo" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "total",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "pages",
-                        },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "total" } },
+                      { kind: "Field", name: { kind: "Name", value: "pages" } },
                     ],
                   },
                 },
@@ -4002,10 +3683,7 @@ export const UpdateCronsDocument = {
         },
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
@@ -4042,75 +3720,24 @@ export const UpdateCronsDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "cronExpr" } },
+                { kind: "Field", name: { kind: "Name", value: "nextRun" } },
+                { kind: "Field", name: { kind: "Name", value: "lastRun" } },
+                { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "lockedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "lockedBy" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "timeoutMs" } },
+                { kind: "Field", name: { kind: "Name", value: "enabled" } },
+                { kind: "Field", name: { kind: "Name", value: "maxAttempts" } },
+                { kind: "Field", name: { kind: "Name", value: "priority" } },
+                { kind: "Field", name: { kind: "Name", value: "attempts" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "cronExpr" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "nextRun" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastRun" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastError" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "status" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lockedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lockedBy" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "timeoutMs" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "enabled" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "maxAttempts",
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "priority" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "attempts" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "subscriberTaskCron",
-                  },
+                  name: { kind: "Name", value: "subscriberTaskCron" },
                 },
               ],
             },
@@ -4130,10 +3757,7 @@ export const InsertCronDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
@@ -4162,75 +3786,24 @@ export const InsertCronDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "cronExpr" } },
+                { kind: "Field", name: { kind: "Name", value: "nextRun" } },
+                { kind: "Field", name: { kind: "Name", value: "lastRun" } },
+                { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "lockedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "lockedBy" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "enabled" } },
+                { kind: "Field", name: { kind: "Name", value: "timeoutMs" } },
+                { kind: "Field", name: { kind: "Name", value: "maxAttempts" } },
+                { kind: "Field", name: { kind: "Name", value: "priority" } },
+                { kind: "Field", name: { kind: "Name", value: "attempts" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "cronExpr" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "nextRun" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastRun" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastError" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "status" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lockedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lockedBy" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "enabled" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "timeoutMs" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "maxAttempts",
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "priority" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "attempts" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "subscriberTaskCron",
-                  },
+                  name: { kind: "Name", value: "subscriberTaskCron" },
                 },
               ],
             },
@@ -4250,10 +3823,7 @@ export const InsertFeedDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
@@ -4282,26 +3852,11 @@ export const InsertFeedDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "feedType" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "token" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "feedType" } },
+                { kind: "Field", name: { kind: "Name", value: "token" } },
               ],
             },
           },
@@ -4373,10 +3928,7 @@ export const GetSubscriptionsDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriptionsFilterInput",
-              },
+              name: { kind: "Name", value: "SubscriptionsFilterInput" },
             },
           },
         },
@@ -4390,10 +3942,7 @@ export const GetSubscriptionsDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriptionsOrderInput",
-              },
+              name: { kind: "Name", value: "SubscriptionsOrderInput" },
             },
           },
         },
@@ -4453,88 +4002,46 @@ export const GetSubscriptionsDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "id",
-                        },
+                        name: { kind: "Name", value: "createdAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "createdAt",
-                        },
+                        name: { kind: "Name", value: "updatedAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "updatedAt",
-                        },
+                        name: { kind: "Name", value: "displayName" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "displayName",
-                        },
+                        name: { kind: "Name", value: "category" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "category",
-                        },
+                        name: { kind: "Name", value: "sourceUrl" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "sourceUrl",
-                        },
+                        name: { kind: "Name", value: "enabled" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "enabled",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "credentialId",
-                        },
+                        name: { kind: "Name", value: "credentialId" },
                       },
                     ],
                   },
                 },
                 {
                   kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "paginationInfo",
-                  },
+                  name: { kind: "Name", value: "paginationInfo" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "total",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "pages",
-                        },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "total" } },
+                      { kind: "Field", name: { kind: "Name", value: "pages" } },
                     ],
                   },
                 },
@@ -4559,18 +4066,12 @@ export const InsertSubscriptionDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriptionsInsertInput",
-              },
+              name: { kind: "Name", value: "SubscriptionsInsertInput" },
             },
           },
         },
@@ -4594,43 +4095,16 @@ export const InsertSubscriptionDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "category" } },
+                { kind: "Field", name: { kind: "Name", value: "sourceUrl" } },
+                { kind: "Field", name: { kind: "Name", value: "enabled" } },
                 {
                   kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "displayName",
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "category" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "sourceUrl" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "enabled" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "credentialId",
-                  },
+                  name: { kind: "Name", value: "credentialId" },
                 },
               ],
             },
@@ -4653,18 +4127,12 @@ export const UpdateSubscriptionsDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriptionsUpdateInput",
-              },
+              name: { kind: "Name", value: "SubscriptionsUpdateInput" },
             },
           },
         },
@@ -4678,10 +4146,7 @@ export const UpdateSubscriptionsDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriptionsFilterInput",
-              },
+              name: { kind: "Name", value: "SubscriptionsFilterInput" },
             },
           },
         },
@@ -4713,37 +4178,13 @@ export const UpdateSubscriptionsDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "createdAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "updatedAt" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "displayName",
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "category" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "sourceUrl" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "enabled" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "createdAt" } },
+                { kind: "Field", name: { kind: "Name", value: "updatedAt" } },
+                { kind: "Field", name: { kind: "Name", value: "displayName" } },
+                { kind: "Field", name: { kind: "Name", value: "category" } },
+                { kind: "Field", name: { kind: "Name", value: "sourceUrl" } },
+                { kind: "Field", name: { kind: "Name", value: "enabled" } },
               ],
             },
           },
@@ -4771,10 +4212,7 @@ export const DeleteSubscriptionsDocument = {
           },
           type: {
             kind: "NamedType",
-            name: {
-              kind: "Name",
-              value: "SubscriptionsFilterInput",
-            },
+            name: { kind: "Name", value: "SubscriptionsFilterInput" },
           },
         },
       ],
@@ -4821,10 +4259,7 @@ export const GetSubscriptionDetailDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriptionsFilterInput",
-              },
+              name: { kind: "Name", value: "SubscriptionsFilterInput" },
             },
           },
         },
@@ -4854,121 +4289,70 @@ export const GetSubscriptionDetailDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "id",
-                        },
+                        name: { kind: "Name", value: "subscriberId" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "subscriberId",
-                        },
+                        name: { kind: "Name", value: "displayName" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "displayName",
-                        },
+                        name: { kind: "Name", value: "createdAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "createdAt",
-                        },
+                        name: { kind: "Name", value: "updatedAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "updatedAt",
-                        },
+                        name: { kind: "Name", value: "category" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "category",
-                        },
+                        name: { kind: "Name", value: "sourceUrl" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "sourceUrl",
-                        },
+                        name: { kind: "Name", value: "enabled" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "enabled",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "feed",
-                        },
+                        name: { kind: "Name", value: "feed" },
                         selectionSet: {
                           kind: "SelectionSet",
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "nodes",
-                              },
+                              name: { kind: "Name", value: "nodes" },
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "id",
-                                    },
+                                    name: { kind: "Name", value: "id" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "createdAt",
-                                    },
+                                    name: { kind: "Name", value: "createdAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "updatedAt",
-                                    },
+                                    name: { kind: "Name", value: "updatedAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "token",
-                                    },
+                                    name: { kind: "Name", value: "token" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "feedType",
-                                    },
+                                    name: { kind: "Name", value: "feedType" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "feedSource",
-                                    },
+                                    name: { kind: "Name", value: "feedSource" },
                                   },
                                 ],
                               },
@@ -4978,50 +4362,29 @@ export const GetSubscriptionDetailDocument = {
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "subscriberTask",
-                        },
+                        name: { kind: "Name", value: "subscriberTask" },
                         arguments: [
                           {
                             kind: "Argument",
-                            name: {
-                              kind: "Name",
-                              value: "pagination",
-                            },
+                            name: { kind: "Name", value: "pagination" },
                             value: {
                               kind: "ObjectValue",
                               fields: [
                                 {
                                   kind: "ObjectField",
-                                  name: {
-                                    kind: "Name",
-                                    value: "page",
-                                  },
+                                  name: { kind: "Name", value: "page" },
                                   value: {
                                     kind: "ObjectValue",
                                     fields: [
                                       {
                                         kind: "ObjectField",
-                                        name: {
-                                          kind: "Name",
-                                          value: "page",
-                                        },
-                                        value: {
-                                          kind: "IntValue",
-                                          value: "0",
-                                        },
+                                        name: { kind: "Name", value: "page" },
+                                        value: { kind: "IntValue", value: "0" },
                                       },
                                       {
                                         kind: "ObjectField",
-                                        name: {
-                                          kind: "Name",
-                                          value: "limit",
-                                        },
-                                        value: {
-                                          kind: "IntValue",
-                                          value: "3",
-                                        },
+                                        name: { kind: "Name", value: "limit" },
+                                        value: { kind: "IntValue", value: "3" },
                                       },
                                     ],
                                   },
@@ -5031,23 +4394,14 @@ export const GetSubscriptionDetailDocument = {
                           },
                           {
                             kind: "Argument",
-                            name: {
-                              kind: "Name",
-                              value: "orderBy",
-                            },
+                            name: { kind: "Name", value: "orderBy" },
                             value: {
                               kind: "ObjectValue",
                               fields: [
                                 {
                                   kind: "ObjectField",
-                                  name: {
-                                    kind: "Name",
-                                    value: "runAt",
-                                  },
-                                  value: {
-                                    kind: "EnumValue",
-                                    value: "DESC",
-                                  },
+                                  name: { kind: "Name", value: "runAt" },
+                                  value: { kind: "EnumValue", value: "DESC" },
                                 },
                               ],
                             },
@@ -5058,33 +4412,21 @@ export const GetSubscriptionDetailDocument = {
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "nodes",
-                              },
+                              name: { kind: "Name", value: "nodes" },
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "id",
-                                    },
+                                    name: { kind: "Name", value: "id" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "taskType",
-                                    },
+                                    name: { kind: "Name", value: "taskType" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "status",
-                                    },
+                                    name: { kind: "Name", value: "status" },
                                   },
                                 ],
                               },
@@ -5094,76 +4436,46 @@ export const GetSubscriptionDetailDocument = {
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "credential3rd",
-                        },
+                        name: { kind: "Name", value: "credential3rd" },
                         selectionSet: {
                           kind: "SelectionSet",
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "id",
-                              },
+                              name: { kind: "Name", value: "id" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "username",
-                              },
+                              name: { kind: "Name", value: "username" },
                             },
                           ],
                         },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "cron",
-                        },
+                        name: { kind: "Name", value: "cron" },
                         arguments: [
                           {
                             kind: "Argument",
-                            name: {
-                              kind: "Name",
-                              value: "pagination",
-                            },
+                            name: { kind: "Name", value: "pagination" },
                             value: {
                               kind: "ObjectValue",
                               fields: [
                                 {
                                   kind: "ObjectField",
-                                  name: {
-                                    kind: "Name",
-                                    value: "page",
-                                  },
+                                  name: { kind: "Name", value: "page" },
                                   value: {
                                     kind: "ObjectValue",
                                     fields: [
                                       {
                                         kind: "ObjectField",
-                                        name: {
-                                          kind: "Name",
-                                          value: "page",
-                                        },
-                                        value: {
-                                          kind: "IntValue",
-                                          value: "0",
-                                        },
+                                        name: { kind: "Name", value: "page" },
+                                        value: { kind: "IntValue", value: "0" },
                                       },
                                       {
                                         kind: "ObjectField",
-                                        name: {
-                                          kind: "Name",
-                                          value: "limit",
-                                        },
-                                        value: {
-                                          kind: "IntValue",
-                                          value: "3",
-                                        },
+                                        name: { kind: "Name", value: "limit" },
+                                        value: { kind: "IntValue", value: "3" },
                                       },
                                     ],
                                   },
@@ -5173,23 +4485,14 @@ export const GetSubscriptionDetailDocument = {
                           },
                           {
                             kind: "Argument",
-                            name: {
-                              kind: "Name",
-                              value: "orderBy",
-                            },
+                            name: { kind: "Name", value: "orderBy" },
                             value: {
                               kind: "ObjectValue",
                               fields: [
                                 {
                                   kind: "ObjectField",
-                                  name: {
-                                    kind: "Name",
-                                    value: "createdAt",
-                                  },
-                                  value: {
-                                    kind: "EnumValue",
-                                    value: "DESC",
-                                  },
+                                  name: { kind: "Name", value: "createdAt" },
+                                  value: { kind: "EnumValue", value: "DESC" },
                                 },
                               ],
                             },
@@ -5200,96 +4503,57 @@ export const GetSubscriptionDetailDocument = {
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "nodes",
-                              },
+                              name: { kind: "Name", value: "nodes" },
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "id",
-                                    },
+                                    name: { kind: "Name", value: "id" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "cronExpr",
-                                    },
+                                    name: { kind: "Name", value: "cronExpr" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "nextRun",
-                                    },
+                                    name: { kind: "Name", value: "nextRun" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lastRun",
-                                    },
+                                    name: { kind: "Name", value: "lastRun" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lastError",
-                                    },
+                                    name: { kind: "Name", value: "lastError" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "enabled",
-                                    },
+                                    name: { kind: "Name", value: "enabled" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "status",
-                                    },
+                                    name: { kind: "Name", value: "status" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lockedAt",
-                                    },
+                                    name: { kind: "Name", value: "lockedAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "lockedBy",
-                                    },
+                                    name: { kind: "Name", value: "lockedBy" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "createdAt",
-                                    },
+                                    name: { kind: "Name", value: "createdAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "updatedAt",
-                                    },
+                                    name: { kind: "Name", value: "updatedAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "timeoutMs",
-                                    },
+                                    name: { kind: "Name", value: "timeoutMs" },
                                   },
                                   {
                                     kind: "Field",
@@ -5300,17 +4564,11 @@ export const GetSubscriptionDetailDocument = {
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "priority",
-                                    },
+                                    name: { kind: "Name", value: "priority" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "attempts",
-                                    },
+                                    name: { kind: "Name", value: "attempts" },
                                   },
                                   {
                                     kind: "Field",
@@ -5327,42 +4585,27 @@ export const GetSubscriptionDetailDocument = {
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "bangumi",
-                        },
+                        name: { kind: "Name", value: "bangumi" },
                         selectionSet: {
                           kind: "SelectionSet",
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "nodes",
-                              },
+                              name: { kind: "Name", value: "nodes" },
                               selectionSet: {
                                 kind: "SelectionSet",
                                 selections: [
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "createdAt",
-                                    },
+                                    name: { kind: "Name", value: "createdAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "updatedAt",
-                                    },
+                                    name: { kind: "Name", value: "updatedAt" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "id",
-                                    },
+                                    name: { kind: "Name", value: "id" },
                                   },
                                   {
                                     kind: "Field",
@@ -5380,24 +4623,15 @@ export const GetSubscriptionDetailDocument = {
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "season",
-                                    },
+                                    name: { kind: "Name", value: "season" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "seasonRaw",
-                                    },
+                                    name: { kind: "Name", value: "seasonRaw" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "fansub",
-                                    },
+                                    name: { kind: "Name", value: "fansub" },
                                   },
                                   {
                                     kind: "Field",
@@ -5408,24 +4642,15 @@ export const GetSubscriptionDetailDocument = {
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "rssLink",
-                                    },
+                                    name: { kind: "Name", value: "rssLink" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "posterLink",
-                                    },
+                                    name: { kind: "Name", value: "posterLink" },
                                   },
                                   {
                                     kind: "Field",
-                                    name: {
-                                      kind: "Name",
-                                      value: "homepage",
-                                    },
+                                    name: { kind: "Name", value: "homepage" },
                                   },
                                 ],
                               },
@@ -5465,10 +4690,7 @@ export const GetTasksDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriberTasksFilterInput",
-              },
+              name: { kind: "Name", value: "SubscriberTasksFilterInput" },
             },
           },
         },
@@ -5482,10 +4704,7 @@ export const GetTasksDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriberTasksOrderInput",
-              },
+              name: { kind: "Name", value: "SubscriberTasksOrderInput" },
             },
           },
         },
@@ -5545,222 +4764,123 @@ export const GetTasksDocument = {
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
+                      { kind: "Field", name: { kind: "Name", value: "id" } },
+                      { kind: "Field", name: { kind: "Name", value: "job" } },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "id",
-                        },
+                        name: { kind: "Name", value: "taskType" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "job",
-                        },
+                        name: { kind: "Name", value: "status" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "taskType",
-                        },
+                        name: { kind: "Name", value: "attempts" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "status",
-                        },
+                        name: { kind: "Name", value: "maxAttempts" },
+                      },
+                      { kind: "Field", name: { kind: "Name", value: "runAt" } },
+                      {
+                        kind: "Field",
+                        name: { kind: "Name", value: "lastError" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "attempts",
-                        },
+                        name: { kind: "Name", value: "lockAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "maxAttempts",
-                        },
+                        name: { kind: "Name", value: "lockBy" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "runAt",
-                        },
+                        name: { kind: "Name", value: "doneAt" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lastError",
-                        },
+                        name: { kind: "Name", value: "priority" },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lockAt",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "lockBy",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "doneAt",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "priority",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "subscription",
-                        },
+                        name: { kind: "Name", value: "subscription" },
                         selectionSet: {
                           kind: "SelectionSet",
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "displayName",
-                              },
+                              name: { kind: "Name", value: "displayName" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "sourceUrl",
-                              },
+                              name: { kind: "Name", value: "sourceUrl" },
                             },
                           ],
                         },
                       },
                       {
                         kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "cron",
-                        },
+                        name: { kind: "Name", value: "cron" },
                         selectionSet: {
                           kind: "SelectionSet",
                           selections: [
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "id",
-                              },
+                              name: { kind: "Name", value: "id" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "cronExpr",
-                              },
+                              name: { kind: "Name", value: "cronExpr" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "nextRun",
-                              },
+                              name: { kind: "Name", value: "nextRun" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "lastRun",
-                              },
+                              name: { kind: "Name", value: "lastRun" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "lastError",
-                              },
+                              name: { kind: "Name", value: "lastError" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "status",
-                              },
+                              name: { kind: "Name", value: "status" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "lockedAt",
-                              },
+                              name: { kind: "Name", value: "lockedAt" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "lockedBy",
-                              },
+                              name: { kind: "Name", value: "lockedBy" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "createdAt",
-                              },
+                              name: { kind: "Name", value: "createdAt" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "updatedAt",
-                              },
+                              name: { kind: "Name", value: "updatedAt" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "timeoutMs",
-                              },
+                              name: { kind: "Name", value: "timeoutMs" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "maxAttempts",
-                              },
+                              name: { kind: "Name", value: "maxAttempts" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "priority",
-                              },
+                              name: { kind: "Name", value: "priority" },
                             },
                             {
                               kind: "Field",
-                              name: {
-                                kind: "Name",
-                                value: "attempts",
-                              },
+                              name: { kind: "Name", value: "attempts" },
                             },
                           ],
                         },
@@ -5770,27 +4890,12 @@ export const GetTasksDocument = {
                 },
                 {
                   kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "paginationInfo",
-                  },
+                  name: { kind: "Name", value: "paginationInfo" },
                   selectionSet: {
                     kind: "SelectionSet",
                     selections: [
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "total",
-                        },
-                      },
-                      {
-                        kind: "Field",
-                        name: {
-                          kind: "Name",
-                          value: "pages",
-                        },
-                      },
+                      { kind: "Field", name: { kind: "Name", value: "total" } },
+                      { kind: "Field", name: { kind: "Name", value: "pages" } },
                     ],
                   },
                 },
@@ -5812,18 +4917,12 @@ export const InsertSubscriberTaskDocument = {
       variableDefinitions: [
         {
           kind: "VariableDefinition",
-          variable: {
-            kind: "Variable",
-            name: { kind: "Name", value: "data" },
-          },
+          variable: { kind: "Variable", name: { kind: "Name", value: "data" } },
           type: {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriberTasksInsertInput",
-              },
+              name: { kind: "Name", value: "SubscriberTasksInsertInput" },
             },
           },
         },
@@ -5833,10 +4932,7 @@ export const InsertSubscriberTaskDocument = {
         selections: [
           {
             kind: "Field",
-            name: {
-              kind: "Name",
-              value: "subscriberTasksCreateOne",
-            },
+            name: { kind: "Name", value: "subscriberTasksCreateOne" },
             arguments: [
               {
                 kind: "Argument",
@@ -5850,10 +4946,7 @@ export const InsertSubscriberTaskDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "id" } },
               ],
             },
           },
@@ -5883,10 +4976,7 @@ export const DeleteTasksDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriberTasksFilterInput",
-              },
+              name: { kind: "Name", value: "SubscriberTasksFilterInput" },
             },
           },
         },
@@ -5931,10 +5021,7 @@ export const RetryTasksDocument = {
             kind: "NonNullType",
             type: {
               kind: "NamedType",
-              name: {
-                kind: "Name",
-                value: "SubscriberTasksFilterInput",
-              },
+              name: { kind: "Name", value: "SubscriberTasksFilterInput" },
             },
           },
         },
@@ -5944,10 +5031,7 @@ export const RetryTasksDocument = {
         selections: [
           {
             kind: "Field",
-            name: {
-              kind: "Name",
-              value: "subscriberTasksRetryOne",
-            },
+            name: { kind: "Name", value: "subscriberTasksRetryOne" },
             arguments: [
               {
                 kind: "Argument",
@@ -5961,57 +5045,18 @@ export const RetryTasksDocument = {
             selectionSet: {
               kind: "SelectionSet",
               selections: [
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "id" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "job" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "taskType" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "status" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "attempts" },
-                },
-                {
-                  kind: "Field",
-                  name: {
-                    kind: "Name",
-                    value: "maxAttempts",
-                  },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "runAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lastError" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lockAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "lockBy" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "doneAt" },
-                },
-                {
-                  kind: "Field",
-                  name: { kind: "Name", value: "priority" },
-                },
+                { kind: "Field", name: { kind: "Name", value: "id" } },
+                { kind: "Field", name: { kind: "Name", value: "job" } },
+                { kind: "Field", name: { kind: "Name", value: "taskType" } },
+                { kind: "Field", name: { kind: "Name", value: "status" } },
+                { kind: "Field", name: { kind: "Name", value: "attempts" } },
+                { kind: "Field", name: { kind: "Name", value: "maxAttempts" } },
+                { kind: "Field", name: { kind: "Name", value: "runAt" } },
+                { kind: "Field", name: { kind: "Name", value: "lastError" } },
+                { kind: "Field", name: { kind: "Name", value: "lockAt" } },
+                { kind: "Field", name: { kind: "Name", value: "lockBy" } },
+                { kind: "Field", name: { kind: "Name", value: "doneAt" } },
+                { kind: "Field", name: { kind: "Name", value: "priority" } },
               ],
             },
           },

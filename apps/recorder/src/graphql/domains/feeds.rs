@@ -1,9 +1,9 @@
-use seaography::{Builder as SeaographyBuilder, BuilderContext, EntityColumnId};
+use seaography::{Builder as SeaographyBuilder, BuilderContext};
 
 use crate::{
     graphql::{
         domains::subscribers::restrict_subscriber_for_entity,
-        infra::custom::register_entity_default_writable,
+        infra::{custom::register_entity_default_writable, name::GraphqlColumnKey},
     },
     models::feeds,
 };
@@ -11,14 +11,10 @@ use crate::{
 pub fn register_feeds_to_schema_context(context: &mut BuilderContext) {
     restrict_subscriber_for_entity::<feeds::Entity>(context, &feeds::Column::SubscriberId);
 
-    // In seaography 2.0, input_none_conversions no longer exists.
-    // The token field auto-generation on create is handled via
-    // ActiveModelBehavior::before_save in the feeds model.
-    // We skip the token from insert input so users don't need to provide it.
-    context
-        .entity_input
-        .insert_skips
-        .push(EntityColumnId::of::<feeds::Entity>(&feeds::Column::Token).to_string());
+    // Token is auto-generated via ActiveModelBehavior::before_save.
+    // Skip it from insert input so users don't need to provide it.
+    GraphqlColumnKey::of::<feeds::Entity>(context, &feeds::Column::Token)
+        .push_insert_skip(context);
 }
 
 pub fn register_feeds_to_schema_builder(mut builder: SeaographyBuilder) -> SeaographyBuilder {

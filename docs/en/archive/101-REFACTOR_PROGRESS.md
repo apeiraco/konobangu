@@ -65,7 +65,7 @@ Created `apps/recorder/src/database/rls.rs`:
 | ✅ Update sea-orm/seaography to 2.0 | Cargo.toml dependency update, remove fork | Low |
 | ✅ Implement `LifecycleHooksInterface` | `auth_hooks.rs` implements `SubscriberAuthHooks` trait (entity_guard + entity_filter) | Low — interfaces aligned in previous round |
 | ✅ Migrate `condition_functions` | Changed to `entity_filter` returning `Condition` | Low |
-| ✅ Migrate `input_none_conversions` | Changed to `insert_skips` (token field in `feeds.rs`) | Low |
+| ✅ Migrate `input_none_conversions` | Changed to `insert_skips` (token field in `feeds.rs`) | Low (**Note**: name format bug discovered post-migration, see Bug Fixes section) |
 | ✅ Migrate custom mutations | `subscriber_tasks.rs`/`system_tasks.rs` manual `Field::new` construction | **High** — No existing macro, manual implementation required |
 | ✅ Migrate types-related | Using `ColumnOptions` (input_type/output_type/input_conversion/output_conversion) | Medium |
 | ✅ Migrate `TypesMapConfig` | Per-column `ColumnOptions` BTreeMap instead of scattered fields | Medium |
@@ -93,7 +93,7 @@ Created `apps/recorder/src/database/rls.rs`:
 |---------|--------|-------------|
 | `input_conversion` subscriber_id injection | ✅ Fixed | Custom mutation closures directly inject via `task.set_subscriber_id(auth_subscriber_id)` (equivalent to old behavior) |
 | `entity_filter` column reference | ✅ Fixed | `SubscriberAuthHooks` uses `HashMap<String, SubscriberIdFilterFn>` storing type-safe column reference closures (equivalent to old behavior) |
-| `insert_skips`/`update_skips` types | ⚠️ Low risk | seaography 2.0 upstream API change: `Vec<EntityColumnId>` → `Vec<String>`. Code generates via `EntityColumnId::of::<T>().to_string()`, no handwritten strings |
+| `insert_skips`/`update_skips` name format | ✅ Fixed | **Root cause**: `EntityColumnId::to_string()` returns database-layer format (`"feeds.subscriber_id"`), but `insert_skips` checks use GraphQL-layer format (`"Feeds.subscriberId"`), causing all skips to silently fail. **Fix**: uniformly use `get_entity_and_column_name<T>(context, column)` to generate the correct format (see Bug Fixes section) |
 
 ### Phase 2: PostgreSQL RLS Implementation — ✅ Completed
 
@@ -146,6 +146,60 @@ Created `apps/recorder/src/database/rls.rs`:
 
 - GraphQL handler: `web/controller/graphql/mod.rs`
 - Database infra: `database/rls.rs` (documentation update)
+
+---
+
+## Bug Fixes (Discovered Post-Migration)
+
+### BF-1: `insert_skips` / `update_skips` Name Format Mismatch Causes Skips to Silently Fail
+
+**Discovered**: 2026-03-17
+
+**Symptom**: GraphQL frontend `FeedsInsertInput` had `token` field still as `NON_NULL` (required), and `SubscriptionsInsertInput`, `Credential3rdInsertInput`, etc. had `subscriberId` still as `NON_NULL`, causing TypeScript type errors on the frontend.
+
+**Root Cause**:
+
+`insert_skips` / `update_skips` are `Vec<String>`, and the check logic inside seaography (`seaography/src/inputs/entity_input.rs`) uses the **GraphQL-layer format**:
+
+```rust
+// seaography internal check
+let full_name = format!("{}.{}", entity_object_builder.type_name::<T>(), column_name);
+// produces "Feeds.subscriberId" (PascalCase entity name + camelCase column name)
+self.context.entity_input.insert_skips.contains(&full_name)
+```
+
+But the migrated code incorrectly used `EntityColumnId::to_string()`:
+
+```rust
+// ❌ Wrong: returns database format "feeds.subscriber_id" (snake_case)
+context.entity_input.insert_skips.push(entity_column_id.to_string());
+```
+
+The two formats never match, so every value pushed into the skip list can never be found by `contains` — all skips silently fail.
+
+**Affected Scope**:
+- `feeds.rs`: `token` field `insert_skips` fails → `FeedsInsertInput.token` remains `NON_NULL`
+- `auth_hooks.rs`: `subscriberId` `insert_skips` and `update_skips` in `restrict_subscriber_for_entity` both fail → all entities registered through this function (Subscriptions, Credential3rd, Bangumi, Episodes, Downloaders, Downloads, Feeds, etc.) have `NON_NULL subscriberId` in their InsertInput
+- `subscriber_tasks.rs` / `system_tasks.rs`: skips in `skip_columns_for_entity_input` and `restrict_*_for_entity` all fail
+
+**Fix**:
+
+Uniformly replaced with `get_entity_and_column_name<T>(context, column)`, which generates GraphQL-format names consistent with seaography's check logic via `context.entity_object.type_name` and `context.entity_object.column_name`:
+
+```rust
+// ✅ Correct: returns GraphQL format "Feeds.subscriberId"
+let entity_column_key = get_entity_and_column_name::<T>(context, column);
+context.entity_input.insert_skips.push(entity_column_key.clone());
+context.entity_input.update_skips.push(entity_column_key);
+```
+
+**Modified Files**:
+- `apps/recorder/src/graphql/infra/auth_hooks.rs`: `restrict_subscriber_for_entity`
+- `apps/recorder/src/graphql/domains/feeds.rs`: `register_feeds_to_schema_context`
+- `apps/recorder/src/graphql/domains/subscriber_tasks.rs`: `skip_columns_for_entity_input` + `restrict_subscriber_tasks_for_entity`
+- `apps/recorder/src/graphql/domains/system_tasks.rs`: `skip_columns_for_entity_input` + `restrict_system_tasks_for_entity`
+
+**Verification**: Post-fix, GraphQL introspection confirms `subscriberId` and `token` are correctly removed from all `InsertInput` types; TypeScript types regenerated by `graphql-codegen` pass `tsc --noEmit` with zero errors.
 
 ---
 

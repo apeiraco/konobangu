@@ -27,7 +27,8 @@ use crate::{
             },
             json::{convert_jsonb_output_for_entity, restrict_jsonb_filter_input_for_entity},
             name::{
-                get_entity_basic_type_name, get_entity_custom_mutation_field_name,
+                GraphqlColumnKey, get_entity_basic_type_name,
+                get_entity_custom_mutation_field_name,
                 get_entity_delete_mutation_field_name,
                 get_entity_create_one_mutation_field_name,
                 get_entity_insert_input_type_name,
@@ -44,13 +45,12 @@ fn skip_columns_for_entity_input(context: &mut BuilderContext) {
     for column in subscriber_tasks::Column::iter() {
         if matches!(
             column,
-            subscriber_tasks::Column::Job | subscriber_tasks::Column::SubscriberId
+            subscriber_tasks::Column::Job
         ) {
             continue;
         }
-        let entity_column_id =
-            EntityColumnId::of::<subscriber_tasks::Entity>(&column);
-        context.entity_input.insert_skips.push(entity_column_id.to_string());
+        GraphqlColumnKey::of::<subscriber_tasks::Entity>(context, &column)
+            .push_insert_skip(context);
     }
 }
 
@@ -101,7 +101,7 @@ where
         },
     ));
 
-    context.entity_input.update_skips.push(entity_column_id.to_string());
+    GraphqlColumnKey::of::<T>(context, column).push_update_skip(context);
 }
 
 pub fn register_subscriber_tasks_to_schema_context(context: &mut BuilderContext) {

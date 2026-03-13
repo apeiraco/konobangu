@@ -38,6 +38,14 @@ _Single source of truth for Agent identity, code standards, and project rules. R
 - **server stack**: use rust + axum + openconnectid + serde + snafu + tracing series for the server stack.
 - **test**: use cargo test for unit test, use testcontainers for tests with external dependencies.
 
+### GraphQL Insert/Update Skip Rules
+
+When working with seaography `insert_skips` / `update_skips`:
+
+- **MUST** use `GraphqlColumnKey::of::<Entity>(context, &Column::Field)` to generate skip keys. **NEVER** use `EntityColumnId::to_string()` — it returns the database format (`table.column`) which silently fails the GraphQL-format check (`TypeName.columnName`).
+- When adding/modifying `ActiveModelBehavior::before_save` to auto-generate a field value, **MUST** also add the corresponding `GraphqlColumnKey::of(...).push_insert_skip(context)` in the entity's `register_*_to_schema_context` function.
+- After any skip changes, re-run `just dev-codegen` and verify the field is removed from the generated `*InsertInput` type in `graphql.ts`.
+
 ### Multi-language Docs
 
 **Directory Structure:**

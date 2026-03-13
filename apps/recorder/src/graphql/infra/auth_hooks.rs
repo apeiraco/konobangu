@@ -9,6 +9,8 @@ use seaography::{
     FilterType, GuardAction, LifecycleHooksInterface, OperationType,
 };
 
+use super::name::GraphqlColumnKey;
+
 use crate::auth::AuthUserInfo;
 
 // ---------------------------------------------------------------------------
@@ -177,9 +179,7 @@ where
         );
     }
 
-    // Update skip — prevent subscriber_id modification
-    context
-        .entity_input
-        .update_skips
-        .push(entity_column_id.to_string());
+    // Skip subscriber_id from both insert and update inputs —
+    // it is auto-injected via auth hooks / RLS.
+    GraphqlColumnKey::of::<T>(context, column).push_skip_both(context);
 }

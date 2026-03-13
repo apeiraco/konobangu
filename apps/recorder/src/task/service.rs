@@ -326,7 +326,7 @@ impl TaskService {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, feature = "testcontainers"))]
 #[allow(unused_variables)]
 mod tests {
     use std::time::Duration;
