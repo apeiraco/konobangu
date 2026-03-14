@@ -25,12 +25,15 @@ jobs:
                   registry: ${{ env.REGISTRY }}
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v3
             - name: Build and push Docker image
               uses: docker/build-push-action@v5
               with:
                   context: "packages/testing-torrents"
                   file: "packages/testing-torrents/Dockerfile"
                   push: true
+                  platforms: linux/amd64,linux/arm64
                   tags: "${{ env.REGISTRY }}/${{ env.ORG }}/${{ env.PROJECT }}-testing-torrents:latest"
                   cache-from: type=gha
                   cache-to: type=gha,mode=max
