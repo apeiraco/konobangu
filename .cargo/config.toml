@@ -1,5 +1,7 @@
 [alias]
 recorder-playground = "run -p recorder  --example playground -- --environment development"
+test-recorder = "test -p recorder --features testcontainers,test-utils"
+test-all = "test --workspace --features testcontainers,test-utils"
 
 [build]
 rustflags = ["-Zthreads=8", "-Zshare-generics=y"]

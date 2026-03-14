@@ -84,7 +84,7 @@ fix-ts:
 fix: fix-rs fix-ts
 
 test-rs:
-    cargo test --workspace
+    cargo test --workspace --features "testcontainers,test-utils"
 
 test-ts:
     pnpm test

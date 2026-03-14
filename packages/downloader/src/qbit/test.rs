@@ -73,10 +73,10 @@ async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
     use testing_torrents::{TestTorrentRequest, TestTorrentResponse, TestingTorrentFileItem};
     use tokio::io::AsyncReadExt;
 
-    tracing_subscriber::fmt()
+    let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_test_writer()
-        .init();
+        .try_init();
 
     let torrents_image = testing_torrents::create_testcontainers().await?;
     let _torrents_container = torrents_image.start().await?;

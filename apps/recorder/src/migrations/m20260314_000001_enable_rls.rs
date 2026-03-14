@@ -14,7 +14,7 @@ const STANDARD_RLS_TABLES: &[&str] = &[
     "downloaders",
     "downloads",
     "auth",
-    "credential_3rd",
+    "credential3rd",
 ];
 
 /// Tables where `subscriber_id` is nullable (system-level resources can have NULL).

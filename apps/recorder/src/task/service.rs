@@ -332,9 +332,8 @@ mod tests {
     use std::time::Duration;
 
     use chrono::Utc;
-    use rstest::{fixture, rstest};
     use sea_orm::ActiveValue;
-    use tracing::Level;
+    use serial_test::serial;
 
     use super::*;
     use crate::{
@@ -342,21 +341,15 @@ mod tests {
         task::EchoTask,
         test_utils::{
             app::{TestingAppContextConfig, TestingPreset},
-            tracing::try_init_testing_tracing,
+            tracing::{logs_contain, setup_traced_test},
         },
     };
 
-    #[fixture]
-    fn before_each() {
-        try_init_testing_tracing(Level::DEBUG);
-    }
-
-    #[rstest]
     #[tokio::test]
-    #[tracing_test::traced_test]
-    async fn test_check_and_trigger_due_crons_with_certain_interval(
-        before_each: (),
-    ) -> RecorderResult<()> {
+    #[serial]
+    async fn test_check_and_trigger_due_crons_with_certain_interval() -> RecorderResult<()> {
+        let _guard = setup_traced_test();
+
         let preset = TestingPreset::default_with_config(
             TestingAppContextConfig::builder()
                 .task_config(TaskConfig {
@@ -395,10 +388,11 @@ mod tests {
         Ok(())
     }
 
-    #[rstest]
     #[tokio::test]
-    #[tracing_test::traced_test]
-    async fn test_trigger_due_cron_when_mutating(before_each: ()) -> RecorderResult<()> {
+    #[serial]
+    async fn test_trigger_due_cron_when_mutating() -> RecorderResult<()> {
+        let _guard = setup_traced_test();
+
         let preset = TestingPreset::default().await?;
         let app_ctx = preset.app_ctx;
         let task_service = app_ctx.task();
@@ -432,3 +426,4 @@ mod tests {
         Ok(())
     }
 }
+

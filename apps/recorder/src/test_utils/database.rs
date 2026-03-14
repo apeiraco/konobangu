@@ -32,7 +32,7 @@ pub async fn build_testing_database_service(
         .with_password("konobangu")
         .with_tag("17-alpine")
         .with_default_log_consumer()
-        .with_prune_existed_label(env!("CARGO_PKG_NAME"), "postgres", true, true)
+        .with_prune_existed_label(env!("CARGO_PKG_NAME"), "postgres", false, false)
         .await?;
 
     let container = container.start().await?;

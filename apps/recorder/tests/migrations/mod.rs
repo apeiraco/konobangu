@@ -131,7 +131,7 @@ async fn test_rls_policies_exist_for_all_tables() {
         "downloaders",
         "downloads",
         "auth",
-        "credential_3rd",
+        "credential3rd",
         "feeds",
         "cron",
     ];
@@ -184,7 +184,7 @@ async fn test_rls_force_enabled_for_all_tables() {
          WHERE n.nspname = 'public' \
            AND c.relname IN ('subscriptions','bangumi','episodes','subscription_bangumi', \
                              'subscription_episode','downloaders','downloads','auth', \
-                             'credential_3rd','feeds','cron') \
+                             'credential3rd','feeds','cron') \
          ORDER BY c.relname",
     ))
     .all(db.as_ref())

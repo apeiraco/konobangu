@@ -38,6 +38,9 @@ snafu = { version = "0.9", features = ["futures"] }
 testcontainers = { version = "0.27" }
 testcontainers-modules = { version = "0.15" }
 testcontainers-ext = { version = "0.2", features = ["tracing"] }
+serial_test = "3"
+ctor = "0.6"
+rstest = "0.26"
 serde = { version = "1", features = ["derive"] }
 tokio = { version = "1.45.1", features = [
     "macros",
@@ -60,6 +63,7 @@ axum = { version = "0.8.3", features = ["macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 axum-extra = { version = "0.12", features = ["typed-header"] }
 mockito = { version = "1.7" }
+tracing-test = "0.2"
 convert_case = "0.11"
 color-eyre = "0.6.5"
 inquire = "0.9"

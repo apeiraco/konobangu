@@ -34,3 +34,37 @@ pub fn try_init_testing_tracing_only_leaf(level: Level) {
         )
         .try_init();
 }
+
+/// Set up a thread-local tracing subscriber that captures logs into
+/// `tracing_test::internal::global_buf()`.
+///
+/// Unlike `#[tracing_test::traced_test]` which uses `set_global_default`
+/// (panics when another test already set it), this uses
+/// `tracing::subscriber::set_default` (thread-local, non-conflicting).
+///
+/// Returns a `DefaultGuard` that must be held alive for the duration
+/// of the test. Pair with [`logs_contain`] to assert on captured logs.
+///
+/// Tests using this should be annotated with `#[serial]` to avoid
+/// concurrent writes to the shared global buffer.
+pub fn setup_traced_test() -> tracing::subscriber::DefaultGuard {
+    let buf = tracing_test::internal::global_buf();
+    buf.lock().unwrap().clear();
+    let mock_writer = tracing_test::internal::MockWriter::new(buf);
+    let subscriber = tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::DEBUG)
+        .with_writer(mock_writer)
+        .with_level(true)
+        .with_ansi(false)
+        .finish();
+    tracing::subscriber::set_default(subscriber)
+}
+
+/// Check whether the captured logs contain the specified string.
+///
+/// Must be used together with [`setup_traced_test`].
+pub fn logs_contain(val: &str) -> bool {
+    let buf = tracing_test::internal::global_buf();
+    let logs = String::from_utf8(buf.lock().unwrap().to_vec()).unwrap();
+    logs.contains(val)
+}

@@ -78,7 +78,7 @@ pub async fn get_current_subscriber_id(
 
     #[derive(Debug, FromQueryResult)]
     struct SettingResult {
-        value: String,
+        value: Option<String>,
     }
 
     let result = db
@@ -90,14 +90,13 @@ pub async fn get_current_subscriber_id(
 
     if let Some(row) = result {
         let setting = SettingResult::from_query_result(&row, "")?;
-        if setting.value.is_empty() {
-            Ok(None)
-        } else {
-            setting
-                .value
+        match setting.value {
+            None => Ok(None),
+            Some(v) if v.is_empty() => Ok(None),
+            Some(v) => v
                 .parse::<i32>()
                 .map(Some)
-                .map_err(|e| DbErr::Custom(format!("Invalid subscriber_id setting: {e}")))
+                .map_err(|e| DbErr::Custom(format!("Invalid subscriber_id setting: {e}"))),
         }
     } else {
         Ok(None)

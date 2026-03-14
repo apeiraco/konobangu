@@ -142,10 +142,10 @@ impl LoggerService {
 
         if !layers.is_empty() {
             let env_filter = Self::init_env_filter(config.override_filter.as_ref(), &config.level);
-            tracing_subscriber::registry()
+            let _ = tracing_subscriber::registry()
                 .with(layers)
                 .with(env_filter)
-                .init();
+                .try_init();
         }
 
         if config.pretty_backtrace {

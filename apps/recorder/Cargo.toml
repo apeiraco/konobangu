@@ -15,7 +15,7 @@ testcontainers = [
     "testcontainers-modules/postgres",
 ]
 jxl = ["dep:jxl-encoder"]
-test-utils = []
+test-utils = ["dep:tracing-test"]
 
 [lib]
 name = "recorder"
@@ -98,6 +98,7 @@ clap = { workspace = true }
 ipnetwork = { workspace = true }
 typed-builder = { workspace = true }
 webp = { workspace = true }
+tracing-test = { workspace = true, optional = true }
 
 sea-orm = { version = "~2.0.0-rc", features = [
     "sqlx-sqlite",
@@ -184,8 +185,7 @@ jxl-encoder = { version = "0.1", optional = true, features = [
 [dev-dependencies]
 inquire = { workspace = true }
 color-eyre = { workspace = true }
-serial_test = "3"
 insta = { version = "1", features = ["redactions", "toml", "filters"] }
-ctor = "0.6"
-tracing-test = "0.2"
-rstest = "0.26"
+
+serial_test = { workspace = true }
+rstest = { workspace = true }
