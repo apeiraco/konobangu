@@ -832,3 +832,7 @@ src/
 7. 添加 DB 级别隔离测试
 8. 将该表的 GraphQL 访问迁移出分叉特定逻辑
 9. 对 `download_task`、`watch_progress` 和其余私有表重复此过程
+
+---
+
+English | [中文](./100-REFACTOR_DESIGN.md)

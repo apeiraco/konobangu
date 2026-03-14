@@ -161,3 +161,7 @@
 | `with-json-as-scalar` feature | 上游已内置 | ✅ 无需操作 |
 | `register_entity!` 3 参数 | `register_entity!` 2 参数 | ✅ 已迁移 |
 | `prepare_active_model(ctx, input, resolver)` | `prepare_active_model(&input_builder, &object_builder, input)` | ✅ 已迁移 |
+
+---
+
+English | [中文](./101-REFACTOR_PROGRESS.md)
