@@ -11,6 +11,7 @@ pub mod m20250520_021135_add_tasks;
 pub mod m20250622_015618_feeds;
 pub mod m20250622_020819_bangumi_and_episode_type;
 pub mod m20250629_065628_add_cron;
+pub mod m20260314_000001_enable_rls;
 
 pub struct Migrator;
 
@@ -26,6 +27,7 @@ impl MigratorTrait for Migrator {
             Box::new(m20250622_015618_feeds::Migration),
             Box::new(m20250622_020819_bangumi_and_episode_type::Migration),
             Box::new(m20250629_065628_add_cron::Migration),
+            Box::new(m20260314_000001_enable_rls::Migration),
         ]
     }
 }

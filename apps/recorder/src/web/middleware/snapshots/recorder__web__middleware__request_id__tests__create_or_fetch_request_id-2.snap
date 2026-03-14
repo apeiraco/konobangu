@@ -1,0 +1,5 @@
+---
+source: apps/recorder/src/web/middleware/request_id.rs
+expression: id.len()
+---
+36

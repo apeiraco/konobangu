@@ -5,14 +5,19 @@ clean-cargo-incremental:
     # https://github.com/rust-lang/rust/issues/141540
     rm -r target/debug/incremental
 
+setup:
+    cargo check --workspace
+    pnpm install
+    cd packages/testing-torrents && pnpm install
+
 prepare-dev:
     cargo install cargo-binstall
     cargo binstall sea-orm-cli cargo-llvm-cov cargo-nextest
-    # <package-manager> install watchexec just zellij nasm libjxl netcat heaptrack
+    # <package-manager> install watchexec just zellij nasm netcat heaptrack
 
 prepare-dev-testcontainers:
     docker pull linuxserver/qbittorrent:latest
-    docker pull ghcr.io/dumtruck/konobangu-testing-torrents:latest
+    docker pull ghcr.io/apeiraco/konobangu-testing-torrents:latest
     docker pull postgres:17-alpine
 
 export-recorder-ts-bindings:
@@ -27,7 +32,7 @@ prod-webui:
     cp -r apps/webui/dist/* apps/recorder/webui/
 
 dev-proxy:
-    npx --yes kill-port --port 8899,5005
+    pnpm exec --yes kill-port --port 8899,5005
     pnpm run --parallel --filter=proxy dev
 
 dev-recorder:
@@ -35,10 +40,6 @@ dev-recorder:
 
 prod-recorder: prod-webui
     cargo run --release -p recorder --bin recorder_cli -- --environment=production --working-dir=apps/recorder --graceful-shutdown=false
-
-prod-recorder-heaptrack: prod-webui
-    cargo build --release -p recorder --bin recorder_cli
-    heaptrack target/release/recorder_cli --environment=production --working-dir=apps/recorder --graceful-shutdown=false
 
 dev-recorder-migrate-down:
     cargo run -p recorder --bin migrate_down -- --environment development
@@ -66,3 +67,27 @@ dev-all:
 [windows]
 dev-all:
     @echo "zellij is not supported on Windows, please use vscode tasks 'dev-all'"
+
+lint-rs:
+    cargo clippy --workspace
+
+lint-ts:
+    pnpm lint
+
+lint: lint-rs lint-ts
+
+fix-rs:
+    cargo clippy --workspace --fix --allow-dirty
+
+fix-ts:
+    pnpm lint-fix
+
+fix: fix-rs fix-ts
+
+test-rs:
+    cargo test --workspace --features "testcontainers,test-utils"
+
+test-ts:
+    pnpm test
+
+test: test-rs test-ts

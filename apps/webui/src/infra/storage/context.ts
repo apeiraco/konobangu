@@ -1,17 +1,17 @@
 import {
-	LocalStorageService,
-	SessionStorageService,
+  LocalStorageService,
+  SessionStorageService,
 } from "./web-storage.service";
 
 export function provideStorages() {
-	return [
-		{
-			provide: LocalStorageService,
-			useClass: LocalStorageService,
-		},
-		{
-			provide: SessionStorageService,
-			useClass: SessionStorageService,
-		},
-	];
+  return [
+    {
+      provide: LocalStorageService,
+      useClass: LocalStorageService,
+    },
+    {
+      provide: SessionStorageService,
+      useClass: SessionStorageService,
+    },
+  ];
 }

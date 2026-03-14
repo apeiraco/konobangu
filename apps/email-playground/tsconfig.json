@@ -1,13 +1,13 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": {
-		"composite": true,
-		"jsx": "react-jsx",
-		"jsxImportSource": "react",
-		"module": "ESNext",
-		"moduleResolution": "bundler"
-	},
-	"references": [{ "path": "../../packages/email" }],
-	"include": ["**/*.ts", "**/*.tsx"],
-	"exclude": ["node_modules"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "references": [{ "path": "../../packages/email" }],
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["node_modules"]
 }

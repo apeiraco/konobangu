@@ -454,10 +454,7 @@ async fn merge_mikan_classic_episodes_and_strip_columns() -> RecorderResult<()> 
             SortMultipleOptions::default().with_order_descending(true),
         )
         .unique(
-            Some(vec![
-                "mikan_fansub_id".to_string(),
-                "mikan_episode_id".to_string(),
-            ]),
+            Some(cols(["mikan_fansub_id", "mikan_episode_id"])),
             UniqueKeepStrategy::First,
         )
         .collect()
@@ -486,9 +483,7 @@ async fn merge_mikan_classic_episodes_and_strip_columns() -> RecorderResult<()> 
 
         ParquetWriter::new(&mut output_file)
             .set_parallel(true)
-            .with_compression(ParquetCompression::Zstd(Some(
-                ZstdLevel::try_new(22).unwrap(),
-            )))
+            .with_compression(ParquetCompression::Zstd(None))
             .finish(&mut result_df.clone())
             .map_err(|e| {
                 let message = format!("Failed to write merged parquet file: {e}");

@@ -262,10 +262,10 @@ impl StorageService {
         let content_type = HeaderValue::from_str(mime_type.as_ref())?;
         let etag = metadata.etag().map(Cow::Borrowed).or_else(|| {
             let len = metadata.content_length();
-            let lm = metadata.last_modified()?.timestamp();
+            let lm = metadata.last_modified()?.into_inner().as_second();
             Some(Cow::Owned(format!("\"{lm:x}-{len:x}\"")))
         });
-        let last_modified = metadata.last_modified().map(|lm| lm.to_rfc2822());
+        let last_modified = metadata.last_modified().map(|lm| lm.format_http_date());
 
         let response = if let Some(TypedHeader(range)) = range {
             let ranges = range

@@ -19,6 +19,6 @@ pub fn register_subscriptions_to_schema_builder(
     mut builder: SeaographyBuilder,
 ) -> SeaographyBuilder {
     builder.register_enumeration::<subscriptions::SubscriptionCategory>();
-    builder = register_entity_default_writable!(builder, subscriptions, false);
+    builder = register_entity_default_writable!(builder, subscriptions);
     builder
 }

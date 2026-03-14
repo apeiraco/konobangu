@@ -1,4 +1,3 @@
-#![feature(duration_constructors_lite)]
 use std::{sync::Arc, time::Duration};
 
 use apalis_sql::postgres::PostgresStorage;

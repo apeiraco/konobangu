@@ -39,10 +39,12 @@ pub enum RecorderError {
     ImageError { source: image::ImageError },
     #[cfg(feature = "jxl")]
     #[snafu(transparent)]
-    JxlEncodeError { source: jpegxl_rs::EncodeError },
-    #[snafu(transparent, context(false))]
+    JxlEncodeError {
+        source: jxl_encoder::At<jxl_encoder::EncodeError>,
+    },
+    #[snafu(context(false))]
     HttpError { source: http::Error },
-    #[snafu(transparent, context(false))]
+    #[snafu(context(false))]
     FancyRegexError {
         #[snafu(source(from(fancy_regex::Error, Box::new)))]
         source: Box<fancy_regex::Error>,
@@ -85,7 +87,7 @@ pub enum RecorderError {
     DbError { source: sea_orm::DbErr },
     #[snafu(transparent)]
     DbSqlxError { source: sea_orm::SqlxError },
-    #[snafu(transparent, context(false))]
+    #[snafu(context(false))]
     FigmentError {
         #[snafu(source(from(figment::Error, Box::new)))]
         source: Box<figment::Error>,

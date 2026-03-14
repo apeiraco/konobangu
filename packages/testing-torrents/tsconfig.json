@@ -1,9 +1,16 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": {
-		"baseUrl": ".",
-		"composite": true
-	},
-	"include": ["./main.ts"],
-	"exclude": ["node_modules"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "types": ["node"],
+    "paths": {
+      "*": ["./*"]
+    },
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "include": ["./main.ts"],
+  "exclude": ["node_modules"]
 }

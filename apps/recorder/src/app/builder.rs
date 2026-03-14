@@ -1,4 +1,4 @@
-use clap::{Parser, command};
+use clap::Parser;
 
 use super::{AppContext, core::App, env::Environment};
 use crate::{app::config::AppConfig, errors::RecorderResult};

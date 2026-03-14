@@ -1,18 +1,18 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": {
-		"baseUrl": ".",
-		"composite": true,
-		"jsx": "react-jsx",
-		"jsxImportSource": "react",
-		"module": "ESNext",
-		"moduleResolution": "bundler"
-	},
-	"include": [
-		"./*.ts",
-		"./*.tsx",
-		"./templates/**/*.ts",
-		"./templates/**/*.tsx"
-	],
-	"exclude": ["node_modules"]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "composite": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "module": "ESNext",
+    "moduleResolution": "bundler"
+  },
+  "include": [
+    "./*.ts",
+    "./*.tsx",
+    "./templates/**/*.ts",
+    "./templates/**/*.tsx"
+  ],
+  "exclude": ["node_modules"]
 }

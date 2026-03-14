@@ -1,6 +1,8 @@
+use std::sync::Arc;
+
 use async_graphql::{
     Error as GraphqlError,
-    dynamic::{ResolverContext, Scalar, SchemaError},
+    dynamic::{ObjectAccessor, Scalar, SchemaError},
     to_value,
 };
 use convert_case::Case;
@@ -11,15 +13,16 @@ use sea_orm::{
     sea_query::{ArrayType, Expr, ExprTrait, IntoLikeExpr, SimpleExpr, Value as DbValue},
 };
 use seaography::{
-    Builder as SeaographyBuilder, BuilderContext, FilterType, FnFilterCondition, SeaographyError,
+    Builder as SeaographyBuilder, BuilderContext, EntityColumnId, FilterType, SeaResult,
+    SeaographyError,
 };
 use serde::{Serialize, de::DeserializeOwned};
 use serde_json::Value as JsonValue;
 
-use crate::{
-    errors::RecorderResult, graphql::infra::name::get_entity_and_column_name,
-    utils::json::convert_json_keys,
-};
+use crate::{errors::RecorderResult, utils::json::convert_json_keys};
+
+type FnFilterCondition =
+    Box<dyn Fn(Condition, &ObjectAccessor) -> SeaResult<Condition> + Send + Sync>;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Copy)]
 pub enum JsonbFilterOperation {
@@ -248,7 +251,7 @@ impl JsonPath {
 }
 
 fn jsonb_path_expr(path: &JsonPath) -> SimpleExpr {
-    Expr::val(path.join()).into()
+    Expr::val(path.join())
 }
 
 fn jsonb_path_exists_expr(col_expr: impl Into<SimpleExpr>, path: &JsonPath) -> SimpleExpr {
@@ -301,8 +304,7 @@ fn jsonb_path_is_in_values_expr(
                         .map(|v| DbValue::Json(Some(Box::new(v))))
                         .collect(),
                 )),
-            ))
-            .into(),
+            )),
         ],
     )
 }
@@ -402,10 +404,8 @@ fn jsonb_path_starts_with_expr(
     let col_expr = col_expr.into();
     let type_assert_expr = jsonb_path_type_assert_expr(col_expr.clone(), path, "string");
     let get_value_expr = jsonb_path_query_first_expr(col_expr, path).cast_as("text");
-    let starts_with_expr = Expr::cust_with_exprs(
-        "starts_with($1, $2)",
-        [get_value_expr, Expr::val(value).into()],
-    );
+    let starts_with_expr =
+        Expr::cust_with_exprs("starts_with($1, $2)", [get_value_expr, Expr::val(value)]);
 
     type_assert_expr.and(starts_with_expr)
 }
@@ -528,8 +528,7 @@ fn jsonb_path_contains_expr(
             jsonb_path_expr(path),
             Expr::val(DbValue::Json(Some(Box::new(JsonValue::Array(vec![
                 value.clone(),
-            ])))))
-            .into(),
+            ]))))),
         ],
     );
     let mut case = Expr::case(
@@ -637,12 +636,11 @@ fn prepare_jsonb_leaf_condition(
         ) => {
             let lexpr = jsonb_path_query_first_auto_cast_expr(col_expr, path, &value)?;
             let rexpr: SimpleExpr = match value {
-                JsonValue::Number(n) => Expr::val(DbValue::Decimal(Some(Box::new(
+                JsonValue::Number(n) => Expr::val(DbValue::Decimal(Some(
                     convert_jsonb_number_to_db_decimal(n)?,
-                ))))
-                .into(),
-                JsonValue::Bool(b) => Expr::val(b).into(),
-                JsonValue::String(s) => Expr::val(s).into(),
+                ))),
+                JsonValue::Bool(b) => Expr::val(b),
+                JsonValue::String(s) => Expr::val(s),
                 _ => Err(SchemaError(format!(
                     "JsonbFilterInput leaf can not be {} with an array, object or null",
                     op.as_ref()
@@ -766,8 +764,8 @@ where
 
         fn try_from(index: JsonIndex) -> Result<Self, Self::Error> {
             match index {
-                JsonIndex::Str(s) => s.try_into(),
-                JsonIndex::Num(n) => n.try_into(),
+                JsonIndex::Str(s) => Ok(JsonPathSegment::Str(s.to_string())),
+                JsonIndex::Num(n) => JsonPathSegment::try_from(n),
             }
         }
     }
@@ -909,23 +907,19 @@ where
 {
     let column = *column;
     Box::new(
-        move |_resolve_context: &ResolverContext<'_>, condition, filter| {
-            if let Some(filter) = filter {
-                let filter_value =
-                    to_value(filter.as_index_map()).map_err(GraphqlError::new_with_source)?;
+        move |condition: Condition, filter: &ObjectAccessor| -> SeaResult<Condition> {
+            let filter_value =
+                to_value(filter.as_index_map()).map_err(GraphqlError::new_with_source)?;
 
-                let filter_json: JsonValue = filter_value
-                    .into_json()
-                    .map_err(GraphqlError::new_with_source)?;
+            let filter_json: JsonValue = filter_value
+                .into_json()
+                .map_err(GraphqlError::new_with_source)?;
 
-                let cond_where = prepare_jsonb_filter_input(&Expr::col(column), filter_json)
-                    .map_err(GraphqlError::new_with_source)?;
+            let cond_where = prepare_jsonb_filter_input(&Expr::col(column), filter_json)
+                .map_err(GraphqlError::new_with_source)?;
 
-                let condition = condition.add(cond_where);
-                Ok(condition)
-            } else {
-                Ok(condition)
-            }
+            let condition = condition.add(cond_where);
+            Ok(condition)
         },
     )
 }
@@ -943,13 +937,13 @@ where
     T: EntityTrait,
     <T as EntityTrait>::Model: Sync,
 {
-    let entity_column_name = get_entity_and_column_name::<T>(context, column);
+    let entity_column_id = EntityColumnId::of::<T>(column);
     context.filter_types.overwrites.insert(
-        get_entity_and_column_name::<T>(context, column),
+        entity_column_id.clone(),
         Some(FilterType::Custom(JSONB_FILTER_NAME.to_string())),
     );
     context.filter_types.condition_functions.insert(
-        entity_column_name.clone(),
+        entity_column_id,
         generate_jsonb_filter_condition_function::<T>(context, column),
     );
 }
@@ -963,10 +957,16 @@ pub fn try_convert_jsonb_input_for_entity<T, S>(
     <T as EntityTrait>::Model: Sync,
     S: DeserializeOwned + Serialize,
 {
-    let entity_column_name = get_entity_and_column_name::<T>(context, column);
-    context.types.input_conversions.insert(
-        entity_column_name.clone(),
-        Box::new(move |_resolve_context, accessor| {
+    let entity_column_id = EntityColumnId::of::<T>(column);
+    let entity_column_name = entity_column_id.to_string();
+    let options = context
+        .types
+        .column_options
+        .entry(entity_column_id)
+        .or_default();
+
+    options.input_conversion = Some(Arc::new(
+        move |accessor: &async_graphql::dynamic::ValueAccessor| -> SeaResult<sea_orm::Value> {
             let mut json_value: serde_json::Value = accessor.deserialize()?;
 
             if let Some(case) = case {
@@ -981,8 +981,8 @@ pub fn try_convert_jsonb_input_for_entity<T, S>(
             })?;
 
             Ok(sea_orm::Value::Json(Some(Box::new(json_value))))
-        }),
-    );
+        },
+    ));
 }
 
 pub fn convert_jsonb_output_for_entity<T>(
@@ -993,35 +993,48 @@ pub fn convert_jsonb_output_for_entity<T>(
     T: EntityTrait,
     <T as EntityTrait>::Model: Sync,
 {
-    let entity_column_name = get_entity_and_column_name::<T>(context, column);
-    context.types.output_conversions.insert(
-        entity_column_name.clone(),
-        Box::new(move |value| {
-            if let sea_orm::Value::Json(Some(json)) = value {
-                let mut json_value = json.as_ref().clone();
-                if let Some(case) = case {
-                    json_value = convert_json_keys(json_value, case);
-                }
-                let result = async_graphql::Value::from_json(json_value).map_err(|err| {
-                    SeaographyError::TypeConversionError(
-                        err.to_string(),
-                        format!("Json - {entity_column_name}"),
-                    )
-                })?;
-                Ok(result)
-            } else {
-                Err(SeaographyError::TypeConversionError(
-                    "value should be json".to_string(),
-                    format!("Json - {entity_column_name}"),
-                ))
-            }
-        }),
-    );
+    let entity_column_id = EntityColumnId::of::<T>(column);
+    let entity_column_name = entity_column_id.to_string();
+    let options = context
+        .types
+        .column_options
+        .entry(entity_column_id)
+        .or_default();
+
+    options.output_conversion =
+        Some(
+            Arc::new(
+                move |value: &sea_orm::sea_query::Value| -> async_graphql::Result<
+                    Option<async_graphql::dynamic::FieldValue<'static>>,
+                > {
+                    if let sea_orm::Value::Json(Some(json)) = value {
+                        let mut json_value = json.as_ref().clone();
+                        if let Some(case) = case {
+                            json_value = convert_json_keys(json_value, case);
+                        }
+                        let result =
+                            async_graphql::Value::from_json(json_value).map_err(|err| {
+                                SeaographyError::TypeConversionError(
+                                    err.to_string(),
+                                    format!("Json - {entity_column_name}"),
+                                )
+                            })?;
+                        Ok(Some(async_graphql::dynamic::FieldValue::from(result)))
+                    } else {
+                        Err(SeaographyError::TypeConversionError(
+                            "value should be json".to_string(),
+                            format!("Json - {entity_column_name}"),
+                        )
+                        .into())
+                    }
+                },
+            ),
+        );
 }
 
 #[cfg(test)]
 mod tests {
-    use std::assert_matches::assert_matches;
+    use std::assert_matches;
 
     use sea_orm::{
         DeriveIden,
@@ -1083,7 +1096,7 @@ mod tests {
              jsonb_path_query_first(\"test_table\".\"job\", $1) = ANY($2)"
         );
         assert_eq!(params.len(), 2);
-        assert_eq!(params[0], DbValue::String(Some(Box::new("$.a.b.c".into()))));
+        assert_eq!(params[0], DbValue::String(Some("$.a.b.c".into())));
         assert_matches!(params[1], DbValue::Array(..));
 
         Ok(())
@@ -1102,7 +1115,7 @@ mod tests {
              (jsonb_path_query_first(\"test_table\".\"job\", $1)) = $2"
         );
         assert_eq!(params.len(), 2);
-        assert_eq!(params[0], DbValue::String(Some(Box::new("$.a.b.c".into()))));
+        assert_eq!(params[0], DbValue::String(Some("$.a.b.c".into())));
         assert_eq!(params[1], DbValue::Json(Some(Box::new(json!("str")))));
 
         Ok(())

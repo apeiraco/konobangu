@@ -5,30 +5,30 @@ import type { Observable } from "rxjs";
 import { authContextFromInjector } from "./context";
 
 export function useAuth() {
-	const injector = useInjector();
+  const injector = useInjector();
 
-	const authContext = useMemo(
-		() => authContextFromInjector(injector),
-		[injector],
-	);
+  const authContext = useMemo(
+    () => authContextFromInjector(injector),
+    [injector],
+  );
 
-	const isAuthenticated = useMemo(
-		() =>
-			atomWithObservable(
-				() => authContext.isAuthenticated$ as Observable<boolean>,
-			),
-		[authContext.isAuthenticated$],
-	);
+  const isAuthenticated = useMemo(
+    () =>
+      atomWithObservable(
+        () => authContext.isAuthenticated$ as Observable<boolean>,
+      ),
+    [authContext.isAuthenticated$],
+  );
 
-	const authData = useMemo(
-		() => atomWithObservable(() => authContext.userData$ as Observable<any>),
-		[authContext],
-	);
+  const authData = useMemo(
+    () => atomWithObservable(() => authContext.userData$ as Observable<any>),
+    [authContext],
+  );
 
-	return {
-		...authContext,
-		authData,
-		injector,
-		isAuthenticated,
-	};
+  return {
+    ...authContext,
+    authData,
+    injector,
+    isAuthenticated,
+  };
 }

@@ -45,11 +45,11 @@ pub async fn create_qbit_testcontainers()
 
     let container = GenericImage::new("linuxserver/qbittorrent", "latest")
         .with_wait_for(WaitFor::message_on_stderr("Connection to localhost"))
-        .with_env_var("WEBUI_PORT", "8080")
+        .with_env_var("WEBUI_PORT", "10721")
         .with_env_var("TZ", "Asia/Singapore")
         .with_env_var("TORRENTING_PORT", "6881")
         .with_mapped_port(6881, ContainerPort::Tcp(6881))
-        .with_mapped_port(8080, ContainerPort::Tcp(8080))
+        .with_mapped_port(10721, ContainerPort::Tcp(10721))
         // .with_reuse(ReuseDirective::Always)
         .with_default_log_consumer()
         .with_prune_existed_label(env!("CARGO_PKG_NAME"), "qbit-downloader", true, true)
@@ -73,10 +73,10 @@ async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
     use testing_torrents::{TestTorrentRequest, TestTorrentResponse, TestingTorrentFileItem};
     use tokio::io::AsyncReadExt;
 
-    tracing_subscriber::fmt()
+    let _ = tracing_subscriber::fmt()
         .with_max_level(tracing::Level::DEBUG)
         .with_test_writer()
-        .init();
+        .try_init();
 
     let torrents_image = testing_torrents::create_testcontainers().await?;
     let _torrents_container = torrents_image.start().await?;
@@ -156,7 +156,7 @@ async fn test_qbittorrent_downloader_impl(
     let base_save_path = Path::new(get_tmp_qbit_test_folder());
 
     let downloader = QBittorrentDownloader::from_creation(QBittorrentDownloaderCreation {
-        endpoint: "http://127.0.0.1:8080".to_string(),
+        endpoint: "http://127.0.0.1:10721".to_string(),
         password: password.unwrap_or_default().to_string(),
         username: username.unwrap_or_default().to_string(),
         subscriber_id: 0,

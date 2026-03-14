@@ -258,7 +258,7 @@ impl HttpClientTrait for MikanClient {}
 #[cfg(test)]
 mod tests {
     #![allow(unused_variables)]
-    use std::{assert_matches::assert_matches, sync::Arc};
+    use std::{assert_matches, sync::Arc};
 
     use rstest::{fixture, rstest};
     use tracing::Level;

@@ -5,47 +5,47 @@ import { useMemo } from "react";
 import { ThemeService } from "./theme.service";
 
 export function provideStyles() {
-	return [
-		{
-			provide: ThemeService,
-			useClass: ThemeService,
-		},
-	];
+  return [
+    {
+      provide: ThemeService,
+      useClass: ThemeService,
+    },
+  ];
 }
 
 export function themeContextFromInjector(injector: Injector) {
-	const themeService = injector.get(ThemeService);
-	const systemColorSchema$ = atomWithObservable(
-		() => themeService.systemColorSchema$,
-	);
-	return {
-		themeService,
-		systemColorSchema$,
-	};
+  const themeService = injector.get(ThemeService);
+  const systemColorSchema$ = atomWithObservable(
+    () => themeService.systemColorSchema$,
+  );
+  return {
+    themeService,
+    systemColorSchema$,
+  };
 }
 
 export function setupThemeContext(injector: Injector) {
-	const { themeService } = themeContextFromInjector(injector);
-	themeService.setup();
+  const { themeService } = themeContextFromInjector(injector);
+  themeService.setup();
 }
 
 export function useTheme() {
-	const injector = useInjector();
+  const injector = useInjector();
 
-	const { themeService } = useMemo(() => {
-		return themeContextFromInjector(injector);
-	}, [injector]);
+  const { themeService } = useMemo(() => {
+    return themeContextFromInjector(injector);
+  }, [injector]);
 
-	const colorTheme = useMemo(
-		() =>
-			atomWithObservable(() => themeService.colorSchema$, {
-				initialValue: themeService.colorSchema$.value,
-			}),
-		[themeService.colorSchema$],
-	);
+  const colorTheme = useMemo(
+    () =>
+      atomWithObservable(() => themeService.colorSchema$, {
+        initialValue: themeService.colorSchema$.value,
+      }),
+    [themeService.colorSchema$],
+  );
 
-	return {
-		themeService,
-		colorTheme,
-	};
+  return {
+    themeService,
+    colorTheme,
+  };
 }

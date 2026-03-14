@@ -14,8 +14,8 @@ testcontainers = [
     "downloader/testcontainers",
     "testcontainers-modules/postgres",
 ]
-jxl = ["dep:jpegxl-rs", "dep:jpegxl-sys"]
-test-utils = []
+jxl = ["dep:jxl-encoder"]
+test-utils = ["dep:tracing-test"]
 
 [lib]
 name = "recorder"
@@ -99,25 +99,28 @@ clap = { workspace = true }
 ipnetwork = { workspace = true }
 typed-builder = { workspace = true }
 webp = { workspace = true }
+tracing-test = { workspace = true, optional = true }
 
-sea-orm = { version = "1.1", features = [
+sea-orm = { version = "~2.0.0-rc", features = [
     "sqlx-sqlite",
     "sqlx-postgres",
     "runtime-tokio",
     "macros",
     "debug-print",
+    "seaography",
+    "with-json",
 ] }
 figment = { version = "0.10", features = ["toml", "json", "env", "yaml"] }
-sea-orm-migration = { version = "1.1", features = ["runtime-tokio"] }
+sea-orm-migration = { version = "~2.0.0-rc", features = ["runtime-tokio"] }
 rss = { version = "2", features = ["builders", "with-serde"] }
-fancy-regex = "0.15"
+fancy-regex = "0.14"
 lightningcss = "1.0.0-alpha.66"
 html-escape = "0.2.13"
-opendal = { version = "0.53", features = ["default", "services-fs"] }
-scraper = "0.23.1"
+opendal = { version = "0.55", features = ["default", "services-fs"] }
+scraper = "0.25"
 async-graphql = { version = "7", features = ["dynamic-schema"] }
 async-graphql-axum = "7"
-seaography = { version = "1.1", features = [
+seaography = { version = "~2.0.0-rc", features = [
     "with-json",
     "with-chrono",
     "with-time",
@@ -125,8 +128,6 @@ seaography = { version = "1.1", features = [
     "with-decimal",
     "with-bigdecimal",
     "with-postgres-array",
-    "with-json-as-scalar",
-    "with-custom-as-json",
 ] }
 tower = { version = "0.5.2", features = ["util"] }
 tower-http = { version = "0.6", features = [
@@ -142,41 +143,50 @@ tower-http = { version = "0.6", features = [
 tera = "1.20.0"
 openidconnect = { version = "4" }
 dotenvy = "0.15.7"
-jpegxl-rs = { version = "0.11.2", optional = true }
-jpegxl-sys = { version = "0.11.2", optional = true }
+# butteraugli 依赖含 NEON SIMD 代码，在 macOS aarch64 上编译失败
+# 因此全局关闭 default features，在非 macOS 平台上单独启用 butteraugli-loop
+jxl-encoder = { version = "0.1", optional = true, default-features = false, features = [
+    "std",
+    "safe-mode",
+] }
 
 apalis = { version = "0.7", features = ["limit", "tracing", "catch-panic"] }
 apalis-sql = { version = "0.7", features = ["postgres"] }
 cocoon = { version = "0.4.3", features = ["getrandom", "thiserror"] }
-reqwest_cookie_store = "0.8.0"
-jwtk = "0.4.0"
+reqwest_cookie_store = "0.10"
+jwtk = "0.5"
 mime_guess = "2.0.5"
 icu_properties = "2.0.1"
 icu = "2.0.0"
 tracing-tree = "0.4.0"
 num_cpus = "1.17.0"
-headers-accept = "0.1.4"
-polars = { version = "0.49.1", features = [
+headers-accept = "0.3"
+polars = { version = "0.53", features = [
     "parquet",
     "lazy",
     "diagonal_concat",
 ], optional = true }
-quick-xml = { version = "0.38", features = [
+quick-xml = { version = "0.37.5", features = [
     "serialize",
     "serde-types",
     "serde",
 ] }
-croner = "2.2.0"
-ts-rs = "11.0.1"
+croner = "3"
+ts-rs = "12"
 secrecy = { version = "0.10.3", features = ["serde"] }
 paste = "1.0.15"
 chrono-tz = "0.10.3"
 
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+# Non-macOS platforms enable butteraugli-loop (full image quality optimization)
+jxl-encoder = { version = "0.1", optional = true, features = [
+    "butteraugli-loop",
+] }
+
 [dev-dependencies]
 inquire = { workspace = true }
 color-eyre = { workspace = true }
-serial_test = "3"
 insta = { version = "1", features = ["redactions", "toml", "filters"] }
-ctor = "0.4.0"
-tracing-test = "0.2.5"
-rstest = "0.25"
+
+serial_test = { workspace = true }
+rstest = { workspace = true }

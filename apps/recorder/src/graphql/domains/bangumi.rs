@@ -15,5 +15,5 @@ pub fn register_bangumi_to_schema_context(context: &mut BuilderContext) {
 pub fn register_bangumi_to_schema_builder(mut builder: SeaographyBuilder) -> SeaographyBuilder {
     builder.register_enumeration::<bangumi::BangumiType>();
 
-    register_entity_default_writable!(builder, bangumi, false)
+    register_entity_default_writable!(builder, bangumi)
 }

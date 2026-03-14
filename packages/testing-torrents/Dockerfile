@@ -1,9 +1,16 @@
-FROM node:23-slim AS nodebt
+FROM node:24-slim AS nodebt
 RUN npm install -g pnpm
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
 
 FROM nodebt AS deps
+
+# Install build tools required by node-gyp for native modules (bufferutil, utf-8-validate, utp-native)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /app/workspace
 WORKDIR /app

@@ -68,7 +68,7 @@ impl MigrationTrait for Migration {
 
         let seed_subscriber_id = manager
             .get_connection()
-            .query_one(
+            .query_one_raw(
                 manager.get_database_backend().build(
                     Query::select()
                         .column(Subscribers::Id)

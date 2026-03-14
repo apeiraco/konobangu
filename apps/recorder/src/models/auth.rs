@@ -1,5 +1,5 @@
 use async_trait::async_trait;
-use sea_orm::{EntityTrait, Set, TransactionTrait, prelude::*};
+use sea_orm::{EntityTrait, Set, TransactionTrait, prelude::*, sea_query::ExprTrait};
 use serde::{Deserialize, Serialize};
 
 use super::subscribers::{self, SEED_SUBSCRIBER};

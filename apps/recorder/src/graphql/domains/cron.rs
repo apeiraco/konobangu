@@ -58,7 +58,7 @@ pub fn register_cron_to_schema_context(context: &mut BuilderContext) {
 pub fn register_cron_to_schema_builder(mut builder: SeaographyBuilder) -> SeaographyBuilder {
     builder.register_enumeration::<cron::CronStatus>();
 
-    builder = register_entity_default_writable!(builder, cron, true);
+    builder = register_entity_default_writable!(builder, cron);
 
     builder
 }

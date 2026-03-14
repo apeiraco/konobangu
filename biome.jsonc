@@ -1,130 +1,136 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.7/schema.json",
-	"javascript": {
-		"globals": ["Liveblocks"]
-	},
-	"css": {
-		"parser": {
-			"tailwindDirectives": true
-		}
-	},
-	"linter": {
-		"rules": {
-			"nursery": {},
-			"style": {
-				"noParameterProperties": "off",
-				"noNonNullAssertion": "off"
-			},
-			"security": {
-				"noDangerouslySetInnerHtml": "off"
-			},
-			"suspicious": {
-				"noArrayIndexKey": "off",
-				"noEmptyBlockStatements": "off",
-				"noExplicitAny": "off",
-				"noConsole": "off"
-			},
-			"a11y": {
-				"useAltText": "off",
-				"noSvgWithoutTitle": "off"
-			},
-			"complexity": {
-				"noExcessiveCognitiveComplexity": {
-					"level": "warn",
-					"options": {
-						"maxAllowedComplexity": 36
-					}
-				},
-				"noImportantStyles": "off",
-				"noBannedTypes": "off"
-			},
-			"correctness": {
-				"useParseIntRadix": {
-					"fix": "safe",
-					"level": "warn"
-				},
-				"noUnusedImports": {
-					"fix": "none",
-					"level": "warn"
-				}
-			}
-		}
-	},
-	"overrides": [
-		{
-			"includes": [".vscode/**/*.json"],
-			"json": {
-				"parser": {
-					"allowComments": true,
-					"allowTrailingCommas": true
-				}
-			}
-		},
-		{
-			"includes": ["**/apps/webui/src/infra/graphql/gql/**/*"],
-			"linter": {
-				"rules": {
-					"style": {
-						"useConsistentArrayType": "off",
-						"useImportType": "off"
-					}
-				}
-			}
-		},
-		{
-			"includes": ["**/apps/webui/src/components/ui/**/*"],
-			"javascript": {
-				"formatter": {
-					"quoteStyle": "double"
-				}
-			},
-			"linter": {
-				"rules": {
-					"style": {
-						"useBlockStatements": "off",
-						"useImportType": "off",
-						"noNestedTernary": "off"
-					},
-					"nursery": {
-						"useSortedClasses": "off"
-					},
-					"a11y": {
-						"useAriaPropsForRole": "off",
-						"noRedundantRoles": "off",
-						"useFocusableInteractive": "off",
-						"useSemanticElements": "off"
-					},
-					"complexity": {
-						"noExcessiveCognitiveComplexity": "off"
-					}
-				}
-			}
-		}
-	],
-	"files": {
-		"includes": [
-			"**",
-			"!**/*.md",
-			"!dist",
-			"!**/dist",
-			"!webui",
-			"!apps/recorder/webui",
-			"!target",
-			"!**/target",
-			"!node_modules",
-			"!**/node_modules",
-			"!pnpm-lock.yaml",
-			"!**/pnpm-lock.yaml",
-			"!pnpm-workspace.yaml",
-			"!**/pnpm-workspace.yaml",
-			"!pnpm-workspace.yaml",
-			"!**/tests/resources",
-			"!**/.tanstack",
-			"!.vite",
-			"!.vitest",
-			"!assets",
-			"!**/*.local.*",
-			"!apps/proxy/.whistle"
-		]
-	}
+  "$schema": "https://biomejs.dev/schemas/2.4.7/schema.json",
+  "javascript": {
+    "globals": ["Liveblocks"]
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
+  },
+  "formatter": {
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineEnding": "lf"
+  },
+  "linter": {
+    "rules": {
+      "nursery": {},
+      "style": {
+        "noParameterProperties": "off",
+        "noNonNullAssertion": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "suspicious": {
+        "noArrayIndexKey": "off",
+        "noEmptyBlockStatements": "off",
+        "noExplicitAny": "off",
+        "noConsole": "off"
+      },
+      "a11y": {
+        "useAltText": "off",
+        "noSvgWithoutTitle": "off"
+      },
+      "complexity": {
+        "noExcessiveCognitiveComplexity": {
+          "level": "warn",
+          "options": {
+            "maxAllowedComplexity": 36
+          }
+        },
+        "noImportantStyles": "off",
+        "noBannedTypes": "off"
+      },
+      "correctness": {
+        "useParseIntRadix": {
+          "fix": "safe",
+          "level": "warn"
+        },
+        "noUnusedImports": {
+          "fix": "none",
+          "level": "warn"
+        }
+      }
+    }
+  },
+  "overrides": [
+    {
+      "includes": [".vscode/**/*.json"],
+      "json": {
+        "parser": {
+          "allowComments": true,
+          "allowTrailingCommas": true
+        }
+      }
+    },
+    {
+      "includes": ["**/apps/webui/src/infra/graphql/gql/**/*"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useConsistentArrayType": "off",
+            "useImportType": "off"
+          }
+        }
+      },
+      "assist": {
+        "actions": {
+          "source": {
+            "organizeImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/apps/webui/src/components/ui/**/*"],
+      "linter": {
+        "rules": {
+          "style": {
+            "useBlockStatements": "off",
+            "noNestedTernary": "off"
+          },
+          "nursery": {
+            "useSortedClasses": "off"
+          },
+          "a11y": {
+            "useAriaPropsForRole": "off",
+            "noRedundantRoles": "off",
+            "useFocusableInteractive": "off",
+            "useSemanticElements": "off"
+          },
+          "complexity": {
+            "noExcessiveCognitiveComplexity": "off"
+          }
+        }
+      }
+    }
+  ],
+  "files": {
+    "includes": [
+      "**",
+      "!**/*.md",
+      "!dist",
+      "!**/dist",
+      "!webui",
+      "!apps/recorder/webui",
+      "!target",
+      "!**/target",
+      "!node_modules",
+      "!**/node_modules",
+      "!pnpm-lock.yaml",
+      "!**/pnpm-lock.yaml",
+      "!pnpm-workspace.yaml",
+      "!**/pnpm-workspace.yaml",
+      "!pnpm-workspace.yaml",
+      "!**/tests/resources",
+      "!**/.tanstack",
+      "!.vite",
+      "!.vitest",
+      "!assets",
+      "!**/*.local.*",
+      "!apps/proxy/.whistle"
+    ]
+  }
 }

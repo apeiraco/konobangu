@@ -42,16 +42,11 @@ pub enum HttpClientCacheBackendConfig {
     Moka { cache_size: u64 },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum HttpClientCachePresetConfig {
     #[serde(rename = "rfc7234")]
+    #[default]
     RFC7234,
-}
-
-impl Default for HttpClientCachePresetConfig {
-    fn default() -> Self {
-        Self::RFC7234
-    }
 }
 
 #[serde_as]

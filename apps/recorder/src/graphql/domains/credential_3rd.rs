@@ -95,7 +95,7 @@ pub fn register_credential3rd_to_schema_builder(
     mut builder: SeaographyBuilder,
 ) -> SeaographyBuilder {
     builder.register_enumeration::<credential_3rd::Credential3rdType>();
-    builder = register_entity_default_writable!(builder, credential_3rd, false);
+    builder = register_entity_default_writable!(builder, credential_3rd);
 
     builder.schema = builder
         .schema

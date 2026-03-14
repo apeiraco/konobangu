@@ -9,11 +9,10 @@ pub use core::{
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use chrono_tz::Tz;
-use croner::Cron;
+use croner::parser::{CronParser, Seconds};
 use sea_orm::{
     ActiveValue::{self, Set},
-    Condition, DeriveActiveEnum, DeriveDisplay, DeriveEntityModel, EnumIter, QuerySelect,
-    Statement, TransactionTrait,
+    Condition, DeriveActiveEnum, DeriveDisplay, DeriveEntityModel, EnumIter, QuerySelect, TransactionTrait,
     entity::prelude::*,
     sea_query::{ExprTrait, LockBehavior, LockType},
     sqlx::postgres::PgNotification,
@@ -370,10 +369,9 @@ impl Model {
     pub async fn check_and_trigger_due_crons(ctx: &dyn AppContextTrait) -> RecorderResult<()> {
         let db = ctx.db();
 
-        db.execute(Statement::from_string(
-            db.get_database_backend(),
-            format!("SELECT {CHECK_AND_TRIGGER_DUE_CRONS_FUNCTION_NAME}()"),
-        ))
+        db.execute_unprepared(
+            &format!("SELECT {CHECK_AND_TRIGGER_DUE_CRONS_FUNCTION_NAME}()"),
+        )
         .await?;
 
         Ok(())
@@ -441,7 +439,7 @@ impl Model {
 
         let user_tz_now = Utc::now().with_timezone(&user_tz);
 
-        let cron_expr = Cron::new(cron_expr).with_seconds_optional().parse()?;
+        let cron_expr = CronParser::builder().seconds(Seconds::Optional).build().parse(cron_expr)?;
 
         let next = cron_expr.find_next_occurrence(&user_tz_now, false)?;
 

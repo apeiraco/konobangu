@@ -18,7 +18,7 @@ pub fn register_subscription_bangumi_to_schema_context(context: &mut BuilderCont
 pub fn register_subscription_bangumi_to_schema_builder(
     mut builder: SeaographyBuilder,
 ) -> SeaographyBuilder {
-    builder = register_entity_default_writable!(builder, subscription_bangumi, false);
+    builder = register_entity_default_writable!(builder, subscription_bangumi);
 
     builder
 }

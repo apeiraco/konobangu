@@ -21,6 +21,6 @@ docker run -p 6080:6080 -p 6081:6081 -p 6082:6082 --name konobangu-testing-torre
 ## Publish
 
 ```bash
-docker tag konobangu-testing-torrents:latest ghcr.io/dumtruck/konobangu-testing-torrents:latest
-docker push ghcr.io/dumtruck/konobangu-testing-torrents:latest
+docker tag konobangu-testing-torrents:latest ghcr.io/apeiraco/konobangu-testing-torrents:latest
+docker push ghcr.io/apeiraco/konobangu-testing-torrents:latest
 ```

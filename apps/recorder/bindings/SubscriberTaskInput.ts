@@ -4,12 +4,12 @@ import type { SyncOneSubscriptionFeedsIncrementalTaskInput } from "./SyncOneSubs
 import type { SyncOneSubscriptionSourcesTaskInput } from "./SyncOneSubscriptionSourcesTaskInput";
 
 export type SubscriberTaskInput =
-	| ({
-			taskType: "sync_one_subscription_feeds_incremental";
-	  } & SyncOneSubscriptionFeedsIncrementalTaskInput)
-	| ({
-			taskType: "sync_one_subscription_feeds_full";
-	  } & SyncOneSubscriptionFeedsFullTaskInput)
-	| ({
-			taskType: "sync_one_subscription_sources";
-	  } & SyncOneSubscriptionSourcesTaskInput);
+  | ({
+      taskType: "sync_one_subscription_feeds_incremental";
+    } & SyncOneSubscriptionFeedsIncrementalTaskInput)
+  | ({
+      taskType: "sync_one_subscription_feeds_full";
+    } & SyncOneSubscriptionFeedsFullTaskInput)
+  | ({
+      taskType: "sync_one_subscription_sources";
+    } & SyncOneSubscriptionSourcesTaskInput);

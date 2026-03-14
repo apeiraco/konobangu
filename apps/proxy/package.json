@@ -1,15 +1,15 @@
 {
-	"name": "proxy",
-	"version": "0.1.0",
-	"private": true,
-	"scripts": {
-		"whistle": "cross-env WHISTLE_MODE=\"prod|capture|keepXFF|x-forwarded-host|x-forwarded-proto\" whistle run -p 8899 -t 30000 -D .",
-		"mikan_doppel": "cargo run -p proxy --bin mikan_doppel",
-		"dev": "npm-run-all -p mikan_doppel whistle"
-	},
-	"keywords": [],
-	"license": "MIT",
-	"devDependencies": {
-		"whistle": "^2.9.99"
-	}
+  "name": "proxy",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "whistle": "cross-env WHISTLE_MODE=\"prod|capture|keepXFF|x-forwarded-host|x-forwarded-proto\" whistle run -p 8899 -t 30000 -D .",
+    "mikan_doppel": "cargo run -p proxy --bin mikan_doppel",
+    "dev": "npm-run-all -p mikan_doppel whistle"
+  },
+  "keywords": [],
+  "license": "MIT",
+  "devDependencies": {
+    "whistle": "^2.9.99"
+  }
 }

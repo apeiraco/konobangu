@@ -4,6 +4,7 @@ use std::{
 };
 
 use bytes::Bytes;
+use librqbit::CloneToOwned;
 use fetch::{bytes::fetch_bytes, client::HttpClientTrait};
 use librqbit_core::{magnet::Magnet, torrent_metainfo, torrent_metainfo::TorrentMetaV1Owned};
 use snafu::ResultExt;
@@ -97,7 +98,7 @@ impl TorrentFileSource {
         url: Option<String>,
     ) -> Result<Self, DownloaderError> {
         let meta = torrent_metainfo::torrent_from_bytes(bytes.as_ref())
-            .to_dyn_boxed()
+            .map_err(|e| Box::new(e) as Box<dyn std::error::Error + Send + Sync>)
             .with_context(|_| TorrentMetaSnafu {
                 message: format!(
                     "filename = {}, url = {}",
@@ -105,7 +106,7 @@ impl TorrentFileSource {
                     url.as_deref().unwrap_or_default()
                 ),
             })?
-            .to_owned();
+            .clone_to_owned(None);
 
         Ok(TorrentFileSource {
             url,

@@ -1,12 +1,6 @@
 #![feature(
-    duration_constructors_lite,
-    assert_matches,
     unboxed_closures,
     impl_trait_in_bindings,
-    iterator_try_collect,
-    async_fn_traits,
-    error_generic_member_access,
-    associated_type_defaults,
     impl_trait_in_fn_trait_return
 )]
 #![allow(clippy::enum_variant_names)]

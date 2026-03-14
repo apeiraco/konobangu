@@ -1,20 +1,22 @@
 {
-	"extends": "../../tsconfig.base.json",
-	"compilerOptions": {
-		"rootDir": ".",
-		"composite": true,
-		"jsx": "preserve",
-		"jsxImportSource": "react",
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"paths": {
-			"@/*": ["./src/*"]
-		}
-	},
-	"include": ["src"],
-	"references": [
-		{
-			"path": "../../apps/recorder"
-		}
-	]
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "composite": true,
+    "jsx": "preserve",
+    "jsxImportSource": "react",
+    "lib": ["DOM", "ES2024", "DOM.AsyncIterable", "DOM.Iterable"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"],
+  "references": [
+    {
+      "path": "../../apps/recorder"
+    },
+    {
+      "path": "./tsconfig.scripts.json"
+    }
+  ]
 }

@@ -30,13 +30,13 @@ chrono = { workspace = true }
 bytes = { workspace = true }
 
 serde-value = "0.7"
-qbit-rs = { git = "https://github.com/lonelyhentxi/qbit.git", rev = "72d53138ebe", features = [
-    "default",
+qbit-rs = { git = "https://github.com/aitiotekt/qbit.git", rev = "43886ec", features = [
+    "rustls",
     "builder",
 ] }
 merge-struct = "0.1"
-librqbit-core = { git = "https://github.com/ikatson/rqbit.git", rev = "0936730" }
-librqbit = { git = "https://github.com/ikatson/rqbit.git", rev = "0936730", features = [
+librqbit-core = { git = "https://github.com/ikatson/rqbit.git", tag = "v9.0.0-beta.2" }
+librqbit = { git = "https://github.com/ikatson/rqbit.git", tag = "v9.0.0-beta.2", features = [
     "async-bt",
     "watch",
 ] }
