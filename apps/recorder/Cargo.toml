@@ -8,14 +8,16 @@ edition = "2024"
 default = ["jxl"]
 playground = ["dep:inquire", "dep:color-eyre", "dep:polars", "test-utils"]
 testcontainers = [
-    "dep:testcontainers",
-    "dep:testcontainers-modules",
-    "dep:testcontainers-ext",
-    "downloader/testcontainers",
-    "testcontainers-modules/postgres",
+  "dep:testcontainers",
+  "dep:testcontainers-modules",
+  "dep:testcontainers-ext",
+  "dep:bollard",
+  "downloader/testcontainers",
+  "testcontainers-modules/postgres",
 ]
 jxl = ["dep:jxl-encoder"]
-test-utils = ["dep:tracing-test"]
+tracing-test = ["dep:tracing-test"]
+test-utils = ["tracing-test"]
 
 [lib]
 name = "recorder"
@@ -26,6 +28,11 @@ path = "src/lib.rs"
 name = "recorder_cli"
 path = "src/bin/main.rs"
 required-features = []
+
+[[bin]]
+name = "testcontainers_prune"
+path = "src/bin/testcontainers_prune.rs"
+required-features = ["testcontainers"]
 
 [[example]]
 name = "mikan_collect_classic_eps"
@@ -60,8 +67,9 @@ async-trait = { workspace = true }
 testcontainers = { workspace = true, optional = true }
 testcontainers-modules = { workspace = true, optional = true }
 testcontainers-ext = { workspace = true, optional = true, features = [
-    "tracing",
+  "tracing",
 ] }
+bollard = { version = "0.20.2", optional = true }
 tracing = { workspace = true }
 axum = { workspace = true }
 axum-extra = { workspace = true }
@@ -101,53 +109,53 @@ typed-builder = { workspace = true }
 webp = { workspace = true }
 tracing-test = { workspace = true, optional = true }
 
-sea-orm = { version = "~2.0.0-rc", features = [
-    "sqlx-sqlite",
-    "sqlx-postgres",
-    "runtime-tokio",
-    "macros",
-    "debug-print",
-    "seaography",
-    "with-json",
+sea-orm = { version = "~2.0.0-rc.37", features = [
+  "sqlx-sqlite",
+  "sqlx-postgres",
+  "runtime-tokio",
+  "macros",
+  "debug-print",
+  "seaography",
+  "with-json",
 ] }
 figment = { version = "0.10", features = ["toml", "json", "env", "yaml"] }
-sea-orm-migration = { version = "~2.0.0-rc", features = ["runtime-tokio"] }
+sea-orm-migration = { version = "~2.0.0-rc.37", features = ["runtime-tokio"] }
 rss = { version = "2", features = ["builders", "with-serde"] }
-fancy-regex = "0.14"
-lightningcss = "1.0.0-alpha.66"
+fancy-regex = "0.17"
+lightningcss = "1.0.0-alpha.71"
 html-escape = "0.2.13"
 opendal = { version = "0.55", features = ["default", "services-fs"] }
-scraper = "0.25"
+scraper = "0.26"
 async-graphql = { version = "7", features = ["dynamic-schema"] }
 async-graphql-axum = "7"
-seaography = { version = "~2.0.0-rc", features = [
-    "with-json",
-    "with-chrono",
-    "with-time",
-    "with-uuid",
-    "with-decimal",
-    "with-bigdecimal",
-    "with-postgres-array",
+seaography = { version = "~2.0.0-rc.8", features = [
+  "with-json",
+  "with-chrono",
+  "with-time",
+  "with-uuid",
+  "with-decimal",
+  "with-bigdecimal",
+  "with-postgres-array",
 ] }
-tower = { version = "0.5.2", features = ["util"] }
+tower = { version = "0.5.3", features = ["util"] }
 tower-http = { version = "0.6", features = [
-    "trace",
-    "catch-panic",
-    "timeout",
-    "add-extension",
-    "cors",
-    "fs",
-    "set-header",
-    "compression-full",
+  "trace",
+  "catch-panic",
+  "timeout",
+  "add-extension",
+  "cors",
+  "fs",
+  "set-header",
+  "compression-full",
 ] }
-tera = "1.20.0"
+tera = "1.20.1"
 openidconnect = { version = "4" }
 dotenvy = "0.15.7"
-# butteraugli 依赖含 NEON SIMD 代码，在 macOS aarch64 上编译失败
-# 因此全局关闭 default features，在非 macOS 平台上单独启用 butteraugli-loop
-jxl-encoder = { version = "0.1", optional = true, default-features = false, features = [
-    "std",
-    "safe-mode",
+# butteraugli dependency contains NEON SIMD code, which fails to compile on macOS aarch64
+# Therefore, we globally disable default features and enable butteraugli-loop on non-macOS platforms
+jxl-encoder = { version = "0.2", optional = true, default-features = false, features = [
+  "std",
+  "safe-mode",
 ] }
 
 apalis = { version = "0.7", features = ["limit", "tracing", "catch-panic"] }
@@ -156,31 +164,31 @@ cocoon = { version = "0.4.3", features = ["getrandom", "thiserror"] }
 reqwest_cookie_store = "0.10"
 jwtk = "0.5"
 mime_guess = "2.0.5"
-icu_properties = "2.0.1"
-icu = "2.0.0"
-tracing-tree = "0.4.0"
+icu_properties = "2.2.0"
+icu = "2.2.0"
+tracing-tree = "0.4.1"
 num_cpus = "1.17.0"
 headers-accept = "0.3"
 polars = { version = "0.53", features = [
-    "parquet",
-    "lazy",
-    "diagonal_concat",
+  "parquet",
+  "lazy",
+  "diagonal_concat",
 ], optional = true }
-quick-xml = { version = "0.37.5", features = [
-    "serialize",
-    "serde-types",
-    "serde",
+quick-xml = { version = "0.39.2", features = [
+  "serialize",
+  "serde-types",
+  "serde",
 ] }
 croner = "3"
 ts-rs = "12"
 secrecy = { version = "0.10.3", features = ["serde"] }
 paste = "1.0.15"
-chrono-tz = "0.10.3"
+chrono-tz = "0.10.4"
 
 [target.'cfg(not(target_os = "macos"))'.dependencies]
 # Non-macOS platforms enable butteraugli-loop (full image quality optimization)
-jxl-encoder = { version = "0.1", optional = true, features = [
-    "butteraugli-loop",
+jxl-encoder = { version = "0.2", optional = true, features = [
+  "butteraugli-loop",
 ] }
 
 [dev-dependencies]

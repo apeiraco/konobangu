@@ -2,13 +2,13 @@
 
 [workspace]
 members = [
-    "packages/testing-torrents",
-    "packages/util",
-    "packages/util-derive",
-    "packages/fetch",
-    "packages/downloader",
-    "apps/recorder",
-    "apps/proxy",
+  "packages/testing-torrents",
+  "packages/util",
+  "packages/util-derive",
+  "packages/fetch",
+  "packages/downloader",
+  "apps/recorder",
+  "apps/proxy",
 ]
 resolver = "2"
 
@@ -25,11 +25,11 @@ downloader = { path = "./packages/downloader" }
 recorder = { path = "./apps/recorder" }
 
 reqwest = { version = "0.13", features = [
-    "charset",
-    "http2",
-    "json",
-    "cookies",
-    "form",
+  "charset",
+  "http2",
+  "json",
+  "cookies",
+  "form",
 ] }
 moka = "0.12"
 futures = "0.3"
@@ -37,29 +37,29 @@ quirks_path = "0.1"
 snafu = { version = "0.9", features = ["futures"] }
 testcontainers = { version = "0.27" }
 testcontainers-modules = { version = "0.15" }
-testcontainers-ext = { version = "0.2", features = ["tracing"] }
+testcontainers-ext = { version = "0.2.1", features = ["tracing"] }
 serial_test = "3"
-ctor = "0.6"
+ctor = "0.8"
 rstest = "0.26"
 serde = { version = "1", features = ["derive"] }
-tokio = { version = "1.45.1", features = [
-    "macros",
-    "fs",
-    "rt-multi-thread",
-    "signal",
+tokio = { version = "1.51.0", features = [
+  "macros",
+  "fs",
+  "rt-multi-thread",
+  "signal",
 ] }
 serde_json = "1"
 async-trait = "0.1"
 tracing = "0.1"
-url = "2.5.2"
+url = "2.5.8"
 anyhow = "1"
 itertools = "0.14"
 chrono = "0.4"
 bytes = "1"
 serde_with = "3"
-regex = "1.11"
+regex = "1.12"
 lazy_static = "1.5"
-axum = { version = "0.8.3", features = ["macros"] }
+axum = { version = "0.8.8", features = ["macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 axum-extra = { version = "0.12", features = ["typed-header"] }
 mockito = { version = "1.7" }
@@ -68,21 +68,21 @@ convert_case = "0.11"
 color-eyre = "0.6.5"
 inquire = "0.9"
 image = "0.25"
-uuid = { version = "1.6.0", features = ["v7"] }
+uuid = { version = "1.23.0", features = ["v7"] }
 maplit = "1.0.2"
-once_cell = "1.20.2"
+once_cell = "1.21.4"
 rand = "0.10"
-rust_decimal = "1.37.2"
+rust_decimal = "1.41.0"
 base64 = "0.22.1"
 nom = "8.0.0"
-percent-encoding = "2.3.1"
+percent-encoding = "2.3.2"
 num-traits = "0.2.19"
-http = "1.2.0"
+http = "1.4.0"
 async-stream = "0.3.6"
 serde_variant = "0.1.3"
-tracing-appender = "0.2.3"
-clap = "4.5.40"
+tracing-appender = "0.2.4"
+clap = "4.6.0"
 ipnetwork = "0.21.1"
 typed-builder = "0.23"
 nanoid = "0.4.0"
-webp = "0.3.0"
+webp = "0.3.1"

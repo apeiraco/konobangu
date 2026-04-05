@@ -29,33 +29,53 @@ fn get_tmp_qbit_test_folder() -> &'static str {
     }
 }
 
+#[derive(Debug)]
+pub struct QbitTestcontainersInstance {
+    pub req: testcontainers::ContainerRequest<testcontainers::GenericImage>,
+    pub webui_port: u16,
+    pub torrenting_port: u16,
+}
+
+fn get_free_port() -> u16 {
+    std::net::TcpListener::bind("127.0.0.1:0")
+        .unwrap()
+        .local_addr()
+        .unwrap()
+        .port()
+}
+
 #[cfg(feature = "testcontainers")]
 pub async fn create_qbit_testcontainers()
--> anyhow::Result<testcontainers::ContainerRequest<testcontainers::GenericImage>> {
+-> anyhow::Result<QbitTestcontainersInstance> {
     use testcontainers::{
         GenericImage,
         core::{
             ContainerPort,
-            // ReuseDirective,
             WaitFor,
         },
     };
     use testcontainers_ext::{ImageDefaultLogConsumerExt, ImagePruneExistedLabelExt};
     use testcontainers_modules::testcontainers::ImageExt;
 
+    let webui_port = get_free_port();
+    let torrenting_port = get_free_port();
+
     let container = GenericImage::new("linuxserver/qbittorrent", "latest")
         .with_wait_for(WaitFor::message_on_stderr("Connection to localhost"))
-        .with_env_var("WEBUI_PORT", "10721")
+        .with_env_var("WEBUI_PORT", webui_port.to_string())
         .with_env_var("TZ", "Asia/Singapore")
-        .with_env_var("TORRENTING_PORT", "6881")
-        .with_mapped_port(6881, ContainerPort::Tcp(6881))
-        .with_mapped_port(10721, ContainerPort::Tcp(10721))
-        // .with_reuse(ReuseDirective::Always)
+        .with_env_var("TORRENTING_PORT", torrenting_port.to_string())
+        .with_mapped_port(torrenting_port, ContainerPort::Tcp(torrenting_port))
+        .with_mapped_port(webui_port, ContainerPort::Tcp(webui_port))
         .with_default_log_consumer()
-        .with_prune_existed_label(env!("CARGO_PKG_NAME"), "qbit-downloader", true, true)
+        .with_prune_existed_label(env!("CARGO_PKG_NAME"), "qbit-downloader", false, false)
         .await?;
 
-    Ok(container)
+    Ok(QbitTestcontainersInstance {
+        req: container,
+        webui_port,
+        torrenting_port,
+    })
 }
 
 #[cfg(not(feature = "testcontainers"))]
@@ -63,7 +83,7 @@ pub async fn create_qbit_testcontainers()
 async fn test_qbittorrent_downloader() {
     let hash = "47ee2d69e7f19af783ad896541a07b012676f858".to_string();
     let torrent_url = format!("https://mikanani.me/Download/20240301/{}.torrent", hash);
-    let _ = test_qbittorrent_downloader_impl(torrent_url, hash, None, None).await;
+    let _ = test_qbittorrent_downloader_impl(torrent_url, hash, None, None, 10721).await;
 }
 
 #[cfg(feature = "testcontainers")]
@@ -79,7 +99,7 @@ async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
         .try_init();
 
     let torrents_image = testing_torrents::create_testcontainers().await?;
-    let _torrents_container = torrents_image.start().await?;
+    let _torrents_container = torrents_image.req.start().await?;
 
     let torrents_req = TestTorrentRequest {
         id: "f10ebdda-dd2e-43f8-b80c-bf0884d071c4".into(),
@@ -92,7 +112,7 @@ async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
     };
 
     let torrent_res: TestTorrentResponse = reqwest::Client::new()
-        .post("http://127.0.0.1:6080/api/torrents/mock")
+        .post(format!("http://127.0.0.1:{}/api/torrents/mock", torrents_image.api_port))
         .json(&torrents_req)
         .send()
         .await?
@@ -100,7 +120,7 @@ async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
         .await?;
 
     let qbit_image = create_qbit_testcontainers().await?;
-    let qbit_container = qbit_image.start().await?;
+    let qbit_container = qbit_image.req.start().await?;
 
     let mut logs = String::new();
 
@@ -140,6 +160,7 @@ async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
         torrent_res.hash,
         Some(username),
         Some(password),
+        qbit_image.webui_port,
     )
     .await?;
 
@@ -151,12 +172,13 @@ async fn test_qbittorrent_downloader_impl(
     torrent_hash: String,
     username: Option<&str>,
     password: Option<&str>,
+    webui_port: u16,
 ) -> anyhow::Result<()> {
     let http_client = fetch::test_util::build_testing_http_client()?;
     let base_save_path = Path::new(get_tmp_qbit_test_folder());
 
     let downloader = QBittorrentDownloader::from_creation(QBittorrentDownloaderCreation {
-        endpoint: "http://127.0.0.1:10721".to_string(),
+        endpoint: format!("http://127.0.0.1:{}", webui_port),
         password: password.unwrap_or_default().to_string(),
         username: username.unwrap_or_default().to_string(),
         subscriber_id: 0,

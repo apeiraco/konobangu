@@ -8,9 +8,9 @@ import Fastify from "fastify";
 import WebTorrent, { type Torrent } from "webtorrent";
 
 // Configuration
-const API_PORT = 6080;
-const TRACKER_PORT = 6081;
-const SEEDING_PORT = 6082;
+const API_PORT = parseInt(process.env.API_PORT || "6080", 10);
+const TRACKER_PORT = parseInt(process.env.TRACKER_PORT || "6081", 10);
+const SEEDING_PORT = parseInt(process.env.SEEDING_PORT || "6082", 10);
 const STATIC_API_PATH = "/api/static";
 const LOCAL_IP = "127.0.0.1";
 const WORKSPACE_PATH = "workspace";

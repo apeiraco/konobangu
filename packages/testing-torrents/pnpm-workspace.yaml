@@ -1,0 +1,4 @@
+# This is a workspace config file that acts as a "hard isolation breakpoint"
+# Its existence tells pnpm that this is an independent root, preventing the pnpm CLI from trying to
+# shuttle upwards and fall back to the konobangu root directory after being excluded by the upper layer
+packages: []

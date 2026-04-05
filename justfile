@@ -6,6 +6,7 @@ clean-cargo-incremental:
     rm -r target/debug/incremental
 
 setup:
+    mise install
     cargo check --workspace
     pnpm install
     cd packages/testing-torrents && pnpm install
@@ -49,6 +50,9 @@ dev-deps:
 
 dev-deps-clean:
     docker compose -f devdeps.compose.yaml down -v
+
+testcontainers-prune:
+    cargo run -p recorder --bin testcontainers_prune --features testcontainers
 
 dev-codegen:
     pnpm run --filter=webui codegen

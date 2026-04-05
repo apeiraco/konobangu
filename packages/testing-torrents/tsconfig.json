@@ -9,7 +9,7 @@
     "paths": {
       "*": ["./*"]
     },
-    "typeRoots": ["./node_modules/@types"]
+    "typeRoots": ["./node_modules/@types", "./node_modules"]
   },
   "include": ["./main.ts"],
   "exclude": ["node_modules"]

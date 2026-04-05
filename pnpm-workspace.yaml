@@ -1,13 +1,20 @@
 packages:
-    - packages/*
-    - apps/*
-    - "!packages/testing-torrents"
+  - apps/docs
+  - apps/email-playground
+  - apps/proxy
+  - apps/recorder
+  - apps/webui
+  - packages/email
+  - packages/testing
 onlyBuiltDependencies:
-    - "@biomejs/biome"
-    - "@parcel/watcher"
-    - "@tailwindcss/oxide"
-    - bufferutil
-    - core-js
-    - esbuild
-    - sharp
-    - utf-8-validate
+  - "@biomejs/biome"
+  - '@j178/prek'
+  - "@parcel/watcher"
+  - "@tailwindcss/oxide"
+  - bufferutil
+  - core-js
+  - esbuild
+  - sharp
+  - utf-8-validate
+overrides:
+  codemirror-graphql>@codemirror/language: "^6.11.1"

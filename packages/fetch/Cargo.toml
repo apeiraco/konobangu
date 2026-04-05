@@ -23,7 +23,7 @@ http-cache-reqwest = { version = "1.0.0-alpha.5", features = [
     "manager-moka",
 ] }
 http-cache-semantics = "3"
-fastrand = "2.3"
+fastrand = "2.4"
 reqwest-middleware = { version = "0.5", features = ["form"] }
 reqwest-retry = "0.9"
 reqwest-tracing = "0.7"
