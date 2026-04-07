@@ -257,3 +257,18 @@ public/sitemap*.xml
 
 patches/*
 !patches/.gitkeep
+
+# Python
+.venv
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+*.egg
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt

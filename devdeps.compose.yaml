@@ -1,14 +1,15 @@
 services:
   postgres:
-    image: postgres:17
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: konobangu
       POSTGRES_PASSWORD: konobangu
       POSTGRES_DB: konobangu
+      PGDATA: /var/lib/postgresql/18/docker
     ports:
       - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
 
 volumes:
   postgres_data:

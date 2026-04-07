@@ -34,6 +34,7 @@ _Single source of truth for Agent identity, code standards, and project rules. R
 - **node package manager**: use `pnpm` as the package manager.
 - **rust toolchain**: use `rust-toolchain.toml` to manage the rust toolchain, use `cargo` as the build tool.
 - **typescript**: use tsconfig.json with references for managing the typescript project.
+- **python**: use pyproject.toml to manage the python project, use `uv` as the package manager (workspace mode).
 - **webui stack**: use typescript + vite + react + @tanstack/react-xxx seriers + tailwindcss + shadcn/ui for the webui stack.
 - **server stack**: use rust + axum + openconnectid + serde + snafu + tracing series for the server stack.
 - **test**: use cargo test for unit test, use testcontainers for tests with external dependencies.

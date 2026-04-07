@@ -111,26 +111,21 @@
     "includes": [
       "**",
       "!**/*.md",
-      "!dist",
       "!**/dist",
       "!webui",
       "!apps/recorder/webui",
-      "!target",
       "!**/target",
-      "!node_modules",
       "!**/node_modules",
-      "!pnpm-lock.yaml",
       "!**/pnpm-lock.yaml",
-      "!pnpm-workspace.yaml",
       "!**/pnpm-workspace.yaml",
-      "!pnpm-workspace.yaml",
-      "!**/tests/resources",
+      "!**/resources",
       "!**/.tanstack",
       "!.vite",
       "!.vitest",
-      "!assets",
+      "!**/assets",
       "!**/*.local.*",
-      "!apps/proxy/.whistle"
+      "!**/.whistle",
+      "!**/.venv"
     ]
   }
 }

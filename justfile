@@ -1,15 +1,12 @@
 set windows-shell := ["pwsh.exe", "-c"]
 set dotenv-load := true
 
-clean-cargo-incremental:
-    # https://github.com/rust-lang/rust/issues/141540
-    rm -r target/debug/incremental
-
 setup:
     mise install
     cargo check --workspace
     pnpm install
     cd packages/testing-torrents && pnpm install
+    uv sync
 
 prepare-dev:
     cargo install cargo-binstall
@@ -19,7 +16,7 @@ prepare-dev:
 prepare-dev-testcontainers:
     docker pull linuxserver/qbittorrent:latest
     docker pull ghcr.io/apeiraco/konobangu-testing-torrents:latest
-    docker pull postgres:17-alpine
+    docker pull postgres:18-alpine
 
 export-recorder-ts-bindings:
     cargo test export_bindings -p recorder
@@ -64,13 +61,8 @@ dev-codegen-wait:
 dev-coverage:
     cargo llvm-cov test --html
 
-[unix]
 dev-all:
     zellij --layout dev.kdl
-
-[windows]
-dev-all:
-    @echo "zellij is not supported on Windows, please use vscode tasks 'dev-all'"
 
 lint-rs:
     cargo clippy --workspace

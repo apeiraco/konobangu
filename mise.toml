@@ -2,4 +2,6 @@
 jq = "latest"
 node = "lts"
 pnpm = "latest"
+python = "latest"
 rust = "nightly"
+uv = "latest"

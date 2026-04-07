@@ -59,6 +59,7 @@ downloader = { workspace = true }
 util = { workspace = true }
 util-derive = { workspace = true }
 fetch = { workspace = true }
+animeta = { workspace = true }
 
 serde = { workspace = true }
 tokio = { workspace = true }

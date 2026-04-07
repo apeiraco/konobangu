@@ -1,0 +1,22 @@
+[package]
+name = "animeta"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+icu = { workspace = true }
+icu_properties = { workspace = true }
+lazy_static = { workspace = true }
+maplit = { workspace = true }
+nom = { workspace = true }
+num-traits = { workspace = true }
+itertools = { workspace = true }
+regex = { workspace = true }
+fancy-regex = { workspace = true }
+serde = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+anyhow = { workspace = true }
+rstest = { workspace = true }
+serde_json = { workspace = true }

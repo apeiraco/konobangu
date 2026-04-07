@@ -26,7 +26,7 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
     .with_db_name("konobangu")
     .with_user("konobangu")
     .with_password("konobangu")
-    .with_tag("17-alpine")
+    .with_tag("18-alpine")
     .with_default_log_consumer()
     .with_prune_existed_label(env!("CARGO_PKG_NAME"), "postgres", true, false)
     .await?;
