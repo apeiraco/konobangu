@@ -39,6 +39,5 @@
     }
   ],
   "rust-analyzer.cargo.features": "all",
-  "rust-analyzer.testExplorer": true,
-  "biome.lsp.bin": "./node_modules/.bin/biome"
+  "rust-analyzer.testExplorer": true
 }
