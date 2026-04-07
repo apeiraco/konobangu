@@ -56,7 +56,7 @@ pub async fn create_qbit_testcontainers() -> anyhow::Result<QbitTestcontainersIn
     .with_mapped_port(torrenting_port, ContainerPort::Tcp(torrenting_port))
     .with_mapped_port(webui_port, ContainerPort::Tcp(webui_port))
     .with_default_log_consumer()
-    .with_prune_existed_label(env!("CARGO_PKG_NAME"), "qbit-downloader", false, false)
+    .with_prune_existed_label(env!("CARGO_PKG_NAME"), "qbit-downloader", true, false)
     .await?;
 
   Ok(QbitTestcontainersInstance {
