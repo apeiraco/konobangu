@@ -1,4 +1,5 @@
 # cargo-features = ["codegen-backend"]
+cargo-features = ["profile-rustflags"]
 
 [workspace]
 members = [
@@ -8,7 +9,8 @@ members = [
   "packages/fetch",
   "packages/downloader",
   "apps/recorder",
-  "apps/proxy", "packages/animeta",
+  "apps/proxy",
+  "packages/animeta",
 ]
 resolver = "2"
 
@@ -43,7 +45,7 @@ serial_test = "3"
 ctor = "0.8"
 rstest = "0.26"
 serde = { version = "1", features = ["derive"] }
-tokio = { version = "1.51.0", features = [
+tokio = { version = "1.51", features = [
   "macros",
   "fs",
   "rt-multi-thread",
@@ -55,11 +57,11 @@ tracing = "0.1"
 url = "2.5.8"
 anyhow = "1"
 itertools = "0.14"
-chrono = "0.4"
+chrono = "=0.4.41"
 bytes = "1"
 serde_with = "3"
 regex = "1.12"
-fancy-regex = "0.16"
+fancy-regex = "0.17"
 lazy_static = "1.5"
 axum = { version = "0.8.8", features = ["macros"] }
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
@@ -90,3 +92,117 @@ nanoid = "0.4.0"
 webp = "0.3.1"
 icu = "2.2.0"
 icu_properties = "2.2.0"
+
+[profile.dev.package.polars]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.polars]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.openidconnect]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.openidconnect]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.sea-orm]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.sea-orm]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.async-graphql]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.async-graphql]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.librqbit]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.librqbit]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.scraper]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.scraper]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.lightningcss]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.lightningcss]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.opendal]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.opendal]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.image]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.image]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.icu]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.icu]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.fancy-regex]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.fancy-regex]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.tera]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.tera]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.rss]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.rss]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.apalis]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.apalis]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.mockito]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.mockito]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.reqwest]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.reqwest]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.moka]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.moka]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.jwtk]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.jwtk]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.dev.package.cocoon]
+rustflags = ["-Zhint-mostly-unused"]
+
+[profile.release.package.cocoon]
+rustflags = ["-Zhint-mostly-unused"]

@@ -3,6 +3,14 @@ name = "animeta"
 version = "0.1.0"
 edition = "2024"
 
+[[bin]]
+name = "animeta_agent_cli"
+path = "src/bin/agent_cli.rs"
+# required-features = ["adk-rust"]
+
+[features]
+# adk-rust = ["dep:adk-rust"]
+
 [dependencies]
 icu = { workspace = true }
 icu_properties = { workspace = true }
@@ -15,6 +23,8 @@ regex = { workspace = true }
 fancy-regex = { workspace = true }
 serde = { workspace = true }
 tracing = { workspace = true }
+chrono = { workspace = true }
+# adk-rust = { version = "0.5", optional = true }
 
 [dev-dependencies]
 anyhow = { workspace = true }

@@ -157,7 +157,8 @@ name = "animeta"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "fancy-regex 0.16.2",
+ "chrono",
+ "fancy-regex",
  "icu",
  "icu_properties",
  "itertools 0.14.0",
@@ -2837,17 +2838,6 @@ name = "fallible-streaming-iterator"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7360491ce676a36bf9bb3c56c1aa791658183a54d2744120f27285738d90465a"
-
-[[package]]
-name = "fancy-regex"
-version = "0.16.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "998b056554fbe42e03ae0e152895cd1a7e1002aec800fdc6635d20270260c46f"
-dependencies = [
- "bit-set",
- "regex-automata",
- "regex-syntax",
-]
 
 [[package]]
 name = "fancy-regex"
@@ -7812,7 +7802,7 @@ dependencies = [
  "croner",
  "dotenvy",
  "downloader",
- "fancy-regex 0.17.0",
+ "fancy-regex",
  "fetch",
  "figment",
  "futures",

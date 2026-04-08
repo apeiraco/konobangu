@@ -6,7 +6,7 @@
 
 ## 目标受众
 
-- 维护 `packages/animeta` 与上游解析逻辑的开发者
+- 维护 `packages/animeta`（Rust）与 `packages/animeta-py`（Python）的开发者
 - 需要扩展番剧名、资源文件名解析能力的架构讨论
 
 ## 目的

@@ -4,7 +4,10 @@ version = "0.1.0"
 description = "Kono bangumi?"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = ["konobangu-animeta"]
 
 [tool.uv.workspace]
-members = ["packages/animeta"]
+members = ["packages/animeta-py"]
+
+[tool.uv.sources]
+konobangu-animeta = { workspace = true }

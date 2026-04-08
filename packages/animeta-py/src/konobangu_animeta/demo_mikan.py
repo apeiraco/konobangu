@@ -12,11 +12,11 @@ Default parquet path matches the recorder test fixture layout. Override with env
 
 Run from repo root::
 
-    cd packages/animeta && uv sync && uv run animeta-mikan-demo
+    cd packages/animeta-py && uv sync && uv run animeta-mikan-demo
 
 Or::
 
-    uv run --directory packages/animeta animeta-mikan-demo --limit 500
+    uv run --directory packages/animeta-py animeta-mikan-demo --limit 500
 """
 
 from __future__ import annotations
@@ -26,6 +26,7 @@ import os
 import random
 import sys
 from pathlib import Path
+
 import polars as pl
 import torch
 from datasets import Dataset
@@ -37,7 +38,7 @@ from transformers import AutoTokenizer
 
 
 def _repo_root() -> Path:
-    # py/konobangu_animeta/demo_mikan.py -> parents[4] = workspace root
+    # src/konobangu_animeta/demo_mikan.py -> parents[4] = workspace root
     return Path(__file__).resolve().parents[4]
 
 

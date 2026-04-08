@@ -110,9 +110,10 @@ fn extract_season(tokens: &[Token]) -> (i32, Option<String>) {
   // Prefer Chinese season in title (第五季) over English S5 when both exist
   for token in tokens {
     if token.resolved == Some(Label::Title)
-      && let Some(n) = parse_zh_season(&token.content) {
-        return (n, Some(token.content.clone()));
-      }
+      && let Some(n) = parse_zh_season(&token.content)
+    {
+      return (n, Some(token.content.clone()));
+    }
   }
 
   // Look for tokens resolved as SeasonPrefix followed by SequenceNumber
@@ -212,9 +213,10 @@ fn parse_season_from_text(text: &str) -> Option<i32> {
     return Some(n);
   }
   if let Some(cap) = ORDINAL_SEASON.captures(text)
-    && let Ok(n) = cap[1].parse::<i32>() {
-      return Some(n);
-    }
+    && let Ok(n) = cap[1].parse::<i32>()
+  {
+    return Some(n);
+  }
   if let Some(n) = parse_zh_season(text) {
     return Some(n);
   }
@@ -277,9 +279,11 @@ fn extract_episode(tokens: &[Token]) -> i32 {
       continue;
     }
     if let Ok(n) = token.content.parse::<i32>()
-      && (0..=9999).contains(&n) && is_alone_non_delim_in_bracket(tokens, i) {
-        return n;
-      }
+      && (0..=9999).contains(&n)
+      && is_alone_non_delim_in_bracket(tokens, i)
+    {
+      return n;
+    }
   }
 
   // After dash: "Title - 08"
@@ -292,9 +296,10 @@ fn extract_episode(tokens: &[Token]) -> i32 {
         continue;
       }
       if let Some(p) = find_prev_non_delimiter(tokens, i)
-        && tokens[p].resolved == Some(Label::ContextDelimiter) {
-          return n;
-        }
+        && tokens[p].resolved == Some(Label::ContextDelimiter)
+      {
+        return n;
+      }
     }
   }
 
@@ -304,14 +309,16 @@ fn extract_episode(tokens: &[Token]) -> i32 {
       continue;
     }
     if let Some(p) = find_prev_non_delimiter(tokens, i)
-      && tokens[p].possibilities.contains_key(&Label::SeasonPrefix) {
-        continue;
-      }
+      && tokens[p].possibilities.contains_key(&Label::SeasonPrefix)
+    {
+      continue;
+    }
     if let Ok(n) = token.content.parse::<i32>()
-      && (0..=9999).contains(&n) {
-        best_episode = Some(n);
-        break;
-      }
+      && (0..=9999).contains(&n)
+    {
+      best_episode = Some(n);
+      break;
+    }
   }
 
   let has_movie = tokens.iter().any(|t| t.resolved == Some(Label::SeriesType));
@@ -397,9 +404,7 @@ fn extract_subtitle(tokens: &[Token], input: &str) -> Option<String> {
           let end = inner.last().map(|t| t.span.end).unwrap_or(0);
           if start < end && end <= input.len() {
             let mut text = input[start..end].trim().to_string();
-            if text == "GB_JP" {
-              text = "GB".to_string();
-            } else if text.starts_with("GB_") && text.len() > 3 {
+            if text == "GB_JP" || (text.starts_with("GB_") && text.len() > 3) {
               text = "GB".to_string();
             }
             if !text.is_empty() {

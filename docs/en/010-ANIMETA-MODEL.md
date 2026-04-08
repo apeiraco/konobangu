@@ -6,7 +6,7 @@ Proposal (for future implementation; can evolve alongside current `legacy` / `pr
 
 ## Audience
 
-- Maintainers of `packages/animeta` and upstream parsing logic
+- Maintainers of `packages/animeta` (Rust) and `packages/animeta-py` (Python)
 - Anyone planning to extend anime title / release-name parsing
 
 ## Purpose
