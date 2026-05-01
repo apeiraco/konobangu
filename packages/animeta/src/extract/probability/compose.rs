@@ -81,29 +81,43 @@ fn extract_title(tokens: &[Token], input: &str) -> String {
 }
 
 fn clean_title(raw: &str) -> String {
-  let trimmed = raw.trim();
-  // Legacy parity: primary title before alternate (slash-separated) titles
-  let trimmed = trimmed.split('/').next().unwrap_or(trimmed).trim();
+  let trimmed = trim_unspaced_aliases(raw.trim());
   // Remove leading/trailing delimiters and brackets
   let cleaned: String = trimmed
     .trim_matches(|c: char| DELIMITERS.contains(c) || OPEN_BRACKETS.contains(&c) || CLOSE_BRACKETS.contains(&c))
     .to_string();
 
-  // Collapse multiple whitespace
   let mut result = String::with_capacity(cleaned.len());
-  let mut prev_space = false;
   for c in cleaned.chars() {
-    if c.is_whitespace() {
-      if !prev_space {
+    if is_title_separator_bracket(c) {
+      if !result.ends_with(char::is_whitespace) {
         result.push(' ');
       }
-      prev_space = true;
     } else {
       result.push(c);
-      prev_space = false;
     }
   }
   result.trim().to_string()
+}
+
+fn is_title_separator_bracket(c: char) -> bool {
+  matches!(c, '[' | ']' | '{' | '}' | '\u{3010}' | '\u{3011}' | '\u{300C}' | '\u{300D}' | '\u{300E}' | '\u{300F}' | '\u{3014}' | '\u{3015}')
+}
+
+fn trim_unspaced_aliases(raw: &str) -> &str {
+  let bytes = raw.as_bytes();
+  for (idx, ch) in raw.char_indices() {
+    if ch != '/' {
+      continue;
+    }
+    let prev_is_space = idx > 0 && bytes[idx - 1].is_ascii_whitespace();
+    let next_idx = idx + ch.len_utf8();
+    let next_is_space = next_idx < bytes.len() && bytes[next_idx].is_ascii_whitespace();
+    if !prev_is_space && !next_is_space {
+      return raw[..idx].trim_end();
+    }
+  }
+  raw
 }
 
 fn extract_season(tokens: &[Token]) -> (i32, Option<String>) {
@@ -278,6 +292,9 @@ fn extract_episode(tokens: &[Token]) -> i32 {
     if token.resolved != Some(Label::SequenceNumber) {
       continue;
     }
+    if is_anniversary_number(tokens, i) {
+      continue;
+    }
     if let Ok(n) = token.content.parse::<i32>()
       && (0..=9999).contains(&n)
       && is_alone_non_delim_in_bracket(tokens, i)
@@ -289,6 +306,9 @@ fn extract_episode(tokens: &[Token]) -> i32 {
   // After dash: "Title - 08"
   for (i, token) in tokens.iter().enumerate() {
     if token.resolved != Some(Label::SequenceNumber) {
+      continue;
+    }
+    if is_anniversary_number(tokens, i) {
       continue;
     }
     if let Ok(n) = token.content.parse::<i32>() {
@@ -306,6 +326,9 @@ fn extract_episode(tokens: &[Token]) -> i32 {
   let mut best_episode: Option<i32> = None;
   for (i, token) in tokens.iter().enumerate() {
     if token.resolved != Some(Label::SequenceNumber) {
+      continue;
+    }
+    if is_anniversary_number(tokens, i) {
       continue;
     }
     if let Some(p) = find_prev_non_delimiter(tokens, i)
@@ -327,6 +350,13 @@ fn extract_episode(tokens: &[Token]) -> i32 {
   }
 
   best_episode.unwrap_or(1)
+}
+
+fn is_anniversary_number(tokens: &[Token], idx: usize) -> bool {
+  tokens[idx + 1..]
+    .iter()
+    .find(|t| t.class != TokenClass::Delimiter)
+    .is_some_and(|t| t.content == "周年")
 }
 
 fn extract_fansub(tokens: &[Token], input: &str) -> Option<String> {
@@ -407,7 +437,7 @@ fn extract_subtitle(tokens: &[Token], input: &str) -> Option<String> {
             if text == "GB_JP" || (text.starts_with("GB_") && text.len() > 3) {
               text = "GB".to_string();
             }
-            if !text.is_empty() {
+            if !text.is_empty() && best_subtitle.is_none() {
               best_subtitle = Some(text);
             }
           }

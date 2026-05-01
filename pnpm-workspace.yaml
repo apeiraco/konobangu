@@ -6,15 +6,13 @@ packages:
   - apps/webui
   - packages/email
   - packages/testing
-onlyBuiltDependencies:
-  - "@biomejs/biome"
-  - '@j178/prek'
-  - "@parcel/watcher"
-  - "@tailwindcss/oxide"
-  - bufferutil
-  - core-js
-  - esbuild
-  - sharp
-  - utf-8-validate
+allowBuilds:
+  "@j178/prek": true
+  "@parcel/watcher": true
+  "@tailwindcss/oxide": true
+  bufferutil: true
+  core-js: true
+  esbuild: true
+  utf-8-validate: true
 overrides:
   codemirror-graphql>@codemirror/language: "^6.11.1"

@@ -8,6 +8,7 @@ pub fn apply_all_possibility_rules(tokens: &mut [Token], bracket_groups: &[Brack
   infer_numbers(tokens);
   infer_release_group(tokens, bracket_groups);
   infer_title_candidates(tokens, bracket_groups);
+  infer_title_metadata_fragments(tokens);
   assign_zones(tokens, bracket_groups, profile);
 }
 
@@ -160,6 +161,9 @@ fn infer_title_candidates(tokens: &mut [Token], bracket_groups: &[BracketGroup])
       continue;
     }
     if has_metadata_possibility(token) {
+      if token.possibilities.contains_key(&Label::SeriesType) {
+        token.add_possibility(Label::Title, 100);
+      }
       continue;
     }
     token.add_possibility(Label::Title, 50);
@@ -168,6 +172,57 @@ fn infer_title_candidates(tokens: &mut [Token], bracket_groups: &[BracketGroup])
   // Also tag title-like bracket groups when an outside-bracket title exists
   // (e.g. "... / 梦想... [年龄限制版] - 09")
   infer_bracket_title(tokens, bracket_groups);
+}
+
+fn infer_title_metadata_fragments(tokens: &mut [Token]) {
+  let len = tokens.len();
+  for i in 0..len {
+    if tokens[i].bracket_group.is_some() {
+      continue;
+    }
+
+    if is_title_bit_depth(tokens, i) {
+      tokens[i].add_possibility(Label::Title, 150);
+    }
+
+    if is_inline_season_title_fragment(tokens, i) {
+      tokens[i].add_possibility(Label::Title, 150);
+      if i + 1 < len {
+        tokens[i + 1].add_possibility(Label::Title, 150);
+      }
+    }
+  }
+}
+
+fn is_title_bit_depth(tokens: &[Token], idx: usize) -> bool {
+  let token = &tokens[idx];
+  if !token.possibilities.contains_key(&Label::VideoTerm) || !token.content.to_ascii_lowercase().contains("bit") {
+    return false;
+  }
+  find_next_non_delimiter(tokens, idx).is_some_and(|next| tokens[next].possibilities.contains_key(&Label::Title))
+}
+
+fn is_inline_season_title_fragment(tokens: &[Token], idx: usize) -> bool {
+  if !tokens[idx].content.eq_ignore_ascii_case("s") {
+    return false;
+  }
+  let Some(prev) = find_prev_non_delimiter(tokens, idx) else {
+    return false;
+  };
+  let Some(next) = find_next_non_delimiter(tokens, idx) else {
+    return false;
+  };
+  tokens[prev].possibilities.contains_key(&Label::Title)
+    && tokens[next].class == TokenClass::Number
+    && tokens[next].content.len() <= 2
+}
+
+fn find_prev_non_delimiter(tokens: &[Token], idx: usize) -> Option<usize> {
+  (0..idx).rev().find(|&i| tokens[i].class != TokenClass::Delimiter)
+}
+
+fn find_next_non_delimiter(tokens: &[Token], idx: usize) -> Option<usize> {
+  (idx + 1..tokens.len()).find(|&i| tokens[i].class != TokenClass::Delimiter)
 }
 
 /// Detect title inside a bracket group when no outside-bracket title exists.
@@ -194,12 +249,16 @@ fn infer_bracket_title(tokens: &mut [Token], bracket_groups: &[BracketGroup]) {
     if word_tokens.len() == 1 {
       let idx = word_tokens[0];
       let global = bg.open_pos + 1 + idx;
+      let has_prior_media_metadata = has_media_metadata_before(tokens, bg.open_pos);
       let tok = &mut tokens[global];
       if tok.possibilities.contains_key(&Label::SeriesType) {
         tok.add_possibility(Label::Title, 200);
         continue;
       }
       if has_metadata_possibility(tok) {
+        continue;
+      }
+      if has_prior_media_metadata {
         continue;
       }
       tok.add_possibility(Label::Title, 200);
@@ -231,6 +290,26 @@ fn infer_bracket_title(tokens: &mut [Token], bracket_groups: &[BracketGroup]) {
       }
     }
   }
+}
+
+fn has_media_metadata_before(tokens: &[Token], end: usize) -> bool {
+  tokens[..end].iter().any(|t| {
+    t.possibilities.keys().any(|label| {
+      matches!(
+        label,
+        Label::Source
+          | Label::VideoResolution
+          | Label::VideoTerm
+          | Label::AudioTerm
+          | Label::SubsTerm
+          | Label::Language
+          | Label::ReleaseVersion
+          | Label::DeviceCompatibility
+          | Label::FileChecksum
+          | Label::FileExtension
+      )
+    })
+  })
 }
 
 /// Assign zone information to each token.

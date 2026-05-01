@@ -64,22 +64,19 @@ pub struct HttpClientConfig {
     pub proxy: Option<HttpClientProxyConfig>,
 }
 
-pub(crate) struct CacheBackend(Box<dyn CacheManager>);
-
-impl CacheBackend {
-    pub(crate) fn new<T: CacheManager>(backend: T) -> Self {
-        Self(Box::new(backend))
-    }
+pub(crate) enum CacheBackend {
+    Moka(MokaManager),
 }
 
-#[async_trait::async_trait]
 impl CacheManager for CacheBackend {
     async fn get(
         &self,
         cache_key: &str,
     ) -> http_cache::Result<Option<(http_cache::HttpResponse, http_cache_semantics::CachePolicy)>>
     {
-        self.0.get(cache_key).await
+        match self {
+            Self::Moka(manager) => manager.get(cache_key).await,
+        }
     }
 
     /// Attempts to cache a response and related policy.
@@ -89,11 +86,16 @@ impl CacheManager for CacheBackend {
         res: http_cache::HttpResponse,
         policy: http_cache_semantics::CachePolicy,
     ) -> http_cache::Result<http_cache::HttpResponse> {
-        self.0.put(cache_key, res, policy).await
+        match self {
+            Self::Moka(manager) => manager.put(cache_key, res, policy).await,
+        }
     }
+
     /// Attempts to remove a record from cache.
     async fn delete(&self, cache_key: &str) -> http_cache::Result<()> {
-        self.0.delete(cache_key).await
+        match self {
+            Self::Moka(manager) => manager.delete(cache_key).await,
+        }
     }
 }
 
@@ -256,12 +258,12 @@ impl HttpClient {
                     .as_ref()
                     .map(|b| match b {
                         HttpClientCacheBackendConfig::Moka { cache_size } => {
-                            CacheBackend::new(MokaManager {
+                            CacheBackend::Moka(MokaManager {
                                 cache: Arc::new(moka::future::Cache::new(*cache_size)),
                             })
                         }
                     })
-                    .unwrap_or_else(|| CacheBackend::new(MokaManager::default()));
+                    .unwrap_or_else(|| CacheBackend::Moka(MokaManager::default()));
 
                 let http_cache = match cache_preset {
                     HttpClientCachePresetConfig::RFC7234 => HttpCache {
