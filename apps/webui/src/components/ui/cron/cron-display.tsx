@@ -10,6 +10,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { formatInstant } from "@/infra/time/instant";
 import { cn } from "@/presentation/utils";
 import type {
   CronDisplayProps,
@@ -53,6 +54,7 @@ const CronDisplay: FC<CronDisplayProps> = ({
 
     try {
       const matches = getFutureMatches(`${expression} *`, {
+        startAt: Temporal.Now.instant().toString(),
         matchCount: nextRunsCount,
         timezone,
         formatInTimezone: true,
@@ -60,11 +62,11 @@ const CronDisplay: FC<CronDisplayProps> = ({
       });
 
       return matches.map((match) => {
-        const date = new Date(match);
+        const date = Temporal.Instant.from(match);
         return {
           date,
-          timestamp: date.getTime(),
-          formatted: date.toLocaleString(),
+          timestamp: date.epochMilliseconds,
+          formatted: formatInstant(date, { timeZone: timezone }),
           relative: getRelativeTime(date),
         };
       });
@@ -88,7 +90,7 @@ const CronDisplay: FC<CronDisplayProps> = ({
     try {
       return isTimeMatches(
         `${expression} *`,
-        new Date().toISOString(),
+        Temporal.Now.instant().toString(),
         timezone,
       );
     } catch (_error: unknown) {
@@ -247,9 +249,9 @@ function generateDescription(expression: string): string {
   return description.replace(/,\s*$/, "").replace(/At\s*$/, "Every occurrence");
 }
 
-function getRelativeTime(date: Date): string {
-  const now = new Date();
-  const diffMs = date.getTime() - now.getTime();
+function getRelativeTime(date: Temporal.Instant): string {
+  const now = Temporal.Now.instant();
+  const diffMs = date.epochMilliseconds - now.epochMilliseconds;
 
   if (diffMs < 0) {
     return "Past";

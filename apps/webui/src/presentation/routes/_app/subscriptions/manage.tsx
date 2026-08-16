@@ -1,26 +1,28 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  type PaginationState,
-  type SortingState,
-  useReactTable,
-  type VisibilityState,
-} from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import { Plus } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ContainerHeader } from "@/components/ui/container-header";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import {
+  type DataTableColumnDef,
+  serverOrder,
+  useClampServerPage,
+  useServerTableState,
+} from "@/components/ui/data-table-state";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { DropdownMenuActions } from "@/components/ui/dropdown-menu-actions";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import { Input } from "@/components/ui/input";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -42,10 +44,7 @@ import {
   apolloErrorToMessage,
   getApolloQueryError,
 } from "@/infra/errors/apollo";
-import type {
-  GetSubscriptionsQuery,
-  GetSubscriptionsQueryVariables,
-} from "@/infra/graphql/gql/graphql";
+
 import { IntlService } from "@/infra/intl/intl.service";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { useDebouncedSkeleton } from "@/presentation/hooks/use-debounded-skeleton";
@@ -59,42 +58,45 @@ export const Route = createFileRoute("/_app/subscriptions/manage")({
   } satisfies RouteStateDataOption,
 });
 
-function SubscriptionManageRouteComponent() {
+export function SubscriptionManageRouteComponent() {
   const navigate = useNavigate();
   const intlService = useInject(IntlService);
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+  const tableState = useServerTableState({
     createdAt: false,
     updatedAt: false,
   });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+  const { pagination, sorting, search, onSearchChange } = tableState;
 
   const {
     loading,
     error: subscriptionsError,
     data,
     refetch,
-  } = useQuery<GetSubscriptionsQuery, GetSubscriptionsQueryVariables>(
-    GET_SUBSCRIPTIONS,
-    {
-      variables: {
-        pagination: {
-          page: {
-            page: pagination.pageIndex,
-            limit: pagination.pageSize,
-          },
-        },
-        filter: {},
-        orderBy: {
-          updatedAt: "DESC",
+  } = useQuery(GET_SUBSCRIPTIONS, {
+    variables: {
+      pagination: {
+        page: {
+          page: pagination.pageIndex,
+          limit: pagination.pageSize,
         },
       },
+      filter: search ? { displayName: { contains: search } } : {},
+      orderBy: serverOrder(
+        sorting,
+        [
+          "id",
+          "displayName",
+          "category",
+          "sourceUrl",
+          "enabled",
+          "createdAt",
+          "updatedAt",
+        ],
+        "updatedAt",
+      ),
     },
-  );
+  });
 
   const [updateSubscription] = useMutation(UPDATE_SUBSCRIPTIONS, {
     onCompleted: async () => {
@@ -137,9 +139,11 @@ function SubscriptionManageRouteComponent() {
   const subscriptions = data?.subscriptions;
 
   const columns = useMemo(() => {
-    const cs: ColumnDef<SubscriptionDto>[] = [
+    const cs: DataTableColumnDef<SubscriptionDto>[] = [
       {
-        header: "Enabled",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Enabled" />
+        ),
         accessorKey: "enabled",
         cell: ({ row }) => {
           const enabled = row.original.enabled;
@@ -165,10 +169,11 @@ function SubscriptionManageRouteComponent() {
             </div>
           );
         },
-        enableResizing: true,
       },
       {
-        header: "Name",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Name" />
+        ),
         accessorKey: "displayName",
         cell: ({ row }) => {
           const displayName = row.original.displayName;
@@ -178,11 +183,15 @@ function SubscriptionManageRouteComponent() {
         },
       },
       {
-        header: "Category",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Category" />
+        ),
         accessorKey: "category",
       },
       {
-        header: "Source URL",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Source URL" />
+        ),
         accessorKey: "sourceUrl",
         cell: ({ row }) => {
           const sourceUrl = row.original.sourceUrl;
@@ -192,7 +201,9 @@ function SubscriptionManageRouteComponent() {
         },
       },
       {
-        header: "Created At",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created At" />
+        ),
         accessorKey: "createdAt",
         cell: ({ row }) => {
           const createdAt = row.original.createdAt;
@@ -204,7 +215,9 @@ function SubscriptionManageRouteComponent() {
         },
       },
       {
-        header: "Updated At",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Updated At" />
+        ),
         accessorKey: "updatedAt",
         cell: ({ row }) => {
           const updatedAt = row.original.updatedAt;
@@ -265,32 +278,24 @@ function SubscriptionManageRouteComponent() {
     intlService.formatDatetimeWithTz,
   ]);
 
-  const table = useReactTable({
+  const table = useTable({
+    ...tableState.tableOptions,
     data: useMemo(() => subscriptions?.nodes ?? [], [subscriptions]),
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
     pageCount: subscriptions?.paginationInfo?.pages,
     rowCount: subscriptions?.paginationInfo?.total,
     enableColumnPinning: true,
-    autoResetPageIndex: true,
-    manualPagination: true,
-    state: {
-      pagination,
-      sorting,
-      columnVisibility,
-    },
     initialState: {
       columnPinning: {
-        right: ["actions"],
+        start: [],
+        end: ["actions"],
       },
     },
   });
 
-  if (subscriptionsError) {
+  useClampServerPage(tableState, subscriptions?.paginationInfo?.pages, loading);
+
+  if (subscriptionsError && !data) {
     return (
       <QueryErrorView message={subscriptionsError.message} onRetry={refetch} />
     );
@@ -298,6 +303,7 @@ function SubscriptionManageRouteComponent() {
 
   return (
     <div className="container mx-auto space-y-4 rounded-md">
+      <QueryPartialError error={subscriptionsError} />
       <ContainerHeader
         title="Subscription Management"
         description="Manage your subscription"
@@ -308,7 +314,13 @@ function SubscriptionManageRouteComponent() {
           </Button>
         }
       />
-      <div className="flex items-center py-2">
+      <div className="flex items-center gap-2 py-2">
+        <Input
+          aria-label="Filter records"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Filter records"
+        />
         <DataTableViewOptions table={table} />
       </div>
       <div className="rounded-md border">
@@ -356,8 +368,8 @@ function SubscriptionManageRouteComponent() {
                           key={cell.id}
                           className={cn({
                             "sticky z-1 bg-background shadow-xs": isPinned,
-                            "right-0": isPinned === "right",
-                            "left-0": isPinned === "left",
+                            "right-0": isPinned === "end",
+                            "left-0": isPinned === "start",
                           })}
                         >
                           {flexRender(

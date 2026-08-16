@@ -1,4 +1,5 @@
 pub mod core;
+pub mod credential3rd;
 pub mod feeds;
 pub mod graphql;
 pub mod metadata;

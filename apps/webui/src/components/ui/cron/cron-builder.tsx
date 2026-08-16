@@ -31,6 +31,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { formatInstant } from "@/infra/time/instant";
 import { useEvent } from "@/presentation/hooks/use-event.js";
 import { useStateRef } from "@/presentation/hooks/use-state-ref.js";
 import { cn } from "@/presentation/utils";
@@ -303,12 +304,13 @@ const CronBuilder: FC<CronBuilderProps> = ({
 
     try {
       const matches = getFutureMatches(`${currentExpression} *`, {
+        startAt: Temporal.Now.instant().toString(),
         matchCount: 3,
         timezone,
         formatInTimezone: true,
         hasSeconds: true,
       });
-      return matches.map((match) => new Date(match));
+      return matches.map((match) => Temporal.Instant.from(match));
     } catch (error) {
       console.error("Failed to get future matched runs", error);
       return [];
@@ -508,7 +510,7 @@ const CronBuilder: FC<CronBuilderProps> = ({
                         </span>
 
                         <span className="font-mono">
-                          {date.toLocaleString()}
+                          {formatInstant(date, { timeZone: timezone })}
                         </span>
                       </div>
                     ))}
@@ -614,7 +616,6 @@ export const CronFieldItemEditor: FC<CronFieldItemEditorProps> = memo(
           : CronFieldItemAnyOrSpecificOption.Specific,
       );
 
-    // biome-ignore lint/correctness/useExhaustiveDependencies: false
     useEffect(() => {
       const nextValue = decodeCronFieldItem(value);
       if (nextValue !== innerValueRef.current) {

@@ -138,10 +138,7 @@ export function buildMikanSubscriptionSourceUrl(
     return buildMikanSubscriptionSubscriberSourceUrl(mikanBaseUrl, formParts);
   }
 
-  throw new UnimplementedError(
-    // @ts-expect-error
-    `source url category = ${formParts.category as any} is not implemented`,
-  );
+  throw new UnimplementedError("Unsupported subscription source category");
 }
 
 export function extractMikanSubscriptionSeasonSourceUrl(
@@ -150,9 +147,7 @@ export function extractMikanSubscriptionSeasonSourceUrl(
   const u = new URL(sourceUrl);
   return MikanSubscriptionSeasonSourceUrlSchema({
     category: SubscriptionCategoryEnum.MikanSeason,
-    seasonStr: u.searchParams.get(
-      MIKAN_SEASON_STR_QUERY_KEY,
-    ) as MikanSeasonEnum,
+    seasonStr: u.searchParams.get(MIKAN_SEASON_STR_QUERY_KEY),
     year: Number(u.searchParams.get(MIKAN_YEAR_QUERY_KEY)),
   });
 }

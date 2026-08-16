@@ -20,7 +20,7 @@ macro_rules! register_system_task_type {
 
         paste::paste! {
             $(#[$type_meta])*
-            #[derive(ts_rs::TS, serde::Serialize, serde::Deserialize)]
+            #[derive(typed_builder::TypedBuilder, ts_rs::TS, serde::Serialize, serde::Deserialize)]
             #[serde(rename_all = "camelCase")]
             #[ts(rename_all = "camelCase")]
             $task_vis struct [<$task_name Input>] {

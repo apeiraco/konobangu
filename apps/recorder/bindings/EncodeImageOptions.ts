@@ -3,7 +3,4 @@ import type { EncodeAvifOptions } from "./EncodeAvifOptions";
 import type { EncodeJxlOptions } from "./EncodeJxlOptions";
 import type { EncodeWebpOptions } from "./EncodeWebpOptions";
 
-export type EncodeImageOptions =
-  | ({ mimeType: "image/webp" } & EncodeWebpOptions)
-  | ({ mimeType: "image/avif" } & EncodeAvifOptions)
-  | ({ mimeType: "image/jxl" } & EncodeJxlOptions);
+export type EncodeImageOptions = { "mimeType": "image/webp" } & EncodeWebpOptions | { "mimeType": "image/avif" } & EncodeAvifOptions | { "mimeType": "image/jxl" } & EncodeJxlOptions;

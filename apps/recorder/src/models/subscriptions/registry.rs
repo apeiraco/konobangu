@@ -4,11 +4,9 @@ use sea_orm::{DeriveActiveEnum, DeriveDisplay, EnumIter};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    errors::RecorderResult,
-    extract::mikan::{
-        MikanBangumiSubscription, MikanSeasonSubscription, MikanSubscriberSubscription,
-    },
-    models::subscriptions::{self, SubscriptionTrait},
+  errors::RecorderResult,
+  extract::mikan::{MikanBangumiSubscription, MikanSeasonSubscription, MikanSubscriberSubscription},
+  models::subscriptions::{self, SubscriptionTrait},
 };
 
 macro_rules! register_subscription_type {

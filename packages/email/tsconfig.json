@@ -1,12 +1,15 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
     "composite": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "rootDir": ".",
+    "outDir": "dist-tsc/lib",
+    "tsBuildInfoFile": "dist-tsc/lib.tsbuildinfo",
+    "types": ["react"]
   },
   "include": [
     "./*.ts",
@@ -14,5 +17,5 @@
     "./templates/**/*.ts",
     "./templates/**/*.tsx"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

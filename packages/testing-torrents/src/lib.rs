@@ -63,3 +63,82 @@ pub async fn create_testcontainers() -> Result<TestingTorrentsInstance, testcont
     seeding_port,
   })
 }
+
+/// Reuses the same local tracker/seeder service without a published image.
+/// Its only files live in a unique repository temp directory.
+pub struct LocalTestingTorrents {
+  child: std::process::Child,
+  pub directory: std::path::PathBuf,
+  pub api_port: u16,
+  pub tracker_port: u16,
+  pub seeding_port: u16,
+}
+impl LocalTestingTorrents {
+  pub async fn start() -> anyhow::Result<Self> {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+      .join("../../temp/iteration4/downloaders")
+      .join(uuid::Uuid::now_v7().to_string());
+    std::fs::create_dir_all(root.join("workspace"))?;
+    let api_port = get_free_port();
+    let tracker_port = get_free_port();
+    let seeding_port = get_free_port();
+    let log = std::fs::File::create(root.join("tracker-seeder.log"))?;
+    let child = std::process::Command::new("node")
+      .arg(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("main.ts"))
+      .current_dir(&root)
+      .env("WORKSPACE_PATH", root.join("workspace"))
+      .env("API_PORT", api_port.to_string())
+      .env("TRACKER_PORT", tracker_port.to_string())
+      .env("SEEDING_PORT", seeding_port.to_string())
+      .stdout(log.try_clone()?)
+      .stderr(log)
+      .spawn()?;
+    let mut fixture = Self {
+      child,
+      directory: root,
+      api_port,
+      tracker_port,
+      seeding_port,
+    };
+    tokio::time::timeout(std::time::Duration::from_secs(20), async {
+      loop {
+        if fixture.child.try_wait()?.is_some() {
+          anyhow::bail!("Local tracker/seeder exited; inspect fixture log");
+        }
+        if reqwest::get(format!("http://127.0.0.1:{api_port}/")).await.is_ok() {
+          break;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+      }
+      Ok::<_, anyhow::Error>(())
+    })
+    .await??;
+    Ok(fixture)
+  }
+  pub async fn torrent(&self) -> anyhow::Result<TestTorrentResponse> {
+    Ok(
+      reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(15))
+        .build()?
+        .post(format!("http://127.0.0.1:{}/api/torrents/mock", self.api_port))
+        .json(&TestTorrentRequest {
+          id: format!("fixture-{}", uuid::Uuid::now_v7()),
+          file_list: vec![TestingTorrentFileItem {
+            path: "known.bin".into(),
+            size: 4096,
+          }],
+        })
+        .send()
+        .await?
+        .error_for_status()?
+        .json()
+        .await?,
+    )
+  }
+}
+impl Drop for LocalTestingTorrents {
+  fn drop(&mut self) {
+    let _ = self.child.kill();
+    let _ = self.child.wait();
+  }
+}

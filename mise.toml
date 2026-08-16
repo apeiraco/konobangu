@@ -1,7 +1,15 @@
+[settings]
+idiomatic_version_file_enable_tools = ["rust"]
+
 [tools]
+just = "1.58.0"
 jq = "latest"
-node = "lts"
-pnpm = "latest"
+node = "26"
+pnpm = "12"
 python = "latest"
-rust = "nightly"
 uv = "latest"
+watchexec = "latest"
+zellij = "0.44.1"
+cmake = "4.4.4"
+
+"cargo:cargo-about" = { version = "0.9.1", features = "cli" }

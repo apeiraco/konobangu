@@ -1,9 +1,11 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "composite": true
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "dist-tsc/lib",
+    "tsBuildInfoFile": "dist-tsc/lib.tsbuildinfo"
   },
-  "include": ["./src/*.tsx"],
-  "exclude": ["node_modules"]
+  "files": [],
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

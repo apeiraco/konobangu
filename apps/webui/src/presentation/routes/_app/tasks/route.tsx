@@ -3,6 +3,7 @@ import { buildVirtualBranchRouteOptions } from "@/infra/routes/utils";
 
 export const Route = createFileRoute("/_app/tasks")(
   buildVirtualBranchRouteOptions({
+    path: "/tasks",
     title: "Tasks",
   }),
 );

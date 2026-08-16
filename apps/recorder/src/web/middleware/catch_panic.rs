@@ -16,8 +16,8 @@ use crate::{app::AppContextTrait, errors::RecorderResult, web::middleware::Middl
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct CatchPanic {
-    #[serde(default)]
-    pub enable: bool,
+  #[serde(default)]
+  pub enable: bool,
 }
 
 /// Handler function for the [`CatchPanicLayer`] middleware.
@@ -26,36 +26,32 @@ pub struct CatchPanic {
 /// and returning an internal server error response.
 #[allow(clippy::needless_pass_by_value)]
 fn handle_panic(err: Box<dyn std::any::Any + Send + 'static>) -> axum::response::Response {
-    let err = err.downcast_ref::<String>().map_or_else(
-        || err.downcast_ref::<&str>().map_or("no error details", |s| s),
-        |s| s.as_str(),
-    );
+  let err = err
+    .downcast_ref::<String>()
+    .map_or_else(|| err.downcast_ref::<&str>().map_or("no error details", |s| s), |s| s.as_str());
 
-    tracing::error!(err.msg = err, "server_panic");
+  tracing::error!(err.msg = err, "server_panic");
 
-    StatusCode::INTERNAL_SERVER_ERROR.into_response()
+  StatusCode::INTERNAL_SERVER_ERROR.into_response()
 }
 
 impl MiddlewareLayer for CatchPanic {
-    /// Returns the name of the middleware
-    fn name(&self) -> &'static str {
-        "catch_panic"
-    }
+  /// Returns the name of the middleware
+  fn name(&self) -> &'static str {
+    "catch_panic"
+  }
 
-    /// Returns whether the middleware is enabled or not
-    fn is_enabled(&self) -> bool {
-        self.enable
-    }
+  /// Returns whether the middleware is enabled or not
+  fn is_enabled(&self) -> bool {
+    self.enable
+  }
 
-    fn config(&self) -> serde_json::Result<serde_json::Value> {
-        serde_json::to_value(self)
-    }
+  fn config(&self) -> serde_json::Result<serde_json::Value> {
+    serde_json::to_value(self)
+  }
 
-    /// Applies the Catch Panic middleware layer to the Axum router.
-    fn apply(
-        &self,
-        app: Router<Arc<dyn AppContextTrait>>,
-    ) -> RecorderResult<Router<Arc<dyn AppContextTrait>>> {
-        Ok(app.layer(CatchPanicLayer::custom(handle_panic)))
-    }
+  /// Applies the Catch Panic middleware layer to the Axum router.
+  fn apply(&self, app: Router<Arc<dyn AppContextTrait>>) -> RecorderResult<Router<Arc<dyn AppContextTrait>>> {
+    Ok(app.layer(CatchPanicLayer::custom(handle_panic)))
+  }
 }

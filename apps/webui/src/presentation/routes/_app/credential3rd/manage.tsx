@@ -1,29 +1,31 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { Dialog } from "@radix-ui/react-dialog";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  type ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  type PaginationState,
-  type Row,
-  type SortingState,
-  useReactTable,
-  type VisibilityState,
-} from "@tanstack/react-table";
+import { flexRender, useTable } from "@tanstack/react-table";
 import { Eye, EyeOff, Plus } from "lucide-react";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContainerHeader } from "@/components/ui/container-header";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import {
+  type DataTableColumnDef,
+  type DataTableRow,
+  serverOrder,
+  useClampServerPage,
+  useServerTableState,
+} from "@/components/ui/data-table-state";
 import { DataTableViewOptions } from "@/components/ui/data-table-view-options";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { DropdownMenuActions } from "@/components/ui/dropdown-menu-actions";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import { Input } from "@/components/ui/input";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -43,7 +45,7 @@ import {
   apolloErrorToMessage,
   getApolloQueryError,
 } from "@/infra/errors/apollo";
-import type { GetCredential3rdQuery } from "@/infra/graphql/gql/graphql";
+
 import { IntlService } from "@/infra/intl/intl.service";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { useDebouncedSkeleton } from "@/presentation/hooks/use-debounded-skeleton";
@@ -58,40 +60,36 @@ export const Route = createFileRoute("/_app/credential3rd/manage")({
   } satisfies RouteStateDataOption,
 });
 
-function CredentialManageRouteComponent() {
+export function CredentialManageRouteComponent() {
   const navigate = useNavigate();
   const intlService = useInject(IntlService);
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+  const tableState = useServerTableState({
     createdAt: false,
     updatedAt: false,
   });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+  const { pagination, sorting, search, onSearchChange } = tableState;
+
   const [showPasswords, setShowPasswords] = useState<Record<number, boolean>>(
     {},
   );
 
-  const { loading, error, data, refetch } = useQuery<GetCredential3rdQuery>(
-    GET_CREDENTIAL_3RD,
-    {
-      variables: {
-        filter: {},
-        orderBy: {
-          createdAt: "DESC",
-        },
-        pagination: {
-          page: {
-            page: pagination.pageIndex,
-            limit: pagination.pageSize,
-          },
+  const { loading, error, data, refetch } = useQuery(GET_CREDENTIAL_3RD, {
+    variables: {
+      filter: search ? { userAgent: { contains: search } } : {},
+      orderBy: serverOrder(
+        sorting,
+        ["id", "credentialType", "userAgent", "createdAt", "updatedAt"],
+        "createdAt",
+      ),
+      pagination: {
+        page: {
+          page: pagination.pageIndex,
+          limit: pagination.pageSize,
         },
       },
     },
-  );
+  });
 
   const [deleteCredential] = useMutation(DELETE_CREDENTIAL_3RD, {
     onCompleted: async () => {
@@ -116,7 +114,7 @@ function CredentialManageRouteComponent() {
   const credentials = data?.credential3rd;
 
   const handleDeleteRecord = useEvent(
-    (row: Row<Credential3rdQueryDto>) => async () => {
+    (row: DataTableRow<Credential3rdQueryDto>) => async () => {
       await deleteCredential({
         variables: {
           filter: {
@@ -135,16 +133,20 @@ function CredentialManageRouteComponent() {
   });
 
   const columns = useMemo(() => {
-    const cs: ColumnDef<Credential3rdQueryDto>[] = [
+    const cs: DataTableColumnDef<Credential3rdQueryDto>[] = [
       {
-        header: "ID",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="ID" />
+        ),
         accessorKey: "id",
         cell: ({ row }) => {
           return <div className="font-mono text-sm">{row.original.id}</div>;
         },
       },
       {
-        header: "Credential Type",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Credential Type" />
+        ),
         accessorKey: "credentialType",
         cell: ({ row }) => {
           const type = row.original.credentialType;
@@ -156,8 +158,11 @@ function CredentialManageRouteComponent() {
         },
       },
       {
-        header: "Username",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Username" />
+        ),
         accessorKey: "username",
+        enableSorting: false,
         cell: ({ row }) => {
           const username = row.original.username;
           return (
@@ -168,8 +173,11 @@ function CredentialManageRouteComponent() {
         },
       },
       {
-        header: "Password",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Password" />
+        ),
         accessorKey: "password",
+        enableSorting: false,
         cell: ({ row }) => {
           const password = row.original.password;
           const isVisible = showPasswords[row.original.id];
@@ -196,7 +204,9 @@ function CredentialManageRouteComponent() {
         },
       },
       {
-        header: "User Agent",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="User Agent" />
+        ),
         accessorKey: "userAgent",
         cell: ({ row }) => {
           const userAgent = row.original.userAgent;
@@ -208,7 +218,9 @@ function CredentialManageRouteComponent() {
         },
       },
       {
-        header: "Created At",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created At" />
+        ),
         accessorKey: "createdAt",
         cell: ({ row }) => {
           const createdAt = row.original.createdAt;
@@ -220,7 +232,9 @@ function CredentialManageRouteComponent() {
         },
       },
       {
-        header: "Updated At",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Updated At" />
+        ),
         accessorKey: "updatedAt",
         cell: ({ row }) => {
           const updatedAt = row.original.updatedAt;
@@ -276,36 +290,30 @@ function CredentialManageRouteComponent() {
     intlService.formatDatetimeWithTz,
   ]);
 
-  const table = useReactTable({
+  const table = useTable({
+    ...tableState.tableOptions,
     data: useMemo(() => credentials?.nodes ?? [], [credentials]),
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
     pageCount: credentials?.paginationInfo?.pages,
     rowCount: credentials?.paginationInfo?.total,
-    state: {
-      pagination,
-      sorting,
-      columnVisibility,
-    },
     enableColumnPinning: true,
     initialState: {
       columnPinning: {
-        left: [],
-        right: ["actions"],
+        start: [],
+        end: ["actions"],
       },
     },
   });
 
-  if (error) {
+  useClampServerPage(tableState, credentials?.paginationInfo?.pages, loading);
+
+  if (error && !data) {
     return <QueryErrorView message={error.message} onRetry={refetch} />;
   }
 
   return (
     <div className="container mx-auto space-y-4 rounded-md">
+      <QueryPartialError error={error} />
       <ContainerHeader
         title="Credential 3rd Management"
         description="Manage your third-party platform login credentials"
@@ -316,7 +324,13 @@ function CredentialManageRouteComponent() {
           </Button>
         }
       />
-      <div className="flex items-center py-2">
+      <div className="flex items-center gap-2 py-2">
+        <Input
+          aria-label="Filter records"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Filter user agent"
+        />
         <DataTableViewOptions table={table} />
       </div>
       <div className="rounded-md border">
@@ -364,8 +378,8 @@ function CredentialManageRouteComponent() {
                           key={cell.id}
                           className={cn({
                             "sticky z-1 bg-background shadow-xs": isPinned,
-                            "right-0": isPinned === "right",
-                            "left-0": isPinned === "left",
+                            "right-0": isPinned === "end",
+                            "left-0": isPinned === "start",
                           })}
                         >
                           {flexRender(

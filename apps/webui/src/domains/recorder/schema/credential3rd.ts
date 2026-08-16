@@ -1,12 +1,12 @@
-import { gql } from "@apollo/client";
 import { type } from "arktype";
+import { gql } from "@/infra/graphql/gql";
 import {
   Credential3rdTypeEnum,
   type GetCredential3rdDetailQuery,
   type GetCredential3rdQuery,
 } from "@/infra/graphql/gql/graphql";
 
-export const GET_CREDENTIAL_3RD = gql`
+export const GET_CREDENTIAL_3RD = gql(`
   query GetCredential3rd($filter: Credential3rdFilterInput!, $orderBy: Credential3rdOrderInput, $pagination: PaginationInput) {
     credential3rd(filter: $filter, orderBy: $orderBy, pagination: $pagination) {
       nodes {
@@ -25,9 +25,9 @@ export const GET_CREDENTIAL_3RD = gql`
       }
     }
   }
-`;
+`);
 
-export const INSERT_CREDENTIAL_3RD = gql`
+export const INSERT_CREDENTIAL_3RD = gql(`
   mutation InsertCredential3rd($data: Credential3rdInsertInput!) {
     credential3rdCreateOne(data: $data) {
       id
@@ -40,9 +40,9 @@ export const INSERT_CREDENTIAL_3RD = gql`
       credentialType
     }
   }
-`;
+`);
 
-export const UPDATE_CREDENTIAL_3RD = gql`
+export const UPDATE_CREDENTIAL_3RD = gql(`
   mutation UpdateCredential3rd($data: Credential3rdUpdateInput!, $filter: Credential3rdFilterInput!) {
     credential3rdUpdate(data: $data, filter: $filter) {
       id
@@ -55,15 +55,15 @@ export const UPDATE_CREDENTIAL_3RD = gql`
       credentialType
     }
   }
-`;
+`);
 
-export const DELETE_CREDENTIAL_3RD = gql`
+export const DELETE_CREDENTIAL_3RD = gql(`
   mutation DeleteCredential3rd($filter: Credential3rdFilterInput!) {
     credential3rdDelete(filter: $filter)
   }
-`;
+`);
 
-export const GET_CREDENTIAL_3RD_DETAIL = gql`
+export const GET_CREDENTIAL_3RD_DETAIL = gql(`
   query GetCredential3rdDetail($id: Int!) {
     credential3rd(filter: { id: { eq: $id } }) {
       nodes {
@@ -78,15 +78,7 @@ export const GET_CREDENTIAL_3RD_DETAIL = gql`
       }
     }
   }
-`;
-
-export const CHECK_CREDENTIAL_3RD_AVAILABLE = gql`
-  mutation CheckCredential3rdAvailable($filter: Credential3rdFilterInput!) {
-    credential3rdCheckAvailable(filter: $filter) {
-       available
-    }
-  }
-`;
+`);
 
 export const Credential3rdTypedMikanSchema = type({
   credentialType: `'${Credential3rdTypeEnum.Mikan}'`,

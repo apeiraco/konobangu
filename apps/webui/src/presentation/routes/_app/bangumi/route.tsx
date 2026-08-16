@@ -3,6 +3,7 @@ import { buildVirtualBranchRouteOptions } from "@/infra/routes/utils";
 
 export const Route = createFileRoute("/_app/bangumi")(
   buildVirtualBranchRouteOptions({
+    path: "/bangumi",
     title: "Bangumi",
   }),
 );

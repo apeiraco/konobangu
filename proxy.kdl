@@ -1,0 +1,6 @@
+layout {
+    pane split_direction="vertical" {
+        pane name="Mikan proxy" command="just" { args "dev-proxy-mikan"; }
+        pane name="Whistle" command="just" { args "dev-proxy-whistle"; }
+    }
+}

@@ -36,14 +36,13 @@ import { Route as AppTasksManageRouteImport } from "./routes/_app/tasks/manage";
 import { Route as AppTasksRouteRouteImport } from "./routes/_app/tasks/route";
 import { Route as R404RouteImport } from "./routes/404";
 import { Route as AboutRouteImport } from "./routes/about";
-import { Route as AuthOidcCallbackRouteImport } from "./routes/auth/oidc/callback";
 import { Route as AuthSignInRouteImport } from "./routes/auth/sign-in";
 import { Route as AuthSignUpRouteImport } from "./routes/auth/sign-up";
 import { Route as IndexRouteImport } from "./routes/index";
 
-const AboutRoute = AboutRouteImport.update({
-  id: "/about",
-  path: "/about",
+const IndexRoute = IndexRouteImport.update({
+  id: "/",
+  path: "/",
   getParentRoute: () => rootRouteImport,
 } as any);
 const R404Route = R404RouteImport.update({
@@ -55,39 +54,14 @@ const AppRouteRoute = AppRouteRouteImport.update({
   id: "/_app",
   getParentRoute: () => rootRouteImport,
 } as any);
-const IndexRoute = IndexRouteImport.update({
-  id: "/",
-  path: "/",
+const AboutRoute = AboutRouteImport.update({
+  id: "/about",
+  path: "/about",
   getParentRoute: () => rootRouteImport,
 } as any);
-const AuthSignUpRoute = AuthSignUpRouteImport.update({
-  id: "/auth/sign-up",
-  path: "/auth/sign-up",
-  getParentRoute: () => rootRouteImport,
-} as any);
-const AuthSignInRoute = AuthSignInRouteImport.update({
-  id: "/auth/sign-in",
-  path: "/auth/sign-in",
-  getParentRoute: () => rootRouteImport,
-} as any);
-const AppTasksRouteRoute = AppTasksRouteRouteImport.update({
-  id: "/tasks",
-  path: "/tasks",
-  getParentRoute: () => AppRouteRoute,
-} as any);
-const AppSubscriptionsRouteRoute = AppSubscriptionsRouteRouteImport.update({
-  id: "/subscriptions",
-  path: "/subscriptions",
-  getParentRoute: () => AppRouteRoute,
-} as any);
-const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
-  id: "/settings",
-  path: "/settings",
-  getParentRoute: () => AppRouteRoute,
-} as any);
-const AppPlaygroundRouteRoute = AppPlaygroundRouteRouteImport.update({
-  id: "/playground",
-  path: "/playground",
+const AppBangumiRouteRoute = AppBangumiRouteRouteImport.update({
+  id: "/bangumi",
+  path: "/bangumi",
   getParentRoute: () => AppRouteRoute,
 } as any);
 const AppCredential3rdRouteRoute = AppCredential3rdRouteRouteImport.update({
@@ -95,35 +69,55 @@ const AppCredential3rdRouteRoute = AppCredential3rdRouteRouteImport.update({
   path: "/credential3rd",
   getParentRoute: () => AppRouteRoute,
 } as any);
-const AppBangumiRouteRoute = AppBangumiRouteRouteImport.update({
-  id: "/bangumi",
-  path: "/bangumi",
+const AppPlaygroundRouteRoute = AppPlaygroundRouteRouteImport.update({
+  id: "/playground",
+  path: "/playground",
   getParentRoute: () => AppRouteRoute,
 } as any);
-const AuthOidcCallbackRoute = AuthOidcCallbackRouteImport.update({
-  id: "/auth/oidc/callback",
-  path: "/auth/oidc/callback",
+const AppSettingsRouteRoute = AppSettingsRouteRouteImport.update({
+  id: "/settings",
+  path: "/settings",
+  getParentRoute: () => AppRouteRoute,
+} as any);
+const AppSubscriptionsRouteRoute = AppSubscriptionsRouteRouteImport.update({
+  id: "/subscriptions",
+  path: "/subscriptions",
+  getParentRoute: () => AppRouteRoute,
+} as any);
+const AppTasksRouteRoute = AppTasksRouteRouteImport.update({
+  id: "/tasks",
+  path: "/tasks",
+  getParentRoute: () => AppRouteRoute,
+} as any);
+const AuthSignInRoute = AuthSignInRouteImport.update({
+  id: "/auth/sign-in",
+  path: "/auth/sign-in",
   getParentRoute: () => rootRouteImport,
 } as any);
-const AppTasksManageRoute = AppTasksManageRouteImport.update({
+const AuthSignUpRoute = AuthSignUpRouteImport.update({
+  id: "/auth/sign-up",
+  path: "/auth/sign-up",
+  getParentRoute: () => rootRouteImport,
+} as any);
+const AppExploreExploreRoute = AppExploreExploreRouteImport.update({
+  id: "/_explore/explore",
+  path: "/explore",
+  getParentRoute: () => AppRouteRoute,
+} as any);
+const AppBangumiManageRoute = AppBangumiManageRouteImport.update({
   id: "/manage",
   path: "/manage",
-  getParentRoute: () => AppTasksRouteRoute,
+  getParentRoute: () => AppBangumiRouteRoute,
 } as any);
-const AppSubscriptionsManageRoute = AppSubscriptionsManageRouteImport.update({
-  id: "/manage",
-  path: "/manage",
-  getParentRoute: () => AppSubscriptionsRouteRoute,
-} as any);
-const AppSubscriptionsCreateRoute = AppSubscriptionsCreateRouteImport.update({
+const AppCredential3rdCreateRoute = AppCredential3rdCreateRouteImport.update({
   id: "/create",
   path: "/create",
-  getParentRoute: () => AppSubscriptionsRouteRoute,
+  getParentRoute: () => AppCredential3rdRouteRoute,
 } as any);
-const AppSettingsDownloaderRoute = AppSettingsDownloaderRouteImport.update({
-  id: "/downloader",
-  path: "/downloader",
-  getParentRoute: () => AppSettingsRouteRoute,
+const AppCredential3rdManageRoute = AppCredential3rdManageRouteImport.update({
+  id: "/manage",
+  path: "/manage",
+  getParentRoute: () => AppCredential3rdRouteRoute,
 } as any);
 const AppPlaygroundGraphqlApiRoute = AppPlaygroundGraphqlApiRouteImport.update({
   id: "/graphql-api",
@@ -132,56 +126,30 @@ const AppPlaygroundGraphqlApiRoute = AppPlaygroundGraphqlApiRouteImport.update({
 } as any).lazy(() =>
   import("./routes/_app/playground/graphql-api.lazy").then((d) => d.Route),
 );
-const AppCredential3rdManageRoute = AppCredential3rdManageRouteImport.update({
-  id: "/manage",
-  path: "/manage",
-  getParentRoute: () => AppCredential3rdRouteRoute,
+const AppSettingsDownloaderRoute = AppSettingsDownloaderRouteImport.update({
+  id: "/downloader",
+  path: "/downloader",
+  getParentRoute: () => AppSettingsRouteRoute,
 } as any);
-const AppCredential3rdCreateRoute = AppCredential3rdCreateRouteImport.update({
+const AppSubscriptionsCreateRoute = AppSubscriptionsCreateRouteImport.update({
   id: "/create",
   path: "/create",
-  getParentRoute: () => AppCredential3rdRouteRoute,
+  getParentRoute: () => AppSubscriptionsRouteRoute,
 } as any);
-const AppBangumiManageRoute = AppBangumiManageRouteImport.update({
+const AppSubscriptionsManageRoute = AppSubscriptionsManageRouteImport.update({
   id: "/manage",
   path: "/manage",
-  getParentRoute: () => AppBangumiRouteRoute,
-} as any);
-const AppExploreExploreRoute = AppExploreExploreRouteImport.update({
-  id: "/_explore/explore",
-  path: "/explore",
-  getParentRoute: () => AppRouteRoute,
+  getParentRoute: () => AppSubscriptionsRouteRoute,
 } as any);
 const AppTasksCronRouteRoute = AppTasksCronRouteRouteImport.update({
   id: "/cron",
   path: "/cron",
   getParentRoute: () => AppTasksRouteRoute,
 } as any);
-const AppTasksDetailIdRoute = AppTasksDetailIdRouteImport.update({
-  id: "/detail/$id",
-  path: "/detail/$id",
-  getParentRoute: () => AppTasksRouteRoute,
-} as any);
-const AppTasksCronManageRoute = AppTasksCronManageRouteImport.update({
+const AppTasksManageRoute = AppTasksManageRouteImport.update({
   id: "/manage",
   path: "/manage",
-  getParentRoute: () => AppTasksCronRouteRoute,
-} as any);
-const AppSubscriptionsEditIdRoute = AppSubscriptionsEditIdRouteImport.update({
-  id: "/edit/$id",
-  path: "/edit/$id",
-  getParentRoute: () => AppSubscriptionsRouteRoute,
-} as any);
-const AppSubscriptionsDetailIdRoute =
-  AppSubscriptionsDetailIdRouteImport.update({
-    id: "/detail/$id",
-    path: "/detail/$id",
-    getParentRoute: () => AppSubscriptionsRouteRoute,
-  } as any);
-const AppCredential3rdEditIdRoute = AppCredential3rdEditIdRouteImport.update({
-  id: "/edit/$id",
-  path: "/edit/$id",
-  getParentRoute: () => AppCredential3rdRouteRoute,
+  getParentRoute: () => AppTasksRouteRoute,
 } as any);
 const AppCredential3rdDetailIdRoute =
   AppCredential3rdDetailIdRouteImport.update({
@@ -189,20 +157,45 @@ const AppCredential3rdDetailIdRoute =
     path: "/detail/$id",
     getParentRoute: () => AppCredential3rdRouteRoute,
   } as any);
-const AppTasksCronEditIdRoute = AppTasksCronEditIdRouteImport.update({
+const AppCredential3rdEditIdRoute = AppCredential3rdEditIdRouteImport.update({
   id: "/edit/$id",
   path: "/edit/$id",
+  getParentRoute: () => AppCredential3rdRouteRoute,
+} as any);
+const AppSubscriptionsDetailIdRoute =
+  AppSubscriptionsDetailIdRouteImport.update({
+    id: "/detail/$id",
+    path: "/detail/$id",
+    getParentRoute: () => AppSubscriptionsRouteRoute,
+  } as any);
+const AppSubscriptionsEditIdRoute = AppSubscriptionsEditIdRouteImport.update({
+  id: "/edit/$id",
+  path: "/edit/$id",
+  getParentRoute: () => AppSubscriptionsRouteRoute,
+} as any);
+const AppTasksCronManageRoute = AppTasksCronManageRouteImport.update({
+  id: "/manage",
+  path: "/manage",
   getParentRoute: () => AppTasksCronRouteRoute,
+} as any);
+const AppTasksDetailIdRoute = AppTasksDetailIdRouteImport.update({
+  id: "/detail/$id",
+  path: "/detail/$id",
+  getParentRoute: () => AppTasksRouteRoute,
 } as any);
 const AppTasksCronDetailIdRoute = AppTasksCronDetailIdRouteImport.update({
   id: "/detail/$id",
   path: "/detail/$id",
   getParentRoute: () => AppTasksCronRouteRoute,
 } as any);
+const AppTasksCronEditIdRoute = AppTasksCronEditIdRouteImport.update({
+  id: "/edit/$id",
+  path: "/edit/$id",
+  getParentRoute: () => AppTasksCronRouteRoute,
+} as any);
 
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
-  "": typeof AppRouteRouteWithChildren;
   "/404": typeof R404Route;
   "/about": typeof AboutRoute;
   "/bangumi": typeof AppBangumiRouteRouteWithChildren;
@@ -223,7 +216,6 @@ export interface FileRoutesByFullPath {
   "/subscriptions/create": typeof AppSubscriptionsCreateRoute;
   "/subscriptions/manage": typeof AppSubscriptionsManageRoute;
   "/tasks/manage": typeof AppTasksManageRoute;
-  "/auth/oidc/callback": typeof AuthOidcCallbackRoute;
   "/credential3rd/detail/$id": typeof AppCredential3rdDetailIdRoute;
   "/credential3rd/edit/$id": typeof AppCredential3rdEditIdRoute;
   "/subscriptions/detail/$id": typeof AppSubscriptionsDetailIdRoute;
@@ -235,7 +227,6 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
-  "": typeof AppRouteRouteWithChildren;
   "/404": typeof R404Route;
   "/about": typeof AboutRoute;
   "/bangumi": typeof AppBangumiRouteRouteWithChildren;
@@ -256,7 +247,6 @@ export interface FileRoutesByTo {
   "/subscriptions/create": typeof AppSubscriptionsCreateRoute;
   "/subscriptions/manage": typeof AppSubscriptionsManageRoute;
   "/tasks/manage": typeof AppTasksManageRoute;
-  "/auth/oidc/callback": typeof AuthOidcCallbackRoute;
   "/credential3rd/detail/$id": typeof AppCredential3rdDetailIdRoute;
   "/credential3rd/edit/$id": typeof AppCredential3rdEditIdRoute;
   "/subscriptions/detail/$id": typeof AppSubscriptionsDetailIdRoute;
@@ -290,7 +280,6 @@ export interface FileRoutesById {
   "/_app/subscriptions/create": typeof AppSubscriptionsCreateRoute;
   "/_app/subscriptions/manage": typeof AppSubscriptionsManageRoute;
   "/_app/tasks/manage": typeof AppTasksManageRoute;
-  "/auth/oidc/callback": typeof AuthOidcCallbackRoute;
   "/_app/credential3rd/detail/$id": typeof AppCredential3rdDetailIdRoute;
   "/_app/credential3rd/edit/$id": typeof AppCredential3rdEditIdRoute;
   "/_app/subscriptions/detail/$id": typeof AppSubscriptionsDetailIdRoute;
@@ -304,7 +293,6 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
   fullPaths:
     | "/"
-    | ""
     | "/404"
     | "/about"
     | "/bangumi"
@@ -325,7 +313,6 @@ export interface FileRouteTypes {
     | "/subscriptions/create"
     | "/subscriptions/manage"
     | "/tasks/manage"
-    | "/auth/oidc/callback"
     | "/credential3rd/detail/$id"
     | "/credential3rd/edit/$id"
     | "/subscriptions/detail/$id"
@@ -337,7 +324,6 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo;
   to:
     | "/"
-    | ""
     | "/404"
     | "/about"
     | "/bangumi"
@@ -358,7 +344,6 @@ export interface FileRouteTypes {
     | "/subscriptions/create"
     | "/subscriptions/manage"
     | "/tasks/manage"
-    | "/auth/oidc/callback"
     | "/credential3rd/detail/$id"
     | "/credential3rd/edit/$id"
     | "/subscriptions/detail/$id"
@@ -391,7 +376,6 @@ export interface FileRouteTypes {
     | "/_app/subscriptions/create"
     | "/_app/subscriptions/manage"
     | "/_app/tasks/manage"
-    | "/auth/oidc/callback"
     | "/_app/credential3rd/detail/$id"
     | "/_app/credential3rd/edit/$id"
     | "/_app/subscriptions/detail/$id"
@@ -409,16 +393,15 @@ export interface RootRouteChildren {
   AboutRoute: typeof AboutRoute;
   AuthSignInRoute: typeof AuthSignInRoute;
   AuthSignUpRoute: typeof AuthSignUpRoute;
-  AuthOidcCallbackRoute: typeof AuthOidcCallbackRoute;
 }
 
 declare module "@tanstack/react-router" {
   interface FileRoutesByPath {
-    "/about": {
-      id: "/about";
-      path: "/about";
-      fullPath: "/about";
-      preLoaderRoute: typeof AboutRouteImport;
+    "/": {
+      id: "/";
+      path: "/";
+      fullPath: "/";
+      preLoaderRoute: typeof IndexRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/404": {
@@ -431,57 +414,22 @@ declare module "@tanstack/react-router" {
     "/_app": {
       id: "/_app";
       path: "";
-      fullPath: "";
+      fullPath: "/";
       preLoaderRoute: typeof AppRouteRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/": {
-      id: "/";
-      path: "/";
-      fullPath: "/";
-      preLoaderRoute: typeof IndexRouteImport;
+    "/about": {
+      id: "/about";
+      path: "/about";
+      fullPath: "/about";
+      preLoaderRoute: typeof AboutRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/auth/sign-up": {
-      id: "/auth/sign-up";
-      path: "/auth/sign-up";
-      fullPath: "/auth/sign-up";
-      preLoaderRoute: typeof AuthSignUpRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/auth/sign-in": {
-      id: "/auth/sign-in";
-      path: "/auth/sign-in";
-      fullPath: "/auth/sign-in";
-      preLoaderRoute: typeof AuthSignInRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/_app/tasks": {
-      id: "/_app/tasks";
-      path: "/tasks";
-      fullPath: "/tasks";
-      preLoaderRoute: typeof AppTasksRouteRouteImport;
-      parentRoute: typeof AppRouteRoute;
-    };
-    "/_app/subscriptions": {
-      id: "/_app/subscriptions";
-      path: "/subscriptions";
-      fullPath: "/subscriptions";
-      preLoaderRoute: typeof AppSubscriptionsRouteRouteImport;
-      parentRoute: typeof AppRouteRoute;
-    };
-    "/_app/settings": {
-      id: "/_app/settings";
-      path: "/settings";
-      fullPath: "/settings";
-      preLoaderRoute: typeof AppSettingsRouteRouteImport;
-      parentRoute: typeof AppRouteRoute;
-    };
-    "/_app/playground": {
-      id: "/_app/playground";
-      path: "/playground";
-      fullPath: "/playground";
-      preLoaderRoute: typeof AppPlaygroundRouteRouteImport;
+    "/_app/bangumi": {
+      id: "/_app/bangumi";
+      path: "/bangumi";
+      fullPath: "/bangumi";
+      preLoaderRoute: typeof AppBangumiRouteRouteImport;
       parentRoute: typeof AppRouteRoute;
     };
     "/_app/credential3rd": {
@@ -491,75 +439,47 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppCredential3rdRouteRouteImport;
       parentRoute: typeof AppRouteRoute;
     };
-    "/_app/bangumi": {
-      id: "/_app/bangumi";
-      path: "/bangumi";
-      fullPath: "/bangumi";
-      preLoaderRoute: typeof AppBangumiRouteRouteImport;
+    "/_app/playground": {
+      id: "/_app/playground";
+      path: "/playground";
+      fullPath: "/playground";
+      preLoaderRoute: typeof AppPlaygroundRouteRouteImport;
       parentRoute: typeof AppRouteRoute;
     };
-    "/auth/oidc/callback": {
-      id: "/auth/oidc/callback";
-      path: "/auth/oidc/callback";
-      fullPath: "/auth/oidc/callback";
-      preLoaderRoute: typeof AuthOidcCallbackRouteImport;
+    "/_app/settings": {
+      id: "/_app/settings";
+      path: "/settings";
+      fullPath: "/settings";
+      preLoaderRoute: typeof AppSettingsRouteRouteImport;
+      parentRoute: typeof AppRouteRoute;
+    };
+    "/_app/subscriptions": {
+      id: "/_app/subscriptions";
+      path: "/subscriptions";
+      fullPath: "/subscriptions";
+      preLoaderRoute: typeof AppSubscriptionsRouteRouteImport;
+      parentRoute: typeof AppRouteRoute;
+    };
+    "/_app/tasks": {
+      id: "/_app/tasks";
+      path: "/tasks";
+      fullPath: "/tasks";
+      preLoaderRoute: typeof AppTasksRouteRouteImport;
+      parentRoute: typeof AppRouteRoute;
+    };
+    "/auth/sign-in": {
+      id: "/auth/sign-in";
+      path: "/auth/sign-in";
+      fullPath: "/auth/sign-in";
+      preLoaderRoute: typeof AuthSignInRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/_app/tasks/manage": {
-      id: "/_app/tasks/manage";
-      path: "/manage";
-      fullPath: "/tasks/manage";
-      preLoaderRoute: typeof AppTasksManageRouteImport;
-      parentRoute: typeof AppTasksRouteRoute;
-    };
-    "/_app/subscriptions/manage": {
-      id: "/_app/subscriptions/manage";
-      path: "/manage";
-      fullPath: "/subscriptions/manage";
-      preLoaderRoute: typeof AppSubscriptionsManageRouteImport;
-      parentRoute: typeof AppSubscriptionsRouteRoute;
-    };
-    "/_app/subscriptions/create": {
-      id: "/_app/subscriptions/create";
-      path: "/create";
-      fullPath: "/subscriptions/create";
-      preLoaderRoute: typeof AppSubscriptionsCreateRouteImport;
-      parentRoute: typeof AppSubscriptionsRouteRoute;
-    };
-    "/_app/settings/downloader": {
-      id: "/_app/settings/downloader";
-      path: "/downloader";
-      fullPath: "/settings/downloader";
-      preLoaderRoute: typeof AppSettingsDownloaderRouteImport;
-      parentRoute: typeof AppSettingsRouteRoute;
-    };
-    "/_app/playground/graphql-api": {
-      id: "/_app/playground/graphql-api";
-      path: "/graphql-api";
-      fullPath: "/playground/graphql-api";
-      preLoaderRoute: typeof AppPlaygroundGraphqlApiRouteImport;
-      parentRoute: typeof AppPlaygroundRouteRoute;
-    };
-    "/_app/credential3rd/manage": {
-      id: "/_app/credential3rd/manage";
-      path: "/manage";
-      fullPath: "/credential3rd/manage";
-      preLoaderRoute: typeof AppCredential3rdManageRouteImport;
-      parentRoute: typeof AppCredential3rdRouteRoute;
-    };
-    "/_app/credential3rd/create": {
-      id: "/_app/credential3rd/create";
-      path: "/create";
-      fullPath: "/credential3rd/create";
-      preLoaderRoute: typeof AppCredential3rdCreateRouteImport;
-      parentRoute: typeof AppCredential3rdRouteRoute;
-    };
-    "/_app/bangumi/manage": {
-      id: "/_app/bangumi/manage";
-      path: "/manage";
-      fullPath: "/bangumi/manage";
-      preLoaderRoute: typeof AppBangumiManageRouteImport;
-      parentRoute: typeof AppBangumiRouteRoute;
+    "/auth/sign-up": {
+      id: "/auth/sign-up";
+      path: "/auth/sign-up";
+      fullPath: "/auth/sign-up";
+      preLoaderRoute: typeof AuthSignUpRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     "/_app/_explore/explore": {
       id: "/_app/_explore/explore";
@@ -568,6 +488,55 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppExploreExploreRouteImport;
       parentRoute: typeof AppRouteRoute;
     };
+    "/_app/bangumi/manage": {
+      id: "/_app/bangumi/manage";
+      path: "/manage";
+      fullPath: "/bangumi/manage";
+      preLoaderRoute: typeof AppBangumiManageRouteImport;
+      parentRoute: typeof AppBangumiRouteRoute;
+    };
+    "/_app/credential3rd/create": {
+      id: "/_app/credential3rd/create";
+      path: "/create";
+      fullPath: "/credential3rd/create";
+      preLoaderRoute: typeof AppCredential3rdCreateRouteImport;
+      parentRoute: typeof AppCredential3rdRouteRoute;
+    };
+    "/_app/credential3rd/manage": {
+      id: "/_app/credential3rd/manage";
+      path: "/manage";
+      fullPath: "/credential3rd/manage";
+      preLoaderRoute: typeof AppCredential3rdManageRouteImport;
+      parentRoute: typeof AppCredential3rdRouteRoute;
+    };
+    "/_app/playground/graphql-api": {
+      id: "/_app/playground/graphql-api";
+      path: "/graphql-api";
+      fullPath: "/playground/graphql-api";
+      preLoaderRoute: typeof AppPlaygroundGraphqlApiRouteImport;
+      parentRoute: typeof AppPlaygroundRouteRoute;
+    };
+    "/_app/settings/downloader": {
+      id: "/_app/settings/downloader";
+      path: "/downloader";
+      fullPath: "/settings/downloader";
+      preLoaderRoute: typeof AppSettingsDownloaderRouteImport;
+      parentRoute: typeof AppSettingsRouteRoute;
+    };
+    "/_app/subscriptions/create": {
+      id: "/_app/subscriptions/create";
+      path: "/create";
+      fullPath: "/subscriptions/create";
+      preLoaderRoute: typeof AppSubscriptionsCreateRouteImport;
+      parentRoute: typeof AppSubscriptionsRouteRoute;
+    };
+    "/_app/subscriptions/manage": {
+      id: "/_app/subscriptions/manage";
+      path: "/manage";
+      fullPath: "/subscriptions/manage";
+      preLoaderRoute: typeof AppSubscriptionsManageRouteImport;
+      parentRoute: typeof AppSubscriptionsRouteRoute;
+    };
     "/_app/tasks/cron": {
       id: "/_app/tasks/cron";
       path: "/cron";
@@ -575,40 +544,12 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppTasksCronRouteRouteImport;
       parentRoute: typeof AppTasksRouteRoute;
     };
-    "/_app/tasks/detail/$id": {
-      id: "/_app/tasks/detail/$id";
-      path: "/detail/$id";
-      fullPath: "/tasks/detail/$id";
-      preLoaderRoute: typeof AppTasksDetailIdRouteImport;
-      parentRoute: typeof AppTasksRouteRoute;
-    };
-    "/_app/tasks/cron/manage": {
-      id: "/_app/tasks/cron/manage";
+    "/_app/tasks/manage": {
+      id: "/_app/tasks/manage";
       path: "/manage";
-      fullPath: "/tasks/cron/manage";
-      preLoaderRoute: typeof AppTasksCronManageRouteImport;
-      parentRoute: typeof AppTasksCronRouteRoute;
-    };
-    "/_app/subscriptions/edit/$id": {
-      id: "/_app/subscriptions/edit/$id";
-      path: "/edit/$id";
-      fullPath: "/subscriptions/edit/$id";
-      preLoaderRoute: typeof AppSubscriptionsEditIdRouteImport;
-      parentRoute: typeof AppSubscriptionsRouteRoute;
-    };
-    "/_app/subscriptions/detail/$id": {
-      id: "/_app/subscriptions/detail/$id";
-      path: "/detail/$id";
-      fullPath: "/subscriptions/detail/$id";
-      preLoaderRoute: typeof AppSubscriptionsDetailIdRouteImport;
-      parentRoute: typeof AppSubscriptionsRouteRoute;
-    };
-    "/_app/credential3rd/edit/$id": {
-      id: "/_app/credential3rd/edit/$id";
-      path: "/edit/$id";
-      fullPath: "/credential3rd/edit/$id";
-      preLoaderRoute: typeof AppCredential3rdEditIdRouteImport;
-      parentRoute: typeof AppCredential3rdRouteRoute;
+      fullPath: "/tasks/manage";
+      preLoaderRoute: typeof AppTasksManageRouteImport;
+      parentRoute: typeof AppTasksRouteRoute;
     };
     "/_app/credential3rd/detail/$id": {
       id: "/_app/credential3rd/detail/$id";
@@ -617,18 +558,53 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AppCredential3rdDetailIdRouteImport;
       parentRoute: typeof AppCredential3rdRouteRoute;
     };
-    "/_app/tasks/cron/edit/$id": {
-      id: "/_app/tasks/cron/edit/$id";
+    "/_app/credential3rd/edit/$id": {
+      id: "/_app/credential3rd/edit/$id";
       path: "/edit/$id";
-      fullPath: "/tasks/cron/edit/$id";
-      preLoaderRoute: typeof AppTasksCronEditIdRouteImport;
+      fullPath: "/credential3rd/edit/$id";
+      preLoaderRoute: typeof AppCredential3rdEditIdRouteImport;
+      parentRoute: typeof AppCredential3rdRouteRoute;
+    };
+    "/_app/subscriptions/detail/$id": {
+      id: "/_app/subscriptions/detail/$id";
+      path: "/detail/$id";
+      fullPath: "/subscriptions/detail/$id";
+      preLoaderRoute: typeof AppSubscriptionsDetailIdRouteImport;
+      parentRoute: typeof AppSubscriptionsRouteRoute;
+    };
+    "/_app/subscriptions/edit/$id": {
+      id: "/_app/subscriptions/edit/$id";
+      path: "/edit/$id";
+      fullPath: "/subscriptions/edit/$id";
+      preLoaderRoute: typeof AppSubscriptionsEditIdRouteImport;
+      parentRoute: typeof AppSubscriptionsRouteRoute;
+    };
+    "/_app/tasks/cron/manage": {
+      id: "/_app/tasks/cron/manage";
+      path: "/manage";
+      fullPath: "/tasks/cron/manage";
+      preLoaderRoute: typeof AppTasksCronManageRouteImport;
       parentRoute: typeof AppTasksCronRouteRoute;
+    };
+    "/_app/tasks/detail/$id": {
+      id: "/_app/tasks/detail/$id";
+      path: "/detail/$id";
+      fullPath: "/tasks/detail/$id";
+      preLoaderRoute: typeof AppTasksDetailIdRouteImport;
+      parentRoute: typeof AppTasksRouteRoute;
     };
     "/_app/tasks/cron/detail/$id": {
       id: "/_app/tasks/cron/detail/$id";
       path: "/detail/$id";
       fullPath: "/tasks/cron/detail/$id";
       preLoaderRoute: typeof AppTasksCronDetailIdRouteImport;
+      parentRoute: typeof AppTasksCronRouteRoute;
+    };
+    "/_app/tasks/cron/edit/$id": {
+      id: "/_app/tasks/cron/edit/$id";
+      path: "/edit/$id";
+      fullPath: "/tasks/cron/edit/$id";
+      preLoaderRoute: typeof AppTasksCronEditIdRouteImport;
       parentRoute: typeof AppTasksCronRouteRoute;
     };
   }
@@ -768,7 +744,6 @@ const rootRouteChildren: RootRouteChildren = {
   AboutRoute: AboutRoute,
   AuthSignInRoute: AuthSignInRoute,
   AuthSignUpRoute: AuthSignUpRoute,
-  AuthOidcCallbackRoute: AuthOidcCallbackRoute,
 };
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

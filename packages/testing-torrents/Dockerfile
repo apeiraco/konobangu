@@ -25,4 +25,4 @@ EXPOSE 6080
 EXPOSE 6081
 EXPOSE 6082
 
-CMD [ "npm", "start" ]
+CMD [ "node", "main.ts" ]

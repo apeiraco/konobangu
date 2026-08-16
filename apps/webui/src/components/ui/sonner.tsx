@@ -3,11 +3,11 @@ import { Toaster as Sonner, type ToasterProps } from "sonner";
 import { useTheme } from "@/infra/styles/context";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { colorTheme = "system" } = useTheme();
+  const { colorTheme } = useTheme();
 
   return (
     <Sonner
-      theme={colorTheme as ToasterProps["theme"]}
+      theme={colorTheme}
       className="toaster group"
       style={
         {

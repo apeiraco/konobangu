@@ -1,8 +1,3 @@
-#![feature(
-    unboxed_closures,
-    impl_trait_in_bindings,
-    impl_trait_in_fn_trait_return
-)]
 #![allow(clippy::enum_variant_names)]
 pub use downloader;
 pub mod app;

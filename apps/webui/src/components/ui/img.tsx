@@ -2,20 +2,26 @@ import { type ComponentProps, useMemo } from "react";
 import { useInject } from "@/infra/di/inject";
 import { DOCUMENT } from "@/infra/platform/injection";
 
-const URL_PARSE_REGEX = /^([^?#]*)(\?[^#]*)?(#.*)?$/;
-
-function parseURL(url: string) {
-  const match = url.match(URL_PARSE_REGEX);
-
-  if (!match) {
-    return { other: url, search: "", hash: "" };
+export function optimizedImageUrl(
+  src: string | undefined,
+  baseURI: string | undefined,
+  optimize: "accept",
+) {
+  if (!src || !baseURI) return src;
+  try {
+    const base = new URL(baseURI);
+    const url = new URL(src, base);
+    if (
+      url.origin !== base.origin ||
+      !url.pathname.startsWith("/api/static/") ||
+      !["http:", "https:"].includes(url.protocol)
+    )
+      return src;
+    url.searchParams.set("optimize", optimize);
+    return url.toString();
+  } catch {
+    return src;
   }
-
-  return {
-    other: match[1] || "",
-    search: match[2] || "",
-    hash: match[3] || "",
-  };
 }
 
 export type ImgProps = Omit<ComponentProps<"img">, "alt"> &
@@ -30,14 +36,7 @@ export const Img = ({
 }: ImgProps) => {
   const document = useInject(DOCUMENT);
   const src = useMemo(() => {
-    const baseURI = document?.baseURI;
-    if (!propsSrc || !baseURI) {
-      return propsSrc;
-    }
-    const { other, search, hash } = parseURL(propsSrc);
-    const searchParams = new URLSearchParams(search);
-    searchParams.set("optimize", optimize);
-    return `${other}?${searchParams.toString()}${hash}`;
+    return optimizedImageUrl(propsSrc, document?.baseURI, optimize);
   }, [propsSrc, optimize, document?.baseURI]);
 
   return <img {...props} alt={props.alt} src={src} />;

@@ -1,0 +1,46 @@
+name: Repository tooling
+description: Install managed tools, native prerequisites and frozen Node workspaces.
+inputs:
+  extra-tools:
+    description: Additional mise tools required by this job.
+    default: rust
+  browser:
+    description: Install Chromium and its host libraries.
+    default: 'false'
+runs:
+  using: composite
+  steps:
+    - uses: jdx/mise-action@v4
+      with:
+        install_args: node pnpm just cmake python ${{ inputs.extra-tools }}
+        cache: false
+    - name: Linux build prerequisites
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y build-essential nasm pkg-config libssl-dev
+    - name: macOS assembler
+      if: runner.os == 'macOS'
+      shell: bash
+      run: brew install nasm
+    - uses: ilammy/msvc-dev-cmd@v1
+      if: runner.os == 'Windows'
+    - name: Windows assembler
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        choco install nasm -y --no-progress
+        "C:\Program Files\NASM" >> $env:GITHUB_PATH
+    - name: Install frozen workspaces
+      shell: bash
+      run: |
+        mise exec -- pnpm install --frozen-lockfile
+        mise exec -- pnpm --dir packages/testing-torrents install --frozen-lockfile
+    - name: Install browser fixture
+      if: inputs.browser == 'true'
+      shell: bash
+      run: |
+        mise install node@24.15.0
+        mise exec -- pnpm --filter webui exec playwright install --with-deps chromium
+        mise exec node@24.15.0 -- pnpm dlx playwright@1.51.1 install chromium --only-shell

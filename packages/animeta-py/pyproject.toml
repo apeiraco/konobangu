@@ -5,14 +5,14 @@ description = "Anime metadata toolset of konobangu project"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-  "polars>=1.39",
-  "pyarrow>=23",
-  "datasets>=4.8",
-  "transformers>=5.5",
-  "sentence-transformers>=5.4",
-  "torch>=2.11",
-  "rich>=14.3",
-  "tqdm>=4.67",
+  "polars>=1.44",
+  "pyarrow>=25",
+  "datasets>=5",
+  "transformers>=5.17",
+  "sentence-transformers>=6",
+  "torch>=2.14",
+  "rich>=15",
+  "tqdm>=4.70",
 ]
 
 [project.scripts]
@@ -36,3 +36,7 @@ explicit = true
 
 [tool.uv.sources]
 torch = { index = "pytorch-cpu" }
+
+[tool.pytest.ini_options]
+python_files = ["*.test.py", "*.spec.py"]
+addopts = ["--import-mode=importlib"]

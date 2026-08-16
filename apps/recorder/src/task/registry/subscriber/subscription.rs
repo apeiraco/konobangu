@@ -23,13 +23,15 @@ macro_rules! register_subscription_task_type {
                 use $crate::models::subscriptions::{
                     Entity, Column, Subscription,
                 };
+                let transaction = $crate::database::operation::begin_task_transaction(ctx.db().as_ref(), self.subscriber_id).await?;
                 let subscription_model = Entity::find()
                     .filter(Column::Id.eq(self.subscription_id))
                     .filter(Column::SubscriberId.eq(self.subscriber_id))
-                    .one(ctx.db())
+                    .one(&transaction)
                     .await?
                     .ok_or_else(|| $crate::errors::RecorderError::from_entity_not_found::<Entity>())?;
 
+                transaction.rollback().await?;
                 let $subscription_param = Subscription::try_from_model(&subscription_model)?;
                 let $ctx_param = ctx;
                 $method_body

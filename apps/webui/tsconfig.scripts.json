@@ -1,9 +1,25 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "dist-tsc/scripts",
+    "tsBuildInfoFile": "dist-tsc/scripts.tsbuildinfo",
     "module": "nodenext",
     "moduleResolution": "nodenext",
-    "types": ["node"]
+    "lib": ["ES2024", "ESNext.Temporal", "DOM"],
+    "types": ["node"],
+    "allowImportingTsExtensions": true,
+    "erasableSyntaxOnly": true
   },
-  "include": ["scripts/**/*", "graphql-codegen.ts", "vite.config.ts"]
+  "include": [
+    "scripts/**/*.ts",
+    "graphql-codegen.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts",
+    "tests/**/*.ts",
+    "tests/**/*.mts"
+  ],
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

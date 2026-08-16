@@ -5,10 +5,20 @@
     "composite": true,
     "jsx": "preserve",
     "jsxImportSource": "react",
-    "lib": ["DOM", "ES2024", "DOM.AsyncIterable", "DOM.Iterable"],
+    "lib": [
+      "DOM",
+      "ES2024",
+      "ESNext.Temporal",
+      "DOM.AsyncIterable",
+      "DOM.Iterable",
+      "ESNext.Disposable"
+    ],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "outDir": "dist-tsc/app",
+    "tsBuildInfoFile": "dist-tsc/app.tsbuildinfo",
+    "types": ["react"]
   },
   "include": ["src"],
   "references": [
@@ -18,5 +28,6 @@
     {
       "path": "./tsconfig.scripts.json"
     }
-  ]
+  ],
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

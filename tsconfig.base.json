@@ -11,6 +11,7 @@
     "isolatedModules": true,
     "module": "preserve",
     "moduleResolution": "bundler",
+    "customConditions": ["monorepo-tsc"],
     "resolveJsonModule": true,
     "emitDeclarationOnly": true,
     "skipLibCheck": true,

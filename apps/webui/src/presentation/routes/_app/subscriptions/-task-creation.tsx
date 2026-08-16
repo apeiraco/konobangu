@@ -12,11 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/spinner";
 import { INSERT_SUBSCRIBER_TASK } from "@/domains/recorder/schema/tasks";
-import {
-  type InsertSubscriberTaskMutation,
-  type InsertSubscriberTaskMutationVariables,
-  SubscriberTaskTypeEnum,
-} from "@/infra/graphql/gql/graphql";
+import { SubscriberTaskTypeEnum } from "@/infra/graphql/gql/graphql";
 
 export type SubscriptionTaskCreationViewCompletePayload = {
   id: string;
@@ -29,20 +25,20 @@ export interface SubscriptionTaskCreationViewProps {
 
 export const SubscriptionTaskCreationView = memo(
   ({ subscriptionId, onComplete }: SubscriptionTaskCreationViewProps) => {
-    const [insertSubscriberTask, { loading: loadingInsert }] = useMutation<
-      InsertSubscriberTaskMutation,
-      InsertSubscriberTaskMutationVariables
-    >(INSERT_SUBSCRIBER_TASK, {
-      onCompleted: (data) => {
-        toast.success("Sync completed");
-        onComplete(data.subscriberTasksCreateOne);
+    const [insertSubscriberTask, { loading: loadingInsert }] = useMutation(
+      INSERT_SUBSCRIBER_TASK,
+      {
+        onCompleted: (data) => {
+          toast.success("Task queued");
+          onComplete(data.subscriberTasksCreateOne);
+        },
+        onError: (error) => {
+          toast.error("Failed to sync subscription", {
+            description: error.message,
+          });
+        },
       },
-      onError: (error) => {
-        toast.error("Failed to sync subscription", {
-          description: error.message,
-        });
-      },
-    });
+    );
 
     const loading = loadingInsert;
 
@@ -111,7 +107,7 @@ export const SubscriptionTaskCreationView = memo(
         {loading && (
           <div className="absolute inset-0 flex flex-row items-center justify-center gap-2">
             <Spinner variant="circle-filled" size="16" />
-            <span>Running...</span>
+            <span>Queuing task...</span>
           </div>
         )}
       </div>

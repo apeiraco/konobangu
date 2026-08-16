@@ -52,12 +52,9 @@ function FormItem({ className, ...props }: React.ComponentProps<"div">) {
 
 const useFieldContext = () => {
   const { id } = React.useContext(FormItemContext);
-  const { name, store, ...fieldContext } = useFormFieldContext();
+  const { name, store } = useFormFieldContext();
 
   const errors = useStore(store, (state) => state.meta.errors);
-  if (!fieldContext) {
-    throw new Error("useFieldContext should be used within <FormItem>");
-  }
 
   return {
     id,
@@ -66,8 +63,6 @@ const useFieldContext = () => {
     formDescriptionId: `${id}-form-item-description`,
     formMessageId: `${id}-form-item-message`,
     errors,
-    store,
-    ...fieldContext,
   };
 };
 

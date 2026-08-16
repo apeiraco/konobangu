@@ -16,15 +16,14 @@ import { CronDisplay } from "@/components/ui/cron";
 import { DetailCardSkeleton } from "@/components/ui/detail-card-skeleton";
 import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Separator } from "@/components/ui/separator";
 import { GET_CRONS } from "@/domains/recorder/schema/cron";
 import { useInject } from "@/infra/di/inject";
-import {
-  CronStatusEnum,
-  type GetCronsQuery,
-  type GetCronsQueryVariables,
-} from "@/infra/graphql/gql/graphql";
+import { CronStatusEnum } from "@/infra/graphql/gql/graphql";
 import { IntlService } from "@/infra/intl/intl.service";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { getStatusBadge } from "./-status-badge";
@@ -40,10 +39,7 @@ function CronDetailRouteComponent() {
   const { id } = Route.useParams();
   const intlService = useInject(IntlService);
 
-  const { data, loading, error, refetch } = useQuery<
-    GetCronsQuery,
-    GetCronsQueryVariables
-  >(GET_CRONS, {
+  const { data, loading, error, refetch } = useQuery(GET_CRONS, {
     variables: {
       filter: {
         id: {
@@ -70,11 +66,11 @@ function CronDetailRouteComponent() {
     return cron.subscriberTaskCron;
   }, [cron]);
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (error) {
+  if (error && !data) {
     return <QueryErrorView message={error.message} onRetry={refetch} />;
   }
 
@@ -84,6 +80,7 @@ function CronDetailRouteComponent() {
 
   return (
     <div className="container mx-auto max-w-4xl py-6">
+      <QueryPartialError error={error} />
       <ContainerHeader
         title="Cron task detail"
         description={`View Cron task #${cron.id}`}
@@ -244,7 +241,7 @@ function CronDetailRouteComponent() {
                     </Label>
                     <CronDisplay
                       expression={cron.cronExpr}
-                      timezone="UTC"
+                      timezone={cron.cronTimezone}
                       showDescription={true}
                       showNextRuns={true}
                       withCard={false}
@@ -273,7 +270,7 @@ function CronDetailRouteComponent() {
                               <Badge variant="outline">{task.status}</Badge>
                             </div>
                             <div className="mt-2 text-muted-foreground text-sm">
-                              Priority: {task.priority} | Attempts:{" "}
+                              Generation: {task.generation} | Attempts:{" "}
                               {task.attempts}/{task.maxAttempts}
                             </div>
                             {task.subscription && (

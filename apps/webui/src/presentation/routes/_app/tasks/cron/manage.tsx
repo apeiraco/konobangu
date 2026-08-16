@@ -1,43 +1,41 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  getPaginationRowModel,
-  type PaginationState,
-  type SortingState,
-  useReactTable,
-  type VisibilityState,
-} from "@tanstack/react-table";
-import { format } from "date-fns";
+import { useTable } from "@tanstack/react-table";
 import { RefreshCw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContainerHeader } from "@/components/ui/container-header";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import {
+  type DataTableColumnDef,
+  serverOrder,
+  useClampServerPage,
+  useServerTableState,
+} from "@/components/ui/data-table-state";
 import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { DropdownMenuActions } from "@/components/ui/dropdown-menu-actions";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import { Input } from "@/components/ui/input";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   type CronDto,
   DELETE_CRONS,
   GET_CRONS,
 } from "@/domains/recorder/schema/cron";
+import { useInject } from "@/infra/di/inject";
 import {
   apolloErrorToMessage,
   getApolloQueryError,
 } from "@/infra/errors/apollo";
-import {
-  CronStatusEnum,
-  type DeleteCronsMutation,
-  type DeleteCronsMutationVariables,
-  type GetCronsQuery,
-  type GetCronsQueryVariables,
-} from "@/infra/graphql/gql/graphql";
+import { CronStatusEnum } from "@/infra/graphql/gql/graphql";
+import { IntlService } from "@/infra/intl";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { useDebouncedSkeleton } from "@/presentation/hooks/use-debounded-skeleton";
 import { getStatusBadge } from "./-status-badge";
@@ -49,20 +47,14 @@ export const Route = createFileRoute("/_app/tasks/cron/manage")({
   } satisfies RouteStateDataOption,
 });
 
-function TaskCronManageRouteComponent() {
+export function TaskCronManageRouteComponent() {
   const navigate = useNavigate();
+  const intlService = useInject(IntlService);
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+  const tableState = useServerTableState({});
+  const { pagination, sorting, search, onSearchChange } = tableState;
 
-  const { loading, error, data, refetch } = useQuery<
-    GetCronsQuery,
-    GetCronsQueryVariables
-  >(GET_CRONS, {
+  const { loading, error, data, refetch } = useQuery(GET_CRONS, {
     variables: {
       pagination: {
         page: {
@@ -70,10 +62,12 @@ function TaskCronManageRouteComponent() {
           limit: pagination.pageSize,
         },
       },
-      filter: {},
-      orderBy: {
-        nextRun: "DESC",
-      },
+      filter: search ? { cronExpr: { contains: search } } : {},
+      orderBy: serverOrder(
+        sorting,
+        ["id", "cronExpr", "nextRun", "createdAt", "updatedAt"],
+        "nextRun",
+      ),
     },
     pollInterval: 5000, // Auto-refresh every 5 seconds
   });
@@ -82,10 +76,7 @@ function TaskCronManageRouteComponent() {
 
   const crons = data?.cron;
 
-  const [deleteCron] = useMutation<
-    DeleteCronsMutation,
-    DeleteCronsMutationVariables
-  >(DELETE_CRONS, {
+  const [deleteCron] = useMutation(DELETE_CRONS, {
     onCompleted: async () => {
       const refetchResult = await refetch();
       const error = getApolloQueryError(refetchResult);
@@ -105,7 +96,7 @@ function TaskCronManageRouteComponent() {
   });
 
   const columns = useMemo(() => {
-    const cs: ColumnDef<CronDto>[] = [
+    const cs: DataTableColumnDef<CronDto>[] = [
       {
         header: "ID",
         accessorKey: "id",
@@ -124,37 +115,30 @@ function TaskCronManageRouteComponent() {
     return cs;
   }, []);
 
-  const table = useReactTable({
-    data: useMemo(() => (crons?.nodes ?? []) as CronDto[], [crons]),
+  const table = useTable({
+    ...tableState.tableOptions,
+    data: useMemo(() => crons?.nodes ?? [], [crons]),
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
     pageCount: crons?.paginationInfo?.pages,
     rowCount: crons?.paginationInfo?.total,
     enableColumnPinning: true,
-    autoResetPageIndex: true,
-    manualPagination: true,
-    state: {
-      pagination,
-      sorting,
-      columnVisibility,
-    },
     initialState: {
       columnPinning: {
-        right: ["actions"],
+        start: [],
+        end: ["actions"],
       },
     },
   });
 
-  if (error) {
+  useClampServerPage(tableState, crons?.paginationInfo?.pages, loading);
+
+  if (error && !data) {
     return <QueryErrorView message={error.message} onRetry={refetch} />;
   }
 
   return (
     <div className="container mx-auto max-w-4xl space-y-4 px-4">
+      <QueryPartialError error={error} />
       <ContainerHeader
         title="Crons Management"
         description="Manage your crons"
@@ -165,6 +149,21 @@ function TaskCronManageRouteComponent() {
         }
       />
 
+      <div className="flex items-center gap-2 py-2">
+        <Input
+          aria-label="Filter records"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Filter records"
+        />
+        {table.getColumn("id") && (
+          <DataTableColumnHeader
+            column={table.getColumn("id")!}
+            title="Sort by ID"
+          />
+        )}
+      </div>
+
       <div className="space-y-3">
         {showSkeleton &&
           Array.from(new Array(10)).map((_, index) => (
@@ -172,14 +171,14 @@ function TaskCronManageRouteComponent() {
           ))}
 
         {!showSkeleton && table.getRowModel().rows?.length > 0 ? (
-          table.getRowModel().rows.map((row, index) => {
+          table.getRowModel().rows.map((row) => {
             const cron = row.original;
             return (
               <div
                 className="space-y-3 rounded-lg border bg-card p-4"
-                key={`${cron.id}-${index}`}
+                key={row.id}
               >
-                {/* Header with status and priority */}
+                {/* Header */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="font-mono text-muted-foreground text-xs">
                     # {cron.id}
@@ -237,7 +236,7 @@ function TaskCronManageRouteComponent() {
                     <span className="text-muted-foreground">Next run: </span>
                     <span>
                       {cron.nextRun
-                        ? format(new Date(cron.nextRun), "MM/dd HH:mm")
+                        ? intlService.formatDatetimeWithTz(cron.nextRun)
                         : "-"}
                     </span>
                   </div>
@@ -246,7 +245,7 @@ function TaskCronManageRouteComponent() {
                     <span className="text-muted-foreground">Last run: </span>
                     <span>
                       {cron.lastRun
-                        ? format(new Date(cron.lastRun), "MM/dd HH:mm")
+                        ? intlService.formatDatetimeWithTz(cron.lastRun)
                         : "-"}
                     </span>
                   </div>
@@ -264,7 +263,7 @@ function TaskCronManageRouteComponent() {
                     <span className="text-muted-foreground">Lock at: </span>
                     <span>
                       {cron.lockedAt
-                        ? format(new Date(cron.lockedAt), "MM/dd HH:mm")
+                        ? intlService.formatDatetimeWithTz(cron.lockedAt)
                         : "-"}
                     </span>
                   </div>
@@ -275,16 +274,9 @@ function TaskCronManageRouteComponent() {
                   <div className="text-sm">
                     <span className="text-muted-foreground">Task:</span>
                     <br />
-                    <span
-                      className="whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(
-                          cron.subscriberTaskCron,
-                          null,
-                          2,
-                        ),
-                      }}
-                    />
+                    <span className="whitespace-pre-wrap">
+                      {JSON.stringify(cron.subscriberTaskCron, null, 2)}
+                    </span>
                   </div>
                 )}
 

@@ -1,20 +1,29 @@
 {
   "name": "@konobangu/email",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "scripts": {
-    "clean": "git clean -xdf .cache dist node_modules",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
-  },
   "dependencies": {
-    "@react-email/components": "1.0.9",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4"
+    "@react-email/components": "1.0.12",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
-    "@types/node": "25.5.0",
-    "@types/react": "19.2.4",
-    "@types/react-dom": "^19.2.3",
-    "typescript": "^5.9.3"
-  }
+    "@types/node": "26.6.2",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "typescript": "^7.0.2"
+  },
+  "exports": {
+    ".": {
+      "monorepo-tsc": "./index.tsx",
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./templates/*": {
+      "monorepo-tsc": "./templates/*.tsx",
+      "types": "./dist/templates/*.d.ts",
+      "import": "./dist/templates/*.js"
+    }
+  },
+  "type": "module"
 }

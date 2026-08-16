@@ -7,11 +7,13 @@ export function provideStorages() {
   return [
     {
       provide: LocalStorageService,
-      useClass: LocalStorageService,
+      useFactory: () => new LocalStorageService(),
+      deps: [],
     },
     {
       provide: SessionStorageService,
-      useClass: SessionStorageService,
+      useFactory: () => new SessionStorageService(),
+      deps: [],
     },
   ];
 }

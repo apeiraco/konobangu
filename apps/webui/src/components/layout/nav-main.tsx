@@ -33,10 +33,10 @@ export function NavMain({ groups }: { groups: NavMainGroup[] }) {
   const { state } = useSidebar();
 
   const isMenuMatch = (link: ProLinkProps | undefined) => {
-    const linkTo = link?.to;
-    if (!linkTo) {
+    if (!link || !("to" in link) || typeof link.to !== "string") {
       return false;
     }
+    const linkTo = link.to;
     return matches.some((match) => match.pathname.startsWith(linkTo));
   };
 

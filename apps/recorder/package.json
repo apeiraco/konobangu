@@ -1,6 +1,12 @@
 {
   "name": "recorder",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": true,
-  "type": "module"
+  "type": "module",
+  "exports": {
+    "./bindings/*": {
+      "monorepo-tsc": "./bindings/*.ts",
+      "types": "./dist/bindings/*.d.ts"
+    }
+  }
 }

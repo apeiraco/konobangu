@@ -1,429 +1,372 @@
-use std::{future::Future, ops::Deref, str::FromStr, sync::Arc};
+use std::{future::Future, sync::Arc, time::Duration};
 
 use apalis::prelude::*;
-use apalis_sql::{
-    Config,
-    context::SqlContext,
-    postgres::{PgListen as ApalisPgListen, PostgresStorage as ApalisPostgresStorage},
-};
-use sea_orm::{ActiveModelTrait, sqlx::postgres::PgListener};
-use tokio::sync::RwLock;
+use chrono::Utc;
+use sea_orm::{ActiveModelTrait, ConnectionTrait, Database, DatabaseConnection, DbBackend, DbErr, Statement, TransactionTrait};
+use tokio::sync::watch;
 use uuid::Uuid;
 
+use super::{
+  AsyncTaskTrait, SubscriberTask, SubscriberTaskTrait, SystemTask, TaskConfig, delivery,
+  execution::{BusinessRetryPolicy, CURRENT_FENCE, ExecutionError, TaskEnvelope, TaskFence},
+};
 use crate::{
-    app::AppContextTrait,
-    errors::{RecorderError, RecorderResult},
-    models::cron::{self, CRON_DUE_DEBUG_EVENT, CRON_DUE_EVENT},
-    task::{
-        AsyncTaskTrait, SUBSCRIBER_TASK_APALIS_NAME, SYSTEM_TASK_APALIS_NAME, SubscriberTask,
-        TaskConfig,
-        config::{default_subscriber_task_workers, default_system_task_workers},
-        registry::SystemTask,
-    },
+  app::AppContextTrait,
+  database::roles::TASK_CONTROL_ACCESS_ROLE,
+  errors::{RecorderError, RecorderResult},
+  models::cron,
 };
 
 pub struct TaskService {
-    pub config: TaskConfig,
-    ctx: Arc<dyn AppContextTrait>,
-    subscriber_task_storage: Arc<RwLock<ApalisPostgresStorage<SubscriberTask>>>,
-    system_task_storage: Arc<RwLock<ApalisPostgresStorage<SystemTask>>>,
-    cron_worker_id: String,
+  pub config: TaskConfig,
+  ctx: Arc<dyn AppContextTrait>,
+  queue_database: Option<DatabaseConnection>,
+  shutdown: watch::Sender<bool>,
 }
 
 impl TaskService {
-    pub async fn from_config_and_ctx(
-        mut config: TaskConfig,
-        ctx: Arc<dyn AppContextTrait>,
-    ) -> RecorderResult<Self> {
-        if config.subscriber_task_concurrency == 0 {
-            config.subscriber_task_concurrency = default_subscriber_task_workers();
-        };
-        if config.system_task_concurrency == 0 {
-            config.system_task_concurrency = default_system_task_workers();
-        };
-
-        let pool = ctx.db().get_postgres_connection_pool().clone();
-        let subscriber_task_storage_config = Config::new(SUBSCRIBER_TASK_APALIS_NAME)
-            .set_reenqueue_orphaned_after(config.subscriber_task_reenqueue_orphaned_after);
-        let system_task_storage_config = Config::new(SYSTEM_TASK_APALIS_NAME)
-            .set_reenqueue_orphaned_after(config.system_task_reenqueue_orphaned_after);
-        let subscriber_task_storage =
-            ApalisPostgresStorage::new_with_config(pool.clone(), subscriber_task_storage_config);
-        let system_task_storage =
-            ApalisPostgresStorage::new_with_config(pool, system_task_storage_config);
-
-        Ok(Self {
-            config,
-            cron_worker_id: Uuid::now_v7().to_string(),
-            ctx,
-            subscriber_task_storage: Arc::new(RwLock::new(subscriber_task_storage)),
-            system_task_storage: Arc::new(RwLock::new(system_task_storage)),
-        })
-    }
-
-    async fn run_subscriber_task(
-        job: SubscriberTask,
-        data: Data<Arc<dyn AppContextTrait>>,
-    ) -> RecorderResult<()> {
-        let ctx = data.deref().clone();
-
-        job.run_async(ctx).await
-    }
-
-    async fn run_system_task(
-        job: SystemTask,
-        data: Data<Arc<dyn AppContextTrait>>,
-    ) -> RecorderResult<()> {
-        let ctx = data.deref().clone();
-        job.run_async(ctx).await
-    }
-
-    pub async fn retry_subscriber_task(&self, job_id: String) -> RecorderResult<()> {
+  pub async fn from_config_and_ctx(config: TaskConfig, ctx: Arc<dyn AppContextTrait>) -> RecorderResult<Self> {
+    let queue_database = if let Some(uri) = &config.queue_database_uri {
+      let mut options = sea_orm::ConnectOptions::new(uri);
+      options.sqlx_logging(false);
+      crate::database::roles::restrict_pool(&mut options, TASK_CONTROL_ACCESS_ROLE);
+      let db = Database::connect(options)
+        .await
+        .map_err(|_| DbErr::Custom("Task-control database connection failed (details redacted)".into()))?;
+      let validated = async {
+        let row = db
+          .query_one_raw(Statement::from_sql_and_values(
+            DbBackend::Postgres,
+            "SELECT rolsuper, rolbypassrls, pg_has_role(current_user, $1::text, 'USAGE') AS task_control, EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace \
+             n ON n.oid=c.relnamespace WHERE n.nspname IN ('public','apalis','auth_identity','auth_session') AND \
+             pg_has_role(current_user,c.relowner,'MEMBER')) AS owner, (EXISTS (SELECT 1 FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE \
+             n.nspname='public' AND c.relname IN \
+             ('subscriptions','bangumi','episodes','subscription_bangumi','subscription_episode','downloaders','downloads','credential3rd','feeds') AND \
+             has_table_privilege(current_user,c.oid,'SELECT,INSERT,UPDATE,DELETE')) OR has_schema_privilege(current_user,'auth_identity','USAGE') OR \
+             has_schema_privilege(current_user,'auth_session','USAGE')) AS private_access FROM pg_roles WHERE rolname=current_user",
+            [TASK_CONTROL_ACCESS_ROLE.into()],
+          ))
+          .await?
+          .ok_or_else(|| DbErr::Custom("Task-control database role is missing".into()))?;
+        if row.try_get::<bool>("", "rolsuper")?
+          || row.try_get::<bool>("", "rolbypassrls")?
+          || row.try_get::<bool>("", "owner")?
+          || row.try_get::<bool>("", "private_access")?
+          || !row.try_get::<bool>("", "task_control")?
         {
-            let mut storage = self.subscriber_task_storage.write().await;
-            let task_id =
-                TaskId::from_str(&job_id).map_err(|err| RecorderError::InvalidTaskId {
-                    message: err.to_string(),
-                })?;
-            let worker_id = WorkerId::new(SUBSCRIBER_TASK_APALIS_NAME);
-            storage.retry(&worker_id, &task_id).await?;
+          return Err(DbErr::Custom(
+            "Task-control pool requires inherited task-control access without private application access".into(),
+          ));
         }
-        Ok(())
-    }
-
-    pub async fn retry_system_task(&self, job_id: String) -> RecorderResult<()> {
-        {
-            let mut storage = self.system_task_storage.write().await;
-            let task_id =
-                TaskId::from_str(&job_id).map_err(|err| RecorderError::InvalidTaskId {
-                    message: err.to_string(),
-                })?;
-            let worker_id = WorkerId::new(SYSTEM_TASK_APALIS_NAME);
-            storage.retry(&worker_id, &task_id).await?;
-        }
-        Ok(())
-    }
-
-    pub async fn add_subscriber_task(
-        &self,
-        subscriber_task: SubscriberTask,
-    ) -> RecorderResult<TaskId> {
-        let task_id = {
-            let mut storage = self.subscriber_task_storage.write().await;
-            let sql_context = {
-                let mut c = SqlContext::default();
-                c.set_max_attempts(1);
-                c
-            };
-            let request = Request::new_with_ctx(subscriber_task, sql_context);
-            storage.push_request(request).await?.task_id
-        };
-
-        Ok(task_id)
-    }
-
-    pub async fn add_system_task(&self, system_task: SystemTask) -> RecorderResult<TaskId> {
-        let task_id = {
-            let mut storage = self.system_task_storage.write().await;
-            let sql_context = {
-                let mut c = SqlContext::default();
-                c.set_max_attempts(1);
-                c
-            };
-            let request = Request::new_with_ctx(system_task, sql_context);
-            storage.push_request(request).await?.task_id
-        };
-
-        Ok(task_id)
-    }
-
-    pub async fn add_subscriber_task_cron(
-        &self,
-        cm: cron::ActiveModel,
-    ) -> RecorderResult<cron::Model> {
-        let db = self.ctx.db();
-        let m = cm.insert(db).await?;
-        Ok(m)
-    }
-
-    pub async fn add_system_task_cron(&self, cm: cron::ActiveModel) -> RecorderResult<cron::Model> {
-        let db = self.ctx.db();
-        let m = cm.insert(db).await?;
-        Ok(m)
-    }
-
-    pub async fn run(&self) -> RecorderResult<()> {
-        self.run_with_signal(None::<fn() -> std::future::Ready<()>>)
-            .await
-    }
-
-    pub async fn run_with_signal<F, Fut>(&self, shutdown_signal: Option<F>) -> RecorderResult<()>
-    where
-        F: FnOnce() -> Fut + Send + 'static,
-        Fut: Future<Output = ()> + Send,
-    {
-        tokio::select! {
-            _ =  {
-                let monitor = self.setup_apalis_monitor().await?;
-                async move {
-                    if let Some(shutdown_signal) = shutdown_signal {
-                        monitor
-                            .run_with_signal(async move {
-                                shutdown_signal().await;
-                                tracing::info!("apalis shutting down...");
-                                Ok(())
-                            })
-                            .await?;
-                    } else {
-                        monitor.run().await?;
-                    }
-                    Ok::<_, RecorderError>(())
-                }
-            } => {}
-            _ = {
-                let listener = self.setup_apalis_listener().await?;
-                async move {
-                    if let Err(e) = listener.listen().await {
-                        tracing::error!("Error listening to apalis: {e}");
-                    }
-                    Ok::<_, RecorderError>(())
-                }
-            } => {},
-            _ = {
-                let mut listener = self.setup_cron_due_listening().await?;
-                let cron_worker_id = self.cron_worker_id.clone();
-                let retry_duration =
-                    chrono::Duration::milliseconds(self.config.cron_retry_duration.as_millis() as i64);
-                let cron_interval_duration = self.config.cron_interval_duration;
-                async move {
-                    listener.listen_all([CRON_DUE_EVENT as &str, CRON_DUE_DEBUG_EVENT as &str]).await?;
-
-                    tokio::join!(
-                        {
-                            let ctx = self.ctx.clone();
-                            async move {
-                                if let Err(e) =
-                                    Self::listen_cron_due(listener, ctx, &cron_worker_id, retry_duration)
-                                        .await
-                                {
-                                    tracing::error!("Error listening to cron due: {e}");
-                                }
-                            }
-                        },
-                        {
-                            let ctx = self.ctx.clone();
-                            let mut interval = tokio::time::interval(cron_interval_duration);
-                            async move {
-                                loop {
-                                    interval.tick().await;
-                                    if let Err(e) = cron::Model::check_and_cleanup_expired_cron_locks(
-                                        ctx.as_ref(),
-                                        retry_duration,
-                                    )
-                                    .await
-                                    {
-                                        tracing::error!(
-                                            "Error checking and cleaning up expired cron locks: {e}"
-                                        );
-                                    }
-
-                                    if let Err(e) =
-                                        cron::Model::check_and_trigger_due_crons(ctx.as_ref()).await
-                                    {
-                                        tracing::error!("Error checking and triggering due crons: {e}");
-                                    }
-                                }
-                            }
-                        }
-                    );
-                    Ok::<_, RecorderError>(())
-                }
-            } => {}
-        };
-
-        Ok(())
-    }
-
-    async fn setup_apalis_monitor(&self) -> RecorderResult<Monitor> {
-        let mut apalis_monitor = Monitor::new();
-
-        {
-            let subscriber_task_worker = WorkerBuilder::new(SUBSCRIBER_TASK_APALIS_NAME)
-                .concurrency(self.config.subscriber_task_concurrency as usize)
-                .catch_panic()
-                .enable_tracing()
-                .data(self.ctx.clone())
-                .backend({
-                    let storage = self.subscriber_task_storage.read().await;
-                    storage.clone()
-                })
-                .build_fn(Self::run_subscriber_task);
-
-            let system_task_worker = WorkerBuilder::new(SYSTEM_TASK_APALIS_NAME)
-                .concurrency(self.config.system_task_concurrency as usize)
-                .catch_panic()
-                .enable_tracing()
-                .data(self.ctx.clone())
-                .backend(self.system_task_storage.read().await.clone())
-                .build_fn(Self::run_system_task);
-
-            apalis_monitor = apalis_monitor
-                .register(subscriber_task_worker)
-                .register(system_task_worker);
-        }
-
-        Ok(apalis_monitor)
-    }
-
-    async fn setup_apalis_listener(&self) -> RecorderResult<ApalisPgListen> {
-        let pool = self.ctx.db().get_postgres_connection_pool().clone();
-        let mut apalis_pg_listener = ApalisPgListen::new(pool).await?;
-
-        {
-            let mut subscriber_task_storage = self.subscriber_task_storage.write().await;
-            apalis_pg_listener.subscribe_with(&mut subscriber_task_storage);
-        }
-
-        {
-            let mut system_task_storage = self.system_task_storage.write().await;
-            apalis_pg_listener.subscribe_with(&mut system_task_storage);
-        }
-
-        Ok(apalis_pg_listener)
-    }
-
-    async fn setup_cron_due_listening(&self) -> RecorderResult<PgListener> {
-        let pool = self.ctx.db().get_postgres_connection_pool().clone();
-        let listener = PgListener::connect_with(&pool).await?;
-        tracing::debug!("Cron due listener connected to postgres");
-
-        Ok(listener)
-    }
-
-    async fn listen_cron_due(
-        mut listener: PgListener,
-        ctx: Arc<dyn AppContextTrait>,
-        worker_id: &str,
-        retry_duration: chrono::Duration,
-    ) -> RecorderResult<()> {
-        loop {
-            let notification = listener.recv().await?;
-            if notification.channel() == CRON_DUE_DEBUG_EVENT {
-                tracing::debug!("Received cron due debug event: {:?}", notification);
-                continue;
-            } else if notification.channel() == CRON_DUE_EVENT
-                && let Err(e) = cron::Model::handle_cron_notification(
-                    ctx.as_ref(),
-                    notification,
-                    worker_id,
-                    retry_duration,
-                )
-                .await
-            {
-                tracing::error!("Error handling cron notification: {e}");
-            }
-        }
-    }
-}
-
-#[cfg(all(test, feature = "testcontainers"))]
-#[allow(unused_variables)]
-mod tests {
-    use std::time::Duration;
-
-    use chrono::Utc;
-    use sea_orm::ActiveValue;
-    use serial_test::serial;
-
-    use super::*;
-    use crate::{
-        models::cron,
-        task::EchoTask,
-        test_utils::{
-            app::{TestingAppContextConfig, TestingPreset},
-            tracing::{logs_contain, setup_traced_test},
-        },
+        Ok::<_, DbErr>(())
+      }
+      .await;
+      if let Err(error) = validated {
+        let _ = db.close().await;
+        return Err(error.into());
+      }
+      Some(db)
+    } else {
+      None
     };
+    let (shutdown, _) = watch::channel(false);
+    Ok(Self {
+      config,
+      ctx,
+      queue_database,
+      shutdown,
+    })
+  }
+  pub async fn close(&self) -> RecorderResult<()> {
+    self.shutdown.send_replace(true);
+    if let Some(db) = &self.queue_database {
+      db.clone().close().await?;
+    }
+    Ok(())
+  }
 
-    #[tokio::test]
-    #[serial]
-    async fn test_check_and_trigger_due_crons_with_certain_interval() -> RecorderResult<()> {
-        let _guard = setup_traced_test();
+  pub fn queue_database(&self) -> RecorderResult<&DatabaseConnection> {
+    self
+      .queue_database
+      .as_ref()
+      .ok_or_else(|| DbErr::Custom("Task workers require scheduler.database.url with restricted task-control access".into()).into())
+  }
+  pub async fn add_subscriber_task(&self, task: SubscriberTask) -> RecorderResult<String> {
+    let transaction = crate::database::operation::begin_task_transaction(self.ctx.db().as_ref(), task.get_subscriber_id()).await?;
+    let id = super::operation::enqueue(&transaction, "subscriber_task", &task).await?;
+    crate::database::operation::commit_task_transaction(transaction).await?;
+    Ok(id)
+  }
+  pub async fn add_system_task(&self, task: SystemTask) -> RecorderResult<String> {
+    let transaction = self.queue_database()?.begin().await?;
+    let id = super::operation::enqueue(&transaction, "system_task", &task).await?;
+    crate::database::operation::commit_task_transaction(transaction).await?;
+    Ok(id)
+  }
+  pub async fn add_subscriber_task_cron(&self, model: cron::ActiveModel) -> RecorderResult<cron::Model> {
+    Ok(model.insert(self.queue_database()?).await?)
+  }
+  pub async fn add_system_task_cron(&self, model: cron::ActiveModel) -> RecorderResult<cron::Model> {
+    Ok(model.insert(self.queue_database()?).await?)
+  }
+  pub async fn run(&self) -> RecorderResult<()> {
+    self.run_with_signal(None::<fn() -> std::future::Ready<()>>).await
+  }
 
-        let preset = TestingPreset::default_with_config(
-            TestingAppContextConfig::builder()
-                .task_config(TaskConfig {
-                    cron_interval_duration: Duration::from_millis(1500),
-                    ..Default::default()
-                })
-                .build(),
-        )
-        .await?;
-        let app_ctx = preset.app_ctx;
-        let task_service = app_ctx.task();
+  pub async fn run_with_signal<F, Fut>(&self, signal: Option<F>) -> RecorderResult<()>
+  where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = ()> + Send,
+  {
+    let database = self.queue_database()?;
+    self.shutdown.send_replace(false);
+    let shutdown = &self.shutdown;
+    let receiver = shutdown.subscribe();
+    let worker = WorkerBuilder::new(format!("business-{}", Uuid::now_v7()))
+      .backend(delivery::storage(database))
+      .data(self.ctx.clone())
+      .concurrency((self.config.subscriber_task_concurrency + self.config.system_task_concurrency).max(1) as usize)
+      .enable_tracing()
+      .retry(BusinessRetryPolicy { shutdown: receiver.clone() })
+      .build(Self::execute);
+    let worker_shutdown = receiver.clone();
+    let worker_run = worker.run_until(async move {
+      let mut receiver = worker_shutdown;
+      receiver.wait_for(|stopped| *stopped).await.map_err(|e| std::io::Error::other(e.to_string()))?;
+      Ok::<_, std::io::Error>(())
+    });
+    let dispatcher = async {
+      let mut ticker = tokio::time::interval(Duration::from_secs(1));
+      let mut receiver = receiver.clone();
+      loop {
+        tokio::select! {
+          _ = receiver.changed() => break,
+          _ = ticker.tick() => {
+            super::operation::settle_cancelled(database, None).await?;
+            for _ in 0..100 {
+              if !delivery::dispatch_one(database).await? { break; }
+            }
+          }
+        }
+      }
+      Ok::<_, RecorderError>(())
+    };
+    let scheduler = async {
+      let mut ticker = tokio::time::interval(self.config.cron_interval_duration);
+      let mut receiver = receiver.clone();
+      loop {
+        tokio::select! {
+          _ = receiver.changed() => break,
+          _ = ticker.tick() => { cron::Model::dispatch_due(database, Utc::now()).await?; }
+        }
+      }
+      Ok::<_, RecorderError>(())
+    };
+    let stop = async {
+      let mut receiver = receiver.clone();
+      if let Some(signal) = signal {
+        tokio::select! {
+          _ = signal() => { shutdown.send_replace(true); }
+          _ = receiver.wait_for(|stopped| *stopped) => {}
+        }
+      } else {
+        let _ = receiver.wait_for(|stopped| *stopped).await;
+      }
+    };
+    // Error paths also signal and join all owned loops before returning.
+    let worker_run = async {
+      let result = worker_run.await.map_err(|e| RecorderError::from(DbErr::Custom(e.to_string())));
+      shutdown.send_replace(true);
+      result
+    };
+    let dispatcher = async {
+      let result = dispatcher.await;
+      shutdown.send_replace(true);
+      result
+    };
+    let scheduler = async {
+      let result = scheduler.await;
+      shutdown.send_replace(true);
+      result
+    };
+    let (worker, dispatcher, scheduler, ()) = tokio::join!(worker_run, dispatcher, scheduler, stop);
+    worker?;
+    dispatcher?;
+    scheduler?;
+    Ok(())
+  }
 
-        let task_id = Uuid::now_v7().to_string();
-
-        let echo_cron = cron::ActiveModel {
-            cron_expr: ActiveValue::Set("*/1 * * * * *".to_string()),
-            cron_timezone: ActiveValue::Set("Asia/Singapore".to_string()),
-            system_task_cron: ActiveValue::Set(Some(
-                EchoTask::builder().task_id(task_id.clone()).build().into(),
-            )),
-            ..Default::default()
-        };
-
-        task_service.add_system_task_cron(echo_cron).await?;
-
-        task_service
-            .run_with_signal(Some(async move || {
-                tokio::time::sleep(std::time::Duration::from_secs(2)).await;
-            }))
+  pub async fn execute(envelope: TaskEnvelope, data: Data<Arc<dyn AppContextTrait>>) -> Result<(), ExecutionError> {
+    let ctx = (*data).clone();
+    let db = ctx.task().queue_database().map_err(|_| ExecutionError {
+      retry_after: None,
+      message: "Queue configuration is unavailable".into(),
+    })?;
+    super::operation::settle_cancelled(db, Some((&envelope.task_id, envelope.generation))).await?;
+    let token = Uuid::now_v7();
+    let claimed = db
+      .query_one_raw(Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "UPDATE task_runs SET status='Running', execution_token=$3, execution_lease_until=clock_timestamp()+INTERVAL '120 seconds', attempts=attempts+CASE \
+         WHEN recovering THEN 0 ELSE 1 END, recovering=false WHERE id=$1 AND generation=$2 AND archived_at IS NULL AND cancel_requested_at IS NULL AND \
+         ((status IN ('Pending','Scheduled') AND run_at <= clock_timestamp()) OR (status='Running' AND execution_lease_until <= clock_timestamp())) AND \
+         (attempts < max_attempts OR recovering) RETURNING kind,subscriber_id,payload,payload_version,attempts,max_attempts",
+        [envelope.task_id.clone().into(), envelope.generation.into(), token.into()],
+      ))
+      .await?;
+    let Some(row) = claimed else {
+      db.execute_raw(Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "UPDATE task_runs SET status='Failed', done_at=clock_timestamp(), execution_token=NULL, execution_lease_until=NULL, last_error='Task execution budget \
+         exhausted' WHERE id=$1 AND generation=$2 AND cancel_requested_at IS NULL AND archived_at IS NULL AND attempts >= max_attempts AND NOT recovering AND \
+         (status IN ('Pending','Scheduled') OR (status='Running' AND execution_lease_until <= clock_timestamp()))",
+        [envelope.task_id.clone().into(), envelope.generation.into()],
+      ))
+      .await?;
+      let active = db
+        .query_one_raw(Statement::from_sql_and_values(
+          DbBackend::Postgres,
+          "SELECT id FROM task_runs WHERE id=$1 AND generation=$2 AND archived_at IS NULL AND cancel_requested_at IS NULL AND status IN \
+           ('Pending','Scheduled','Running')",
+          [envelope.task_id.into(), envelope.generation.into()],
+        ))
+        .await?
+        .is_some();
+      if active {
+        return Err(ExecutionError {
+          retry_after: Some(Duration::from_secs(5)),
+          message: "Task is scheduled or has a live executor".into(),
+        });
+      }
+      return Ok(());
+    };
+    let kind: String = row.try_get("", "kind")?;
+    let payload: serde_json::Value = row.try_get("", "payload")?;
+    let owner: Option<i32> = row.try_get("", "subscriber_id")?;
+    let attempts: i32 = row.try_get("", "attempts")?;
+    let max_attempts: i32 = row.try_get("", "max_attempts")?;
+    let fence = TaskFence {
+      envelope: envelope.clone(),
+      token,
+    };
+    // Persist a fixed migration diagnostic without exposing payload values or
+    // arbitrary codec/database errors to task readers.
+    let failure_message = if super::operation::legacy_jxl_options(&payload) {
+      super::operation::LEGACY_JXL_DIAGNOSTIC
+    } else {
+      "Task execution failed"
+    };
+    let execution = async {
+      super::operation::validate_payload(&kind, &payload, owner)?;
+      if row.try_get::<i32>("", "payload_version")? != 1 {
+        return Err(DbErr::Custom("Unsupported task payload version".into()).into());
+      }
+      if kind == "subscriber_task" {
+        serde_json::from_value::<SubscriberTask>(payload)?.run_async(ctx.clone()).await
+      } else {
+        serde_json::from_value::<SystemTask>(payload)?.run_async(ctx.clone()).await
+      }
+    };
+    // Both futures stay polled while renewal waits for a business fence lock.
+    // This scope drops either losing future (and its transaction) before the
+    // terminal UPDATE can try to acquire that same task row.
+    let (result, stopping) = {
+      let execution = CURRENT_FENCE.scope(fence, execution);
+      let renewal = async {
+        let mut ticker = tokio::time::interval_at(tokio::time::Instant::now() + Duration::from_secs(30), Duration::from_secs(30));
+        loop {
+          ticker.tick().await;
+          let renewed = db
+            .execute_raw(Statement::from_sql_and_values(
+              DbBackend::Postgres,
+              "UPDATE task_runs SET execution_lease_until=clock_timestamp()+INTERVAL '120 seconds' WHERE id=$1 AND generation=$2 AND execution_token=$3 AND \
+               execution_lease_until > clock_timestamp() AND status='Running' AND cancel_requested_at IS NULL AND archived_at IS NULL",
+              [envelope.task_id.clone().into(), envelope.generation.into(), token.into()],
+            ))
             .await?;
-
-        assert!(logs_contain(&format!(
-            "EchoTask {task_id} start running at"
-        )));
-
-        Ok(())
+          if renewed.rows_affected() == 0 {
+            return Err::<(), RecorderError>(DbErr::Custom("Task was cancelled or lost its execution lease".into()).into());
+          }
+        }
+      };
+      let mut stopped = ctx.task().shutdown.subscribe();
+      tokio::pin!(execution, renewal);
+      let (mut result, stopping, aborting) = tokio::select! {
+        result = &mut execution => (result, false, false),
+        result = &mut renewal => (result, false, true),
+        _ = stopped.wait_for(|stopped| *stopped) => (Err(DbErr::Custom("Task service stopped".into()).into()), true, true),
+      };
+      if aborting {
+        let (business, queue) = tokio::join!(
+          super::execution::cancel_queries(ctx.db().as_ref(), token),
+          super::execution::cancel_queries(db, token)
+        );
+        if let Err(error) = business.and(queue) {
+          result = Err(error.into());
+        }
+      }
+      (result, stopping)
+    };
+    let retry_delay = result
+      .as_ref()
+      .err()
+      .filter(|e| stopping || super::execution::recoverable(e))
+      .filter(|_| attempts < max_attempts)
+      .map(|_| if attempts == 1 { 5_i64 } else { 30_i64 });
+    let status = if result.is_ok() {
+      "Done"
+    } else if retry_delay.is_some() {
+      "Scheduled"
+    } else {
+      "Failed"
+    };
+    let completed = db
+      .execute_raw(Statement::from_sql_and_values(
+        DbBackend::Postgres,
+        "UPDATE task_runs SET status=CASE WHEN cancel_requested_at IS NOT NULL THEN 'Killed' ELSE $4 END, run_at=CASE WHEN $5::bigint IS NULL THEN run_at \
+         ELSE clock_timestamp()+$5*INTERVAL '1 second' END, done_at=CASE WHEN $4='Scheduled' AND cancel_requested_at IS NULL THEN NULL ELSE clock_timestamp() \
+         END, last_error=$6, execution_token=NULL, execution_lease_until=NULL WHERE id=$1 AND generation=$2 AND execution_token=$3 AND execution_lease_until \
+         > clock_timestamp() AND status='Running'",
+        [
+          envelope.task_id.into(),
+          envelope.generation.into(),
+          token.into(),
+          status.into(),
+          retry_delay.into(),
+          result.as_ref().err().map(|_| failure_message.to_owned()).into(),
+        ],
+      ))
+      .await?;
+    if completed.rows_affected() == 0 {
+      return Err(ExecutionError {
+        retry_after: None,
+        message: "Task execution fence expired".into(),
+      });
     }
-
-    #[tokio::test]
-    #[serial]
-    async fn test_trigger_due_cron_when_mutating() -> RecorderResult<()> {
-        let _guard = setup_traced_test();
-
-        let preset = TestingPreset::default().await?;
-        let app_ctx = preset.app_ctx;
-        let task_service = app_ctx.task();
-
-        let task_id = Uuid::now_v7().to_string();
-
-        let echo_cron = cron::ActiveModel {
-            cron_expr: ActiveValue::Set("* * * */1 * *".to_string()),
-            cron_timezone: ActiveValue::Set("Asia/Singapore".to_string()),
-            next_run: ActiveValue::Set(Some(Utc::now() + chrono::Duration::seconds(-10))),
-            system_task_cron: ActiveValue::Set(Some(
-                EchoTask::builder().task_id(task_id.clone()).build().into(),
-            )),
-            ..Default::default()
-        };
-
-        let task_runner = task_service.run_with_signal(Some(async move || {
-            tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-        }));
-
-        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
-
-        task_service.add_system_task_cron(echo_cron).await?;
-
-        task_runner.await?;
-
-        assert!(logs_contain(&format!(
-            "EchoTask {task_id} start running at"
-        )));
-
-        Ok(())
-    }
+    result.map_err(|_| ExecutionError {
+      retry_after: retry_delay.map(|seconds| Duration::from_secs(seconds as u64)),
+      message: "Task execution failed".into(),
+    })
+  }
 }
 
+#[cfg(test)]
+mod tests {
+  use super::*;
+  #[tokio::test]
+  async fn queue_construction_errors_redact_credentials() {
+    let ctx = Arc::new(crate::test_utils::app::TestingAppContext::builder().build());
+    let error = TaskService::from_config_and_ctx(
+      TaskConfig {
+        queue_database_uri: Some("postgres://SENTINEL-queue@host:invalid/queue".into()),
+        ..Default::default()
+      },
+      ctx,
+    )
+    .await
+    .err()
+    .unwrap();
+    assert!(!format!("{error:?} {error}").contains("SENTINEL"));
+    assert!(error.to_string().contains("redacted"));
+  }
+}

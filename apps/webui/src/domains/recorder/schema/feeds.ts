@@ -1,6 +1,6 @@
-import { gql } from "@apollo/client";
+import { gql } from "@/infra/graphql/gql";
 
-export const INSERT_FEED = gql`
+export const INSERT_FEED = gql(`
     mutation InsertFeed($data: FeedsInsertInput!) {
         feedsCreateOne(data: $data) {
             id
@@ -10,10 +10,10 @@ export const INSERT_FEED = gql`
             token
         }
     }
-`;
+`);
 
-export const DELETE_FEED = gql`
+export const DELETE_FEED = gql(`
     mutation DeleteFeed($filter: FeedsFilterInput!) {
         feedsDelete(filter: $filter)
     }
-`;
+`);

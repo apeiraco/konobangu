@@ -1,0 +1,7 @@
+# Generate notices from the resolved recorder graph, not copied license snapshots.
+accepted = ["MIT", "Apache-2.0", "BSD-3-Clause", "BSD-2-Clause", "ISC", "OpenSSL", "Unicode-3.0", "Unicode-DFS-2016", "CC0-1.0", "BSL-1.0", "Zlib", "MPL-2.0", "Unlicense", "MIT-0", "CDLA-Permissive-2.0"]
+ignore-dev-dependencies = true
+workarounds = ["ring"]
+
+[private]
+ignore = true

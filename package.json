@@ -1,7 +1,7 @@
 {
   "name": "konobangu",
-  "version": "0.0.0",
-  "description": "Kono bangumi?",
+  "version": "0.1.0",
+  "description": "Self-hosted bangumi subscription and recording service.",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -9,27 +9,29 @@
     "url": "https://github.com/apeiraco/konobangu.git"
   },
   "scripts": {
-    "prepare": "prek install",
-    "lint": "biome check",
-    "lint-fix": "biome check --write",
-    "bump-deps": "npx --yes npm-check-updates --deep -u && pnpm install",
-    "clean": "git clean -xdf node_modules",
-    "test-ts": "echo 'TODO TEST'"
+    "prepare": "prek install"
   },
   "engines": {
     "node": ">=24"
   },
   "dependencies": {
-    "es-toolkit": "^1.45.1"
+    "es-toolkit": "^1.52.0"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.4.7",
-    "@j178/prek": "^0.3.5",
-    "@types/node": "^25.5.0",
-    "cross-env": "^10.1.0",
-    "kill-port": "^2.0.1",
-    "npm-run-all": "^4.1.5",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
-  }
+    "@biomejs/biome": "2.5.14",
+    "@j178/prek": "^0.5.3",
+    "@types/cross-spawn": "6.0.6",
+    "@types/node": "^26.6.2",
+    "@types/semver": "7.8.0",
+    "commander": "15.0.0",
+    "cross-env": "10.1.0",
+    "cross-spawn": "7.0.6",
+    "semver": "7.8.5",
+    "smol-toml": "1.9.0",
+    "tsdown": "^0.23.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "yaml": "2.7.1"
+  },
+  "private": true
 }

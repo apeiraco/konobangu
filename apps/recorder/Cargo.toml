@@ -2,11 +2,15 @@
 name = "recorder"
 version = "0.1.0"
 edition = "2024"
+autotests = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+license = "MIT"
+repository = "https://github.com/apeiraco/konobangu"
+publish = false
 [features]
-default = ["jxl"]
-playground = ["dep:inquire", "dep:color-eyre", "dep:polars", "test-utils"]
+default = ["jxl", "media-par-rayon"]
+playground = ["test-utils"]
 testcontainers = [
   "dep:testcontainers",
   "dep:testcontainers-modules",
@@ -15,9 +19,11 @@ testcontainers = [
   "downloader/testcontainers",
   "testcontainers-modules/postgres",
 ]
-jxl = ["dep:jxl-encoder"]
+jxl = ["dep:jpxl", "dep:jpxl-encode-policy"]
+media-par-rayon = ["par-core/rayon", "dep:rayon"]
+media-par-chili = ["par-core/chili", "dep:chili"]
 tracing-test = ["dep:tracing-test"]
-test-utils = ["tracing-test"]
+test-utils = ["tracing-test", "dep:mockito", "dep:tracing-tree"]
 
 [lib]
 name = "recorder"
@@ -25,14 +31,20 @@ path = "src/lib.rs"
 
 
 [[bin]]
-name = "recorder_cli"
+name = "recorder-cli"
 path = "src/bin/main.rs"
 required-features = []
 
 [[bin]]
-name = "testcontainers_prune"
-path = "src/bin/testcontainers_prune.rs"
+name = "testcontainers-prune"
+path = "src/bin/testcontainers-prune.rs"
 required-features = ["testcontainers"]
+
+[[bin]]
+name = "auth-test-server"
+path = "tests/e2e/support/auth_test_server.rs"
+required-features = ["testcontainers", "test-utils"]
+test = false
 
 [[example]]
 name = "mikan_collect_classic_eps"
@@ -54,10 +66,21 @@ name = "playground"
 path = "examples/playground.rs"
 required-features = ["playground"]
 
+[[bin]]
+name = "media-backfill"
+path = "src/bin/media-backfill.rs"
+
+[[example]]
+name = "media_bench"
+path = "examples/media_bench.rs"
+required-features = ["jxl"]
+
 [dependencies]
+sqlx08 = { package = "sqlx", version = "=0.8.6", default-features = false, features = ["postgres", "runtime-tokio"] }
+tower-sessions-core-014 = { package = "tower-sessions-core", version = "=0.14.0" }
+sqlx = { version = "=0.9.0", default-features = false, features = ["postgres", "runtime-tokio", "chrono", "uuid", "json"] }
 downloader = { workspace = true }
 util = { workspace = true }
-util-derive = { workspace = true }
 fetch = { workspace = true }
 animeta = { workspace = true }
 
@@ -86,11 +109,10 @@ serde_with = { workspace = true }
 moka = { workspace = true }
 chrono = { workspace = true }
 tracing-subscriber = { workspace = true }
-mockito = { workspace = true }
-color-eyre = { workspace = true, optional = true }
-inquire = { workspace = true, optional = true }
+mockito = { workspace = true, optional = true }
 convert_case = { workspace = true }
 image = { workspace = true }
+png = "=0.18.1"
 uuid = { workspace = true }
 maplit = { workspace = true }
 once_cell = { workspace = true }
@@ -110,8 +132,7 @@ typed-builder = { workspace = true }
 webp = { workspace = true }
 tracing-test = { workspace = true, optional = true }
 
-sea-orm = { version = "~2.0.0-rc.37", features = [
-  "sqlx-sqlite",
+sea-orm = { version = "=2.0.4", features = [
   "sqlx-postgres",
   "runtime-tokio",
   "macros",
@@ -120,16 +141,16 @@ sea-orm = { version = "~2.0.0-rc.37", features = [
   "with-json",
 ] }
 figment = { version = "0.10", features = ["toml", "json", "env", "yaml"] }
-sea-orm-migration = { version = "~2.0.0-rc.37", features = ["runtime-tokio"] }
+sea-orm-migration = { version = "=2.0.4", default-features = false, features = ["runtime-tokio", "sqlx-postgres"] }
 rss = { version = "2", features = ["builders", "with-serde"] }
-fancy-regex = "0.17"
-lightningcss = "1.0.0-alpha.71"
-html-escape = "0.2.13"
-opendal = { version = "0.55", features = ["default", "services-fs"] }
-scraper = "0.26"
+fancy-regex = "0.19"
+lightningcss = "1.0.0-alpha.72"
+html-escape = "0.2.15"
+opendal = { version = "0.59", features = ["default", "services-fs"] }
+scraper = "0.27"
 async-graphql = { version = "7", features = ["dynamic-schema"] }
 async-graphql-axum = "7"
-seaography = { version = "~2.0.0-rc.8", features = [
+seaography = { version = "=2.0.0-rc.9", features = [
   "with-json",
   "with-chrono",
   "with-time",
@@ -139,7 +160,7 @@ seaography = { version = "~2.0.0-rc.8", features = [
   "with-postgres-array",
 ] }
 tower = { version = "0.5.3", features = ["util"] }
-tower-http = { version = "0.6", features = [
+tower-http = { version = "0.7", features = [
   "trace",
   "catch-panic",
   "timeout",
@@ -149,53 +170,109 @@ tower-http = { version = "0.6", features = [
   "set-header",
   "compression-full",
 ] }
-tera = "1.20.1"
-openidconnect = { version = "4" }
 dotenvy = "0.15.7"
-# butteraugli dependency contains NEON SIMD code, which fails to compile on macOS aarch64
-# Therefore, we globally disable default features and enable butteraugli-loop on non-macOS platforms
-jxl-encoder = { version = "0.2", optional = true, default-features = false, features = [
-  "std",
-  "safe-mode",
-] }
+shellexpand = { version = "=3.1.2", default-features = false, features = ["base-0"] }
+sha2 = "0.10.9"
+mediatype = "=0.21.0"
+http-range = "=0.1.5"
+tempfile = "=3.27.0"
 
-apalis = { version = "0.7", features = ["limit", "tracing", "catch-panic"] }
-apalis-sql = { version = "0.7", features = ["postgres"] }
-cocoon = { version = "0.4.3", features = ["getrandom", "thiserror"] }
+apalis = { version = "=1.0.0-rc.10", features = ["limit", "tracing", "catch-panic"] }
+apalis-postgres = { version = "=1.0.0-rc.9", features = ["tokio-comp", "migrate"] }
+cocoon = { version = "0.5", features = ["getrandom", "thiserror"] }
 reqwest_cookie_store = "0.10"
-jwtk = "0.5"
 mime_guess = "2.0.5"
-icu_properties = "2.2.0"
-icu = "2.2.0"
-tracing-tree = "0.4.1"
+icu_properties = "2.3"
+icu = "2.3"
+tracing-tree = { version = "0.4.1", optional = true }
 num_cpus = "1.17.0"
 headers-accept = "0.3"
-polars = { version = "0.53", features = [
-  "parquet",
-  "lazy",
-  "diagonal_concat",
-], optional = true }
-quick-xml = { version = "0.39.2", features = [
+quick-xml = { version = "0.42", features = [
   "serialize",
   "serde-types",
   "serde",
 ] }
-croner = "3"
+croner = "4"
 ts-rs = "12"
-secrecy = { version = "0.10.3", features = ["serde"] }
 paste = "1.0.15"
 chrono-tz = "0.10.4"
-
-[target.'cfg(not(target_os = "macos"))'.dependencies]
-# Non-macOS platforms enable butteraugli-loop (full image quality optimization)
-jxl-encoder = { version = "0.2", optional = true, features = [
-  "butteraugli-loop",
-] }
+securitydept-oidc-client = { version = "=0.3.0", default-features = false }
+securitydept-session-context = { version = "=0.3.0", default-features = false }
+tower-sessions = { version = "=0.15.0", default-features = false, features = ["axum-core"] }
+tower-sessions-sqlx-store = { version = "=0.15.0", default-features = false, features = ["postgres"] }
 
 [dev-dependencies]
+sysinfo = { version = "0.39.6", features = ["system"] }
+mockito = { workspace = true }
+tracing-tree = "0.4.1"
+# Only the classic-episode export example uses dataframe/CSV/Parquet support.
+polars = { version = "0.55", default-features = false, features = ["csv", "parquet", "diagonal_concat"] }
+jxl = "=0.7.4"
 inquire = { workspace = true }
 color-eyre = { workspace = true }
 insta = { version = "1", features = ["redactions", "toml", "filters"] }
 
 serial_test = { workspace = true }
 rstest = { workspace = true }
+
+# Test target names remain stable for Cargo/Just filters.
+[[test]]
+name = "rls"
+path = "tests/integration/rls.spec.rs"
+required-features = ["testcontainers", "test-utils"]
+
+[[test]]
+name = "config_media"
+path = "tests/integration/config_media.spec.rs"
+
+[[test]]
+name = "config_secrets"
+path = "tests/integration/config_secrets.spec.rs"
+
+[[test]]
+name = "media_executor"
+path = "tests/integration/media_executor.spec.rs"
+
+[[test]]
+name = "media_http"
+path = "tests/integration/media_http.spec.rs"
+
+[[test]]
+name = "media_delivery"
+path = "tests/integration/media_delivery.spec.rs"
+
+[[test]]
+name = "mod"
+path = "tests/integration/migrations.test.rs"
+
+[dependencies.jpxl]
+git = "https://github.com/liminalism/JPXL"
+rev = "1e2004aa0672259279cc24a52d4b8e264f675b77"
+optional = true
+
+[dependencies.jpxl-encode-policy]
+git = "https://github.com/liminalism/JPXL"
+rev = "1e2004aa0672259279cc24a52d4b8e264f675b77"
+default-features = false
+features = ["g5-bounded-entropy", "one-shot-controller", "corrected-stop", "flagged-median-start", "reserve-coupled-band", "case-predictor"]
+optional = true
+
+[dependencies.par-core]
+version = "=2.0.0"
+default-features = false
+
+[dependencies.rayon]
+version = "1.11.0"
+optional = true
+
+[dependencies.chili]
+version = "=0.2.1"
+optional = true
+
+[[example]]
+name = "media_browser_server"
+path = "examples/media_browser_server.rs"
+required-features = ["jxl", "test-utils"]
+
+[lints]
+workspace = true

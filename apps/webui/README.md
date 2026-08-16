@@ -1,29 +1,13 @@
-# Rsbuild project
+# Konobangu WebUI
 
-## Setup
+From the repository root, install mise tools and frozen pnpm dependencies, then use:
 
-Install the dependencies:
-
-```bash
-pnpm install
+```text
+just dev-webui
+just build-webui
+just test webui
+just dev-codegen
+just dev-all
 ```
 
-## Get started
-
-Start the dev server:
-
-```bash
-pnpm dev
-```
-
-Build the app for production:
-
-```bash
-pnpm build
-```
-
-Preview the production build locally:
-
-```bash
-pnpm preview
-```
+See [development and verification](../../docs/en/001-DEVELOPMENT-VERIFICATION.md).

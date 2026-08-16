@@ -34,8 +34,6 @@ import { useInject } from "@/infra/di/inject";
 import { compatFormDefaultValues } from "@/infra/forms/compat";
 import {
   Credential3rdTypeEnum,
-  type InsertSubscriptionMutation,
-  type InsertSubscriptionMutationVariables,
   SubscriptionCategoryEnum,
 } from "@/infra/graphql/gql/graphql";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
@@ -52,10 +50,7 @@ function SubscriptionCreateRouteComponent() {
   const navigate = useNavigate();
   const subscriptionService = useInject(SubscriptionService);
 
-  const [insertSubscription, { loading }] = useMutation<
-    InsertSubscriptionMutation,
-    InsertSubscriptionMutationVariables
-  >(INSERT_SUBSCRIPTION, {
+  const [insertSubscription, { loading }] = useMutation(INSERT_SUBSCRIPTION, {
     onCompleted(data) {
       toast.success("Subscription created");
       navigate({
@@ -208,7 +203,7 @@ function SubscriptionCreateRouteComponent() {
                                   Number.parseInt(e.target.value, 10),
                                 )
                               }
-                              placeholder={`Please enter full year (e.g. ${new Date().getFullYear()})`}
+                              placeholder={`Please enter full year (e.g. ${Temporal.Now.plainDateISO().year})`}
                               autoComplete="off"
                             />
                             {field.state.meta.errors && (

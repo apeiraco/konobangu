@@ -6,7 +6,8 @@ export const providePlatform = () => {
     { provide: DOCUMENT, useValue: document },
     {
       provide: PlatformService,
-      useClass: PlatformService,
+      useFactory: () => new PlatformService(),
+      deps: [],
     },
   ];
 };

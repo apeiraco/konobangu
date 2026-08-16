@@ -1,6 +1,9 @@
 {
   "references": [
     {
+      "path": "./apps/docs"
+    },
+    {
       "path": "./apps/email-playground"
     },
     {
@@ -17,6 +20,10 @@
     },
     {
       "path": "./packages/testing-torrents"
+    },
+    {
+      "path": "./scripts"
     }
-  ]
+  ],
+  "files": []
 }

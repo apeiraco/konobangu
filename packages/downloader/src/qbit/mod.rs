@@ -6,6 +6,5 @@ mod test;
 
 pub use downloader::{QBittorrentDownloader, QBittorrentDownloaderCreation, QBittorrentSyncData};
 pub use task::{
-    QBittorrentComplexSelector, QBittorrentCreation, QBittorrentHash, QBittorrentHashSelector,
-    QBittorrentSelector, QBittorrentState, QBittorrentTask,
+  QBittorrentComplexSelector, QBittorrentCreation, QBittorrentHash, QBittorrentHashSelector, QBittorrentSelector, QBittorrentState, QBittorrentTask,
 };

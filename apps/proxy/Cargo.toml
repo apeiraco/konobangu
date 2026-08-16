@@ -4,16 +4,22 @@ version = "0.1.0"
 edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+license = "MIT"
+repository = "https://github.com/apeiraco/konobangu"
+publish = false
 [lib]
 name = "proxy"
 path = "src/lib.rs"
 
 [[bin]]
-name = "mikan_doppel"
-path = "src/bin/mikan_doppel.rs"
+name = "mikan-doppel"
+path = "src/bin/mikan-doppel.rs"
 
 [dependencies]
-recorder = { workspace = true, features = ["playground"] }
+recorder = { workspace = true, features = ["test-utils"] }
 tokio = { workspace = true }
 tracing-subscriber = { workspace = true }
 tracing = { workspace = true }
+
+[lints]
+workspace = true

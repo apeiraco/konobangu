@@ -1,0 +1,7 @@
+# Release notices
+
+Do not store versioned copies of dependency license texts here. `scripts/lib/licenses.mts` generates `licenses/THIRD-PARTY-NOTICES.md` from the locked recorder graph using cargo-about and the selected target, then appends native archive notices from the resolved Cargo sources. The project license is copied separately.
+
+The generation policy lives in `about.toml`; the presentation template lives in `scripts/templates/third-party.hbs`. ring is a real runtime dependency and includes BoringSSL/ISC notices, so those attributions remain in generated output. JPXL, libwebp/sharpyuv, AWS-LC and zstd notices likewise follow resolved versions. Build-only OpenSSL and Linux compiler/runtime snapshots must not be copied into unrelated native artifacts.
+
+Only the three Linux static-runtime notices remain as supplemental source files under runtime: musl copyright and GCC GPL/runtime exception, matched to the pinned Alpine builder (musl 1.2.6, GCC 15.2). They are appended only to musl releases, not Windows/macOS/GNU artifacts. These runtimes are supplied by the compiler/container rather than Cargo; cargo-about cannot discover them. Update the supplemental notices when changing that builder. Generated notices belong beside the release artifact or under temp, never as copied codec sources in this repository. Run the release checks again when dependencies, targets or license policy change.

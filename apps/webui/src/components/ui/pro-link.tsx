@@ -15,12 +15,20 @@ const BasicLinkComponent = (props: ComponentProps<"a">) => {
 const CreatedLinkComponent = createLink(BasicLinkComponent);
 
 export type ProLinkProps =
-  | LinkComponentProps<typeof BasicLinkComponent>
-  | BasicLinkProps;
+  | (LinkComponentProps<typeof BasicLinkComponent> & { href?: never })
+  | (BasicLinkProps & { href: string } & Pick<
+        LinkComponentProps<typeof BasicLinkComponent>,
+        "activeProps" | "inactiveProps"
+      >);
 
 export const ProLink: ComponentType<ProLinkProps> = (props) => {
-  if (props.href) {
-    return <BasicLinkComponent {...(props as any)} />;
+  if (props.href !== undefined) {
+    const {
+      activeProps: _activeProps,
+      inactiveProps: _inactiveProps,
+      ...anchorProps
+    } = props;
+    return <BasicLinkComponent {...anchorProps} />;
   }
   return <CreatedLinkComponent preload={"intent"} {...props} />;
 };

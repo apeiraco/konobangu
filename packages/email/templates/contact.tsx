@@ -9,6 +9,7 @@ import {
   Tailwind,
   Text,
 } from "@react-email/components";
+import type { JSX } from "react";
 
 type ContactTemplateProps = {
   readonly name: string;
@@ -20,7 +21,7 @@ export const ContactTemplate = ({
   name,
   email,
   message,
-}: ContactTemplateProps) => (
+}: ContactTemplateProps): JSX.Element => (
   <Tailwind>
     <Html>
       <Head />
@@ -45,7 +46,7 @@ export const ContactTemplate = ({
   </Tailwind>
 );
 
-const ExampleContactEmail = () => (
+const ExampleContactEmail = (): JSX.Element => (
   <ContactTemplate
     name="Jane Smith"
     email="jane@example.com"

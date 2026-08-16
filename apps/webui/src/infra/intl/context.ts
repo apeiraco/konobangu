@@ -1,8 +1,13 @@
-import type { Injector, Provider } from "@outposts/injection-js";
+import type {
+  SecuritydeptInjectorTrait as Injector,
+  SecuritydeptProvider as Provider,
+} from "@securitydept/client";
 import { IntlService } from "./intl.service";
 
 export function provideIntl(): Provider[] {
-  return [IntlService];
+  return [
+    { provide: IntlService, useFactory: () => new IntlService(), deps: [] },
+  ];
 }
 
 export function intlContextFromInjector(injector: Injector) {

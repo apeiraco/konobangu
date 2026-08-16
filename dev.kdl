@@ -26,9 +26,8 @@ layout {
         }
     }
     tab name="Proxy" {
-        pane command="just" {
-            args "dev-proxy"
-        }
+        pane command="just" { args "dev-proxy-mikan"; }
+        pane command="just" { args "dev-proxy-whistle"; }
     }
     tab name="Recorder" {
         pane command="just" {

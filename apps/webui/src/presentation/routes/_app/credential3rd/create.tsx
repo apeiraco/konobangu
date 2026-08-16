@@ -38,8 +38,6 @@ import { compatFormDefaultValues } from "@/infra/forms/compat";
 import {
   type Credential3rdInsertInput,
   Credential3rdTypeEnum,
-  type InsertCredential3rdMutation,
-  type InsertCredential3rdMutationVariables,
 } from "@/infra/graphql/gql/graphql";
 import { PlatformService } from "@/infra/platform/platform.service";
 import {
@@ -77,27 +75,27 @@ function CredentialCreateRouteComponent() {
     }
   };
 
-  const [insertCredential3rd, { loading }] = useMutation<
-    InsertCredential3rdMutation,
-    InsertCredential3rdMutationVariables
-  >(INSERT_CREDENTIAL_3RD, {
-    onCompleted(data) {
-      toast.success("Credential created");
-      if (search.completeAction === CreateCompleteAction.Back) {
-        handleBack();
-      } else {
-        navigate({
-          to: "/credential3rd/detail/$id",
-          params: { id: `${data.credential3rdCreateOne.id}` },
+  const [insertCredential3rd, { loading }] = useMutation(
+    INSERT_CREDENTIAL_3RD,
+    {
+      onCompleted(data) {
+        toast.success("Credential created");
+        if (search.completeAction === CreateCompleteAction.Back) {
+          handleBack();
+        } else {
+          navigate({
+            to: "/credential3rd/detail/$id",
+            params: { id: `${data.credential3rdCreateOne.id}` },
+          });
+        }
+      },
+      onError(error) {
+        toast.error("Failed to create credential", {
+          description: error.message,
         });
-      }
+      },
     },
-    onError(error) {
-      toast.error("Failed to create credential", {
-        description: error.message,
-      });
-    },
-  });
+  );
 
   const form = useAppForm({
     defaultValues: compatFormDefaultValues<

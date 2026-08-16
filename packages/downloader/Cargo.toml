@@ -3,20 +3,16 @@ name = "downloader"
 version = "0.1.0"
 edition = "2024"
 
+license = "MIT"
+repository = "https://github.com/apeiraco/konobangu"
+publish = false
 [features]
 default = []
-testcontainers = [
-    "dep:testcontainers",
-    "dep:testcontainers-modules",
-    "dep:testcontainers-ext",
-    "dep:testing-torrents",
-]
+# Enable integration tests; their container dependencies remain development-only.
+testcontainers = []
 
 [dependencies]
 futures = { workspace = true }
-testcontainers = { workspace = true, optional = true }
-testcontainers-modules = { workspace = true, optional = true }
-testcontainers-ext = { workspace = true, optional = true }
 tokio = { workspace = true }
 async-trait = { workspace = true }
 tracing = { workspace = true }
@@ -30,22 +26,26 @@ chrono = { workspace = true }
 bytes = { workspace = true }
 
 serde-value = "0.7"
-qbit-rs = { git = "https://github.com/aitiotekt/qbit.git", rev = "43886ec", features = [
-    "rustls",
-    "builder",
-] }
+qbit-rs = { version = "=0.6.0", default-features = false, features = ["reqwest", "rustls-tls", "builder"] }
 merge-struct = "0.1"
-librqbit-core = { git = "https://github.com/ikatson/rqbit.git", tag = "v9.0.0-beta.2" }
-librqbit = { git = "https://github.com/ikatson/rqbit.git", tag = "v9.0.0-beta.2", features = [
+librqbit-core = "=9.0.1"
+librqbit = { version = "=9.0.1", features = [
     "async-bt",
     "watch",
 ] }
 
 util = { workspace = true }
-testing-torrents = { workspace = true, optional = true }
 fetch = { workspace = true }
 
 
 [dev-dependencies]
+testcontainers = { workspace = true }
+testcontainers-modules = { workspace = true }
+testcontainers-ext = { workspace = true }
+testing-torrents = { workspace = true }
+serde_json = { workspace = true }
 reqwest = { workspace = true }
 tracing-subscriber = { workspace = true }
+
+[lints]
+workspace = true

@@ -6,11 +6,9 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "types": ["node"],
-    "paths": {
-      "*": ["./*"]
-    },
-    "typeRoots": ["./node_modules/@types", "./node_modules"]
+    "outDir": "dist-tsc/lib",
+    "tsBuildInfoFile": "dist-tsc/lib.tsbuildinfo"
   },
   "include": ["./main.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

@@ -14,5 +14,13 @@ allowBuilds:
   core-js: true
   esbuild: true
   utf-8-validate: true
+minimumReleaseAgeExclude:
+  - '@ark/schema@0.56.4'
+  - '@ark/util@0.56.4'
+  - '@vitest/mocker@5.0.2'
+  - '@vitest/spy@5.0.2'
+  - arkregex@0.0.10
+  - arktype@2.2.5
+  - vitest@5.0.2
 overrides:
-  codemirror-graphql>@codemirror/language: "^6.11.1"
+  codemirror-graphql>@codemirror/language: "^6.12.4"

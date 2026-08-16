@@ -1,3 +1,11 @@
+[server]
+host = "localhost"
+
+[logger]
+enable = true
+level = "info"
+format = "compact"
+
 [storage]
 data_dir = "./data"
 
@@ -11,21 +19,10 @@ leaky_bucket_initial_tokens = 0
 leaky_bucket_refill_tokens = 1
 leaky_bucket_refill_interval = 500
 
-
-[mikan.http_client.proxy]
-
-[mikan.http_client.proxy.headers]
-
 [graphql]
 depth_limit = inf
 complexity_limit = inf
 
-[cache]
-
-[crypto]
-
-[task]
-
-[message]
-
+[scheduler]
 [media]
+# Typed defaults inherit the compiled codec capabilities.

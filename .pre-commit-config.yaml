@@ -1,15 +1,15 @@
 repos:
-    - repo: local
-      hooks:
-          - id: pnpm-lint
-            name: pnpm lint
-            entry: pnpm lint
-            language: system
-            pass_filenames: false
-            stages: [commit]
-          - id: cargo-clippy
-            name: cargo clippy --workspace
-            entry: cargo clippy --workspace
-            language: system
-            pass_filenames: false
-            stages: [commit]
+  - repo: local
+    hooks:
+      - id: typescript-lint
+        name: just lint ts
+        entry: just lint ts
+        language: system
+        pass_filenames: false
+        stages: [commit]
+      - id: rust-check
+        name: just check rust
+        entry: just check rust
+        language: system
+        pass_filenames: false
+        stages: [commit]

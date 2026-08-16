@@ -1,7 +1,6 @@
-import { Injectable, inject } from "@outposts/injection-js";
+import { inject } from "injection-js";
 import { DOCUMENT } from "./injection.js";
 
-@Injectable()
 export class PlatformService {
   document = inject(DOCUMENT);
 

@@ -1,133 +1,122 @@
-import { Injectable, inject } from "@outposts/injection-js";
 import {
-  BehaviorSubject,
-  combineLatest,
-  distinctUntilChanged,
-  filter,
-  fromEvent,
-  map,
-} from "rxjs";
+  createComputed,
+  createSignal,
+  readonlySignal,
+} from "@securitydept/client";
+import { inject } from "injection-js";
+import { fromEvent, Subscription } from "rxjs";
 import { DOCUMENT } from "@/infra/platform/injection";
 import { LocalStorageService } from "@/infra/storage/web-storage.service";
+
 export type PreferColorSchemaType = "dark" | "light" | "system";
 export type PreferColorSchemaClass = "dark" | "light";
 
-const MOBILE_BREAKPOINT = 768;
+const STORAGE_KEY = "prefers-color-scheme";
+const MOBILE_QUERY = "(max-width: 767px)";
+const SYSTEM_THEME_QUERY = "(prefers-color-scheme: dark)";
 
-@Injectable()
-export class ThemeService {
-  document = inject(DOCUMENT);
-  localStorage = inject(LocalStorageService);
-  systemColorSchema$ = new BehaviorSubject(this.systemColorSchema);
-  storageColorSchema$ = new BehaviorSubject(
-    this.getColorSchemaType(this.localStorage.getItem("prefers-color-scheme")),
+export class ThemeService implements Disposable {
+  private readonly document = inject(DOCUMENT);
+  private readonly localStorage = inject(LocalStorageService);
+  private readonly systemQuery =
+    this.document.defaultView?.matchMedia?.(SYSTEM_THEME_QUERY);
+  private readonly mobileQuery =
+    this.document.defaultView?.matchMedia?.(MOBILE_QUERY);
+  private readonly preferenceState = createSignal<PreferColorSchemaType>(
+    this.readPreference(),
   );
-  colorSchema$ = new BehaviorSubject(
-    this.getColorSchemaByType(
-      this.storageColorSchema$.value,
-      this.systemColorSchema$.value,
-    ),
+  private readonly systemState = createSignal<PreferColorSchemaClass>(
+    this.systemQuery?.matches ? "dark" : "light",
   );
-  isMobile$ = new BehaviorSubject(
-    this.getIsMobileByInnerWidth(this.document.defaultView?.innerWidth),
+  private readonly mobileState = createSignal(
+    this.mobileQuery?.matches ??
+      (this.document.defaultView?.innerWidth ?? 768) < 768,
   );
+  private readonly subscriptions = new Subscription();
+  private started = false;
+  private disposed = false;
 
-  setup() {
-    const isMobileMediaQuery = this.document.defaultView?.matchMedia(
-      `(max-width: ${MOBILE_BREAKPOINT - 1}px)`,
-    );
+  readonly preference = readonlySignal(this.preferenceState);
+  readonly systemTheme = readonlySignal(this.systemState);
+  readonly isMobile = readonlySignal(this.mobileState);
+  readonly colorTheme = createComputed(() => {
+    const preference = this.preferenceState.get();
+    return preference === "system" ? this.systemState.get() : preference;
+  });
 
-    if (isMobileMediaQuery) {
-      fromEvent(isMobileMediaQuery, "change")
-        .pipe(
-          map(() =>
-            this.getIsMobileByInnerWidth(this.document.defaultView?.innerWidth),
-          ),
-          distinctUntilChanged(),
-        )
-        .subscribe(this.isMobile$);
+  setup(): void {
+    if (this.started || this.disposed) return;
+    this.started = true;
+    this.applyTheme();
+    if (this.systemQuery) {
+      this.subscriptions.add(
+        fromEvent(this.systemQuery, "change").subscribe(() => {
+          this.systemState.set(this.systemQuery?.matches ? "dark" : "light");
+          this.applyTheme();
+        }),
+      );
     }
-
-    const systemColorSchemaMediaQuery = this.document.defaultView?.matchMedia(
-      "(prefers-color-scheme: dark)",
-    );
-
-    if (systemColorSchemaMediaQuery) {
-      fromEvent(systemColorSchemaMediaQuery, "change")
-        .pipe(
-          map(() => (systemColorSchemaMediaQuery.matches ? "dark" : "light")),
-          distinctUntilChanged(),
-        )
-        .subscribe(this.systemColorSchema$);
+    if (this.mobileQuery) {
+      this.subscriptions.add(
+        fromEvent(this.mobileQuery, "change").subscribe(() => {
+          this.mobileState.set(this.mobileQuery?.matches ?? false);
+        }),
+      );
     }
-
-    if (this.document.defaultView?.localStorage) {
-      fromEvent(this.document.defaultView, "storage")
-        .pipe(
-          filter(
-            (e): e is StorageEvent =>
-              (e as StorageEvent)?.key === "prefers-color-scheme",
-          ),
-          map((event) => this.getColorSchemaType(event.newValue)),
-          distinctUntilChanged(),
-        )
-        .subscribe(this.storageColorSchema$);
+    const window = this.document.defaultView;
+    if (window) {
+      this.subscriptions.add(
+        fromEvent<StorageEvent>(window, "storage").subscribe((event) => {
+          // A null key represents localStorage.clear(), which resets the preference.
+          if (event.key !== STORAGE_KEY && event.key !== null) return;
+          try {
+            if (event.storageArea && event.storageArea !== window.localStorage)
+              return;
+          } catch {
+            return;
+          }
+          this.preferenceState.set(this.parsePreference(event.newValue));
+          this.applyTheme();
+        }),
+      );
     }
-
-    combineLatest({
-      system: this.systemColorSchema$,
-      storage: this.storageColorSchema$,
-    })
-      .pipe(
-        map(({ system, storage }) =>
-          this.getColorSchemaByType(storage, system),
-        ),
-      )
-      .subscribe(this.colorSchema$);
   }
 
-  private getColorSchemaType(themeType: string | null): PreferColorSchemaType {
-    if (themeType === "dark" || themeType === "light") {
-      return themeType as PreferColorSchemaType;
+  setPreference(preference: PreferColorSchemaType): void {
+    if (this.disposed) return;
+    this.preferenceState.set(preference);
+    this.applyTheme();
+    try {
+      this.localStorage.setItem(STORAGE_KEY, preference);
+    } catch {
+      // Browser privacy settings can deny persistence; the in-memory preference still works.
     }
-    return "system";
   }
 
-  private getColorSchemaByType(
-    themeType: PreferColorSchemaType,
-    systemColorSchema: PreferColorSchemaClass,
-  ): PreferColorSchemaClass {
-    if (themeType === "dark" || themeType === "light") {
-      return themeType;
+  [Symbol.dispose](): void {
+    this.dispose();
+  }
+
+  dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.subscriptions.unsubscribe();
+  }
+
+  private readPreference(): PreferColorSchemaType {
+    try {
+      return this.parsePreference(this.localStorage.getItem(STORAGE_KEY));
+    } catch {
+      return "system";
     }
-    return systemColorSchema;
   }
 
-  private getIsMobileByInnerWidth(innerWidth: number | undefined): boolean {
-    if (innerWidth === undefined) {
-      return false;
-    }
-    return innerWidth < MOBILE_BREAKPOINT;
+  private parsePreference(value: string | null): PreferColorSchemaType {
+    return value === "dark" || value === "light" ? value : "system";
   }
 
-  get systemColorSchema(): PreferColorSchemaClass {
-    return this.document.defaultView?.matchMedia("(prefers-color-scheme: dark)")
-      .matches
-      ? "dark"
-      : "light";
-  }
-
-  get colorSchema() {
-    return this.colorSchema$.value;
-  }
-
-  set colorSchema(themeType: PreferColorSchemaType) {
-    this.localStorage.setItem("prefers-color-scheme", themeType);
-    const themeClass = this.getColorSchemaByType(
-      themeType,
-      this.systemColorSchema,
-    );
+  private applyTheme(): void {
     this.document.documentElement.classList.remove("dark", "light");
-    this.document.documentElement.classList.add(themeClass);
+    this.document.documentElement.classList.add(this.colorTheme.get());
   }
 }

@@ -25,11 +25,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { INSERT_CRON } from "@/domains/recorder/schema/cron";
 import { useInject } from "@/infra/di/inject";
-import {
-  type InsertCronMutation,
-  type InsertCronMutationVariables,
-  SubscriberTaskTypeEnum,
-} from "@/infra/graphql/gql/graphql";
+import { SubscriberTaskTypeEnum } from "@/infra/graphql/gql/graphql";
 import { IntlService } from "@/infra/intl/intl.service";
 
 const SUBSCRIPTION_TASK_CRON_PRESETS = [
@@ -144,10 +140,7 @@ export const SubscriptionCronCreationView = memo(
   ({ subscriptionId, onComplete }: SubscriptionCronCreationViewProps) => {
     const intlService = useInject(IntlService);
 
-    const [insertCron, { loading: loadingInsert }] = useMutation<
-      InsertCronMutation,
-      InsertCronMutationVariables
-    >(INSERT_CRON, {
+    const [insertCron, { loading: loadingInsert }] = useMutation(INSERT_CRON, {
       onCompleted: (data) => {
         toast.success("Cron created");
         onComplete(data.cronCreateOne);

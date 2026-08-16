@@ -1,17 +1,8 @@
-import {
-  type InjectionToken,
-  Injector,
-  inject,
-  type Type,
-} from "@outposts/injection-js";
-import { useInjector } from "oidc-client-rx/adapters/react";
+import { useSecuritydeptContext } from "@securitydept/client-react";
+import type { InjectionToken, Type } from "injection-js";
 import { useMemo } from "react";
 
-export function injectInjector(): Injector {
-  return inject(Injector as any as InjectionToken<Injector>);
-}
-
 export function useInject<T>(token: InjectionToken<T> | Type<T>): T {
-  const injector = useInjector();
+  const injector = useSecuritydeptContext();
   return useMemo(() => injector.get(token), [injector, token]);
 }

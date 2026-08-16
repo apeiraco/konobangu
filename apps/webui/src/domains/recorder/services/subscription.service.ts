@@ -1,6 +1,6 @@
-import { Injectable, inject } from "@outposts/injection-js";
 import { ArkErrors } from "arktype";
 import { omit } from "es-toolkit";
+import { inject } from "injection-js";
 import {
   SubscriptionCategoryEnum,
   type SubscriptionsInsertInput,
@@ -17,7 +17,6 @@ import {
 import type { SubscriptionForm } from "../schema/subscriptions";
 import { MikanService } from "./mikan.service";
 
-@Injectable()
 export class SubscriptionService {
   private mikan = inject(MikanService);
 

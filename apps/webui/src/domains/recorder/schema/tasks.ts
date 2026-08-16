@@ -1,7 +1,7 @@
-import { gql } from "@apollo/client";
+import { gql } from "@/infra/graphql/gql";
 import type { GetTasksQuery } from "@/infra/graphql/gql/graphql";
 
-export const GET_TASKS = gql`
+export const GET_TASKS = gql(`
   query GetTasks($filter: SubscriberTasksFilterInput!, $orderBy: SubscriberTasksOrderInput!, $pagination: PaginationInput!) {
     subscriberTasks(
       pagination: $pagination
@@ -10,6 +10,7 @@ export const GET_TASKS = gql`
     ) {
       nodes {
         id,
+        subscriptionId,
         job,
         taskType,
         status,
@@ -17,10 +18,9 @@ export const GET_TASKS = gql`
         maxAttempts,
         runAt,
         lastError,
-        lockAt,
-        lockBy,
+        generation,
+        cancelRequestedAt,
         doneAt,
-        priority,
         subscription {
           displayName
           sourceUrl
@@ -38,8 +38,7 @@ export const GET_TASKS = gql`
             updatedAt
             timeoutMs
             maxAttempts
-            priority
-            attempts
+                attempts
         }
       }
       paginationInfo {
@@ -48,23 +47,23 @@ export const GET_TASKS = gql`
       }
     }
   }
-`;
+`);
 
-export const INSERT_SUBSCRIBER_TASK = gql`
+export const INSERT_SUBSCRIBER_TASK = gql(`
   mutation InsertSubscriberTask($data: SubscriberTasksInsertInput!) {
     subscriberTasksCreateOne(data: $data) {
       id
     }
   }
-`;
+`);
 
-export const DELETE_TASKS = gql`
+export const DELETE_TASKS = gql(`
   mutation DeleteTasks($filter: SubscriberTasksFilterInput!) {
     subscriberTasksDelete(filter: $filter)
   }
-`;
+`);
 
-export const RETRY_TASKS = gql`
+export const RETRY_TASKS = gql(`
   mutation RetryTasks($filter: SubscriberTasksFilterInput!) {
     subscriberTasksRetryOne(filter: $filter) {
         id,
@@ -75,12 +74,11 @@ export const RETRY_TASKS = gql`
         maxAttempts,
         runAt,
         lastError,
-        lockAt,
-        lockBy,
+        generation,
+        cancelRequestedAt,
         doneAt,
-        priority
     }
   }
-`;
+`);
 
 export type TaskDto = GetTasksQuery["subscriberTasks"]["nodes"][number];

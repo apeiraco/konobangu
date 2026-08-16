@@ -7,8 +7,6 @@ import { SelectContent, SelectItem } from "@/components/ui/select";
 import { GET_CREDENTIAL_3RD } from "@/domains/recorder/schema/credential3rd";
 import {
   type Credential3rdTypeEnum,
-  type GetCredential3rdQuery,
-  type GetCredential3rdQueryVariables,
   OrderByEnum,
 } from "@/infra/graphql/gql/graphql";
 import { CreateCompleteAction } from "@/infra/routes/nav";
@@ -24,10 +22,7 @@ export function Credential3rdSelectContent({
 }: Credential3rdSelectContentProps) {
   const navigate = useNavigate();
 
-  const { data, loading, error, refetch } = useQuery<
-    GetCredential3rdQuery,
-    GetCredential3rdQueryVariables
-  >(GET_CREDENTIAL_3RD, {
+  const { data, loading, error, refetch } = useQuery(GET_CREDENTIAL_3RD, {
     variables: {
       filter: {
         credentialType: {
@@ -75,8 +70,7 @@ export function Credential3rdSelectContent({
         </div>
       )}
 
-      {!loading &&
-        !error &&
+      {(!loading || data) &&
         (credentials.length === 0 ? (
           <div className="flex flex-col items-center gap-2 py-6 text-center">
             <span className="text-muted-foreground text-sm">

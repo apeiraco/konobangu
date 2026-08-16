@@ -32,3 +32,13 @@ export function QueryErrorView({
     </div>
   );
 }
+
+export function QueryPartialError({ error }: { error: Error | undefined }) {
+  if (!error) return null;
+  return (
+    <Alert variant="destructive" role="alert">
+      <AlertTitle>Some data could not be loaded</AlertTitle>
+      <AlertDescription>{error.message}</AlertDescription>
+    </Alert>
+  );
+}

@@ -2,3 +2,9 @@
 # Its existence tells pnpm that this is an independent root, preventing the pnpm CLI from trying to
 # shuttle upwards and fall back to the konobangu root directory after being excluded by the upper layer
 packages: []
+allowBuilds:
+  bufferutil: true
+  ip-set: true
+  node-datachannel: true
+  utf-8-validate: true
+  utp-native: true

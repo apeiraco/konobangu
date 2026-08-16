@@ -1,34 +1,14 @@
-import { atomWithObservable } from "jotai/utils";
-import { useInjector } from "oidc-client-rx/adapters/react";
-import { useMemo } from "react";
-import type { Observable } from "rxjs";
-import { authContextFromInjector } from "./context";
+import { useSignal } from "@securitydept/client-react";
+import { AuthService } from "@/domains/auth/auth.service";
+import { useInject } from "@/infra/di/inject";
 
 export function useAuth() {
-  const injector = useInjector();
-
-  const authContext = useMemo(
-    () => authContextFromInjector(injector),
-    [injector],
-  );
-
-  const isAuthenticated = useMemo(
-    () =>
-      atomWithObservable(
-        () => authContext.isAuthenticated$ as Observable<boolean>,
-      ),
-    [authContext.isAuthenticated$],
-  );
-
-  const authData = useMemo(
-    () => atomWithObservable(() => authContext.userData$ as Observable<any>),
-    [authContext],
-  );
-
+  const authService = useInject(AuthService);
   return {
-    ...authContext,
-    authData,
-    injector,
-    isAuthenticated,
+    type: authService.authMethod,
+    authService,
+    authData: useSignal(authService.userData),
+    isAuthenticated: useSignal(authService.isAuthenticated),
+    check: useSignal(authService.check),
   };
 }

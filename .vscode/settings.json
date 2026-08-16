@@ -25,7 +25,6 @@
   },
   "emmet.showExpandedAbbreviation": "never",
   "prettier.enable": false,
-  "typescript.tsdk": "node_modules/typescript/lib",
   "rust-analyzer.showUnlinkedFileNotification": false,
   "sqltools.connections": [
     {

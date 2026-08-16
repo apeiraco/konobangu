@@ -1,6 +1,6 @@
-import { gql } from "@apollo/client";
 import { type } from "arktype";
 import { arkValidatorToTypeNarrower } from "@/infra/errors/arktype";
+import { gql } from "@/infra/graphql/gql";
 import {
   type GetSubscriptionsQuery,
   SubscriptionCategoryEnum,
@@ -13,7 +13,7 @@ import {
   MikanSubscriptionSubscriberSourceUrlSchema,
 } from "./mikan";
 
-export const GET_SUBSCRIPTIONS = gql`
+export const GET_SUBSCRIPTIONS = gql(`
   query GetSubscriptions($filter: SubscriptionsFilterInput!, $orderBy: SubscriptionsOrderInput!, $pagination: PaginationInput!) {
     subscriptions(
       pagination: $pagination
@@ -36,9 +36,9 @@ export const GET_SUBSCRIPTIONS = gql`
       }
     }
   }
-`;
+`);
 
-export const INSERT_SUBSCRIPTION = gql`
+export const INSERT_SUBSCRIPTION = gql(`
     mutation InsertSubscription($data: SubscriptionsInsertInput!) {
         subscriptionsCreateOne(data: $data) {
             id
@@ -51,12 +51,12 @@ export const INSERT_SUBSCRIPTION = gql`
             credentialId
         }
     }
-`;
+`);
 
 export type SubscriptionDto =
   GetSubscriptionsQuery["subscriptions"]["nodes"][number];
 
-export const UPDATE_SUBSCRIPTIONS = gql`
+export const UPDATE_SUBSCRIPTIONS = gql(`
     mutation UpdateSubscriptions(
     $data: SubscriptionsUpdateInput!,
     $filter: SubscriptionsFilterInput!,
@@ -74,15 +74,15 @@ export const UPDATE_SUBSCRIPTIONS = gql`
         enabled
     }
 }
-`;
+`);
 
-export const DELETE_SUBSCRIPTIONS = gql`
+export const DELETE_SUBSCRIPTIONS = gql(`
     mutation DeleteSubscriptions($filter: SubscriptionsFilterInput) {
         subscriptionsDelete(filter: $filter)
     }
-`;
+`);
 
-export const GET_SUBSCRIPTION_DETAIL = gql`
+export const GET_SUBSCRIPTION_DETAIL = gql(`
 query GetSubscriptionDetail ($filter: SubscriptionsFilterInput!) {
   subscriptions(filter: $filter) {
     nodes {
@@ -170,7 +170,7 @@ query GetSubscriptionDetail ($filter: SubscriptionsFilterInput!) {
     }
   }
 }
-`;
+`);
 
 export const SubscriptionFormTypedMikanSeasonSchema =
   MikanSubscriptionSeasonSourceUrlSchema.and(

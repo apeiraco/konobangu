@@ -1,39 +1,21 @@
+#[cfg(feature = "testcontainers")]
 use std::time::Duration;
 
-use chrono::Utc;
-use qbit_rs::model::{GetTorrentListArg, TorrentFilter as QbitTorrentFilter};
-use quirks_path::Path;
-use snafu::OptionExt;
-
+#[cfg(feature = "testcontainers")]
 use crate::{
-  DownloaderError,
-  bittorrent::{downloader::TorrentDownloaderTrait, source::HashTorrentSource, task::TorrentTaskTrait},
+  bittorrent::{downloader::TorrentDownloaderTrait, source::HashTorrentSource},
   core::{DownloadIdSelectorTrait, DownloaderTrait},
   qbit::{
     QBittorrentDownloader, QBittorrentDownloaderCreation,
-    task::{QBittorrentComplexSelector, QBittorrentCreation, QBittorrentHashSelector, QBittorrentSelector, QBittorrentTask},
+    task::{QBittorrentCreation, QBittorrentHashSelector, QBittorrentSelector},
   },
-  utils::path_equals_as_file_url,
 };
 
-fn get_tmp_qbit_test_folder() -> &'static str {
-  if cfg!(all(windows, not(feature = "testcontainers"))) {
-    "C:\\Windows\\Temp\\konobangu\\qbit"
-  } else {
-    "/tmp/konobangu/qbit"
-  }
-}
-
+#[cfg(feature = "testcontainers")]
 #[derive(Debug)]
 pub struct QbitTestcontainersInstance {
   pub req: testcontainers::ContainerRequest<testcontainers::GenericImage>,
   pub webui_port: u16,
-  #[allow(unused)]
-  pub torrenting_port: u16,
-}
-
-fn get_free_port() -> u16 {
-  std::net::TcpListener::bind("127.0.0.1:0").unwrap().local_addr().unwrap().port()
 }
 
 #[cfg(feature = "testcontainers")]
@@ -42,206 +24,230 @@ pub async fn create_qbit_testcontainers() -> anyhow::Result<QbitTestcontainersIn
     GenericImage,
     core::{ContainerPort, WaitFor},
   };
-  use testcontainers_ext::{ImageDefaultLogConsumerExt, ImagePruneExistedLabelExt};
+  use testcontainers_ext::ImageDefaultLogConsumerExt;
   use testcontainers_modules::testcontainers::ImageExt;
 
-  let webui_port = get_free_port();
-  let torrenting_port = get_free_port();
+  let webui_port = 8080;
+  let torrenting_port = 6881;
 
   let container = GenericImage::new("linuxserver/qbittorrent", "latest")
     .with_wait_for(WaitFor::message_on_stderr("Connection to localhost"))
+    // Docker reserves host ports atomically; probing and releasing a local
+    // socket before container startup races with other test containers.
+    .with_exposed_port(ContainerPort::Tcp(webui_port))
+    .with_exposed_port(ContainerPort::Tcp(torrenting_port))
     .with_env_var("WEBUI_PORT", webui_port.to_string())
     .with_env_var("TZ", "Asia/Singapore")
+    .with_host("host.docker.internal", testcontainers::core::Host::HostGateway)
     .with_env_var("TORRENTING_PORT", torrenting_port.to_string())
-    .with_mapped_port(torrenting_port, ContainerPort::Tcp(torrenting_port))
-    .with_mapped_port(webui_port, ContainerPort::Tcp(webui_port))
-    .with_default_log_consumer()
-    .with_prune_existed_label(env!("CARGO_PKG_NAME"), "qbit-downloader", true, false)
-    .await?;
+    // This fixture deliberately maps a random host port to the fixed service
+    // port. Disable only qBittorrent's port-equality check; authentication and
+    // CSRF protection remain enabled and the wrong-password case is asserted.
+    .with_copy_to(
+      "/config/qBittorrent/qBittorrent.conf",
+      b"[Preferences]\nWebUI\\HostHeaderValidation=false\n".to_vec(),
+    )
+    .with_default_log_consumer();
 
-  Ok(QbitTestcontainersInstance {
-    req: container,
-    webui_port,
-    torrenting_port,
-  })
-}
-
-#[cfg(not(feature = "testcontainers"))]
-#[tokio::test]
-async fn test_qbittorrent_downloader() {
-  let hash = "47ee2d69e7f19af783ad896541a07b012676f858".to_string();
-  let torrent_url = format!("https://mikanani.me/Download/20240301/{}.torrent", hash);
-  let _ = test_qbittorrent_downloader_impl(torrent_url, hash, None, None, 10721).await;
+  Ok(QbitTestcontainersInstance { req: container, webui_port })
 }
 
 #[cfg(feature = "testcontainers")]
 #[tokio::test(flavor = "multi_thread")]
-async fn test_qbittorrent_downloader() -> anyhow::Result<()> {
+async fn downloader_qbit_local_lifecycle_sync_auth_timeout_shutdown() -> anyhow::Result<()> {
+  use anyhow::Context;
   use testcontainers::runners::AsyncRunner;
-  use testing_torrents::{TestTorrentRequest, TestTorrentResponse, TestingTorrentFileItem};
   use tokio::io::AsyncReadExt;
 
-  let _ = tracing_subscriber::fmt().with_max_level(tracing::Level::DEBUG).with_test_writer().try_init();
-
-  let torrents_image = testing_torrents::create_testcontainers().await?;
-  let _torrents_container = torrents_image.req.start().await?;
-
-  let torrents_req = TestTorrentRequest {
-    id: "f10ebdda-dd2e-43f8-b80c-bf0884d071c4".into(),
-    file_list: vec![TestingTorrentFileItem {
-      path: "[Nekomoe kissaten&LoliHouse] Boku no Kokoro no Yabai Yatsu - 20 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv".into(),
-      size: 1024,
-    }],
-  };
-
-  let torrent_res: TestTorrentResponse = reqwest::Client::new()
-    .post(format!("http://127.0.0.1:{}/api/torrents/mock", torrents_image.api_port))
-    .json(&torrents_req)
-    .send()
-    .await?
-    .json()
-    .await?;
-
-  let qbit_image = create_qbit_testcontainers().await?;
-  let qbit_container = qbit_image.req.start().await?;
-
+  use crate::core::{DownloadSimpleState, DownloadStateTrait, DownloadTaskTrait};
+  let fixture = testing_torrents::LocalTestingTorrents::start().await?;
+  let torrent = fixture.torrent().await?;
+  let image = create_qbit_testcontainers().await?;
+  let container = image.req.start().await?;
+  let webui_port = container.get_host_port_ipv4(image.webui_port).await?;
+  for command in [vec!["mkdir", "-p", "/downloads/fixture"], vec!["chmod", "0777", "/downloads/fixture"]] {
+    let status = tokio::process::Command::new("docker")
+      .args(["exec", container.id()])
+      .args(command)
+      .status()
+      .await?;
+    anyhow::ensure!(
+      status.success(),
+      "Owned download directory must be writable by the fixture's unprivileged qBittorrent process"
+    );
+  }
   let mut logs = String::new();
-
-  qbit_container.stdout(false).read_to_string(&mut logs).await?;
-
+  container.stdout(false).read_to_string(&mut logs).await?;
   let username = logs
     .lines()
-    .find_map(|line| {
-      if line.contains("The WebUI administrator username is") {
-        line.split_whitespace().last()
-      } else {
-        None
-      }
-    })
-    .expect("should have username")
-    .trim();
-
+    .find(|line| line.contains("The WebUI administrator username is"))
+    .and_then(|line| line.split_whitespace().last())
+    .ok_or_else(|| anyhow::anyhow!("Fixture username missing"))?;
   let password = logs
     .lines()
-    .find_map(|line| {
-      if line.contains("A temporary password is provided for") {
-        line.split_whitespace().last()
-      } else {
-        None
+    .find(|line| line.contains("A temporary password is provided for"))
+    .and_then(|line| line.split_whitespace().last())
+    .ok_or_else(|| anyhow::anyhow!("Fixture password missing"))?;
+  let creation = |password: &str| QBittorrentDownloaderCreation {
+    endpoint: format!("http://127.0.0.1:{webui_port}"),
+    username: username.into(),
+    password: password.into(),
+    save_path: "/downloads/fixture".into(),
+    subscriber_id: 1,
+    downloader_id: 1,
+    wait_sync_timeout: Some(Duration::from_secs(5)),
+  };
+  assert!(QBittorrentDownloader::from_creation(creation("wrong-fixture-password")).await.is_err());
+  let downloader = QBittorrentDownloader::from_creation(creation(password)).await?;
+  let result = async {
+    assert!(downloader.client.get_version().await?.trim_start_matches('v').starts_with('5'));
+    let original = reqwest::get(&torrent.torrent_url).await?.error_for_status()?.bytes().await?;
+    // Only top-level tracker/webseed URL strings change; the info dictionary
+    // and known hash stay intact. Docker reaches the local fixture through
+    // its host.
+    let mut payload = original.to_vec();
+    let torrent_url = url::Url::parse(&torrent.torrent_url)?;
+    let name = torrent_url
+      .path_segments()
+      .and_then(Iterator::last)
+      .ok_or_else(|| anyhow::anyhow!("Fixture torrent name missing"))?
+      .trim_end_matches(".torrent");
+    for port in [fixture.api_port, fixture.tracker_port] {
+      let from = format!("http://127.0.0.1:{port}");
+      let to = format!("http://host.docker.internal:{port}");
+      // URL suffixes are part of each bencoded string length.
+      for suffix in ["/announce", &format!("/api/static/{name}/")] {
+        let old = format!("{}:{}{}", from.len() + suffix.len(), from, suffix).into_bytes();
+        let new = format!("{}:{}{}", to.len() + suffix.len(), to, suffix).into_bytes();
+        while let Some(at) = payload.windows(old.len()).position(|w| w == old) {
+          payload.splice(at..at + old.len(), new.clone());
+        }
       }
+    }
+    let source = HashTorrentSource::TorrentFile(crate::bittorrent::source::TorrentFileSource::from_bytes(
+      "fixture.torrent".into(),
+      payload.into(),
+      None,
+    )?);
+    let add = || QBittorrentCreation {
+      save_path: "/downloads/fixture".into(),
+      tags: vec![],
+      category: None,
+      sources: vec![source.clone()],
+    };
+    downloader.add_downloads(add()).await?;
+    downloader.add_downloads(add()).await?;
+    let selector = || QBittorrentSelector::Hash(QBittorrentHashSelector::from_id(torrent.hash.clone()));
+    assert_eq!(downloader.query_downloads(selector()).await?.len(), 1);
+    let rid = downloader.sync_data.read().await.rid;
+    assert!(rid > 0);
+    downloader.sync_data().await?;
+    assert!(downloader.sync_data.read().await.rid >= rid);
+    downloader.pause_torrents(vec![torrent.hash.clone()].into()).await?;
+    let mut pause_state = None;
+    tokio::time::timeout(Duration::from_secs(5), async {
+      loop {
+        let tasks = downloader.query_downloads(selector()).await?;
+        pause_state = tasks[0].torrent.state.clone();
+        if tasks[0].state().to_download_state() == DownloadSimpleState::Paused {
+          break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+      }
+      Ok::<_, anyhow::Error>(())
     })
-    .expect("should have password")
-    .trim();
-
-  tracing::info!(username, password);
-
-  test_qbittorrent_downloader_impl(torrent_res.torrent_url, torrent_res.hash, Some(username), Some(password), qbit_image.webui_port).await?;
-
-  Ok(())
+    .await
+    .with_context(|| format!("Paused state timed out, last state: {pause_state:?}"))??;
+    downloader.resume_torrents(vec![torrent.hash.clone()].into()).await?;
+    tokio::time::timeout(Duration::from_secs(5), async {
+      loop {
+        if downloader.query_downloads(selector()).await?[0].state().to_download_state() != DownloadSimpleState::Paused {
+          break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+      }
+      Ok::<_, anyhow::Error>(())
+    })
+    .await
+    .context("Resumed state timed out")??;
+    tokio::time::timeout(Duration::from_secs(30), async {
+      loop {
+        let tasks = downloader.query_downloads(selector()).await?;
+        if tasks[0].progress().is_some_and(|progress| progress >= 1.0) {
+          break;
+        }
+        tokio::time::sleep(Duration::from_millis(50)).await;
+      }
+      Ok::<_, anyhow::Error>(())
+    })
+    .await
+    .context("Complete download timed out")??;
+    let content = downloader.query_downloads(selector()).await?[0].contents[0].name.clone();
+    let file = format!("/downloads/fixture/{content}");
+    let exists = || async {
+      let output = tokio::process::Command::new("docker")
+        .args(["exec", container.id(), "test", "-f", &file])
+        .output()
+        .await?;
+      Ok::<_, anyhow::Error>(output.status.success())
+    };
+    assert!(exists().await?);
+    downloader.remove_torrents_with_files(vec![torrent.hash.clone()].into(), false).await?;
+    assert!(downloader.query_downloads(selector()).await?.is_empty());
+    assert!(exists().await?, "Keep-files deletion must preserve downloaded content");
+    assert!(!downloader.sync_data.read().await.torrents.contains_key(&torrent.hash));
+    downloader.add_downloads(add()).await?;
+    downloader.remove_torrents(vec![torrent.hash.clone()].into()).await?;
+    downloader.remove_torrents(vec![torrent.hash.clone()].into()).await?;
+    tokio::time::timeout(Duration::from_secs(5), async {
+      while exists().await? {
+        tokio::time::sleep(Duration::from_millis(50)).await;
+      }
+      Ok::<_, anyhow::Error>(())
+    })
+    .await
+    .context("Removed downloaded file timed out")??;
+    // A silent endpoint proves the client has a bounded request, independently
+    // of background sync notifications.
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:0").await?;
+    let address = listener.local_addr()?;
+    let silent = tokio::spawn(async move {
+      let (socket, _) = listener.accept().await.unwrap();
+      let _socket = socket;
+      std::future::pending::<()>().await;
+    });
+    let mut options = creation(password);
+    options.endpoint = format!("http://{address}");
+    options.wait_sync_timeout = Some(Duration::from_millis(100));
+    let timed = tokio::time::timeout(Duration::from_secs(2), QBittorrentDownloader::from_creation(options)).await;
+    silent.abort();
+    assert!(timed?.is_err());
+    Ok::<_, anyhow::Error>(())
+  }
+  .await;
+  tokio::time::timeout(Duration::from_secs(6), downloader.shutdown()).await?;
+  result
 }
 
-async fn test_qbittorrent_downloader_impl(
-  torrent_url: String,
-  torrent_hash: String,
-  username: Option<&str>,
-  password: Option<&str>,
-  webui_port: u16,
-) -> anyhow::Result<()> {
-  let http_client = fetch::test_util::build_testing_http_client()?;
-  let base_save_path = Path::new(get_tmp_qbit_test_folder());
-
-  let downloader = QBittorrentDownloader::from_creation(QBittorrentDownloaderCreation {
-    endpoint: format!("http://127.0.0.1:{}", webui_port),
-    password: password.unwrap_or_default().to_string(),
-    username: username.unwrap_or_default().to_string(),
-    subscriber_id: 0,
-    save_path: base_save_path.to_string(),
-    downloader_id: 0,
-    wait_sync_timeout: Some(Duration::from_secs(3)),
-  })
-  .await?;
-
-  downloader.check_connection().await?;
-
-  downloader.remove_torrents(vec![torrent_hash.clone()].into()).await?;
-
-  let torrent_source = HashTorrentSource::from_url_and_http_client(&http_client, torrent_url).await?;
-
-  let folder_name = format!("torrent_test_{}", Utc::now().timestamp());
-  let save_path = base_save_path.join(&folder_name);
-
-  let torrent_creation = QBittorrentCreation {
-    save_path,
-    tags: vec![],
-    sources: vec![torrent_source],
-    category: None,
-  };
-
-  downloader.add_downloads(torrent_creation).await?;
-
-  let get_torrent = async || -> Result<QBittorrentTask, DownloaderError> {
-    let torrent_infos = downloader
-      .query_downloads(QBittorrentSelector::Hash(QBittorrentHashSelector::from_id(torrent_hash.clone())))
-      .await?;
-
-    let result = torrent_infos
-      .into_iter()
-      .find(|t| t.hash_info() == torrent_hash)
-      .whatever_context::<_, DownloaderError>("no bittorrent")?;
-
-    Ok(result)
-  };
-
-  let target_torrent = get_torrent().await?;
-
-  let files = target_torrent.contents;
-
-  assert!(!files.is_empty());
-
-  let first_file = files.first().expect("should have first file");
-  assert!(
-    &first_file
-      .name
-      .ends_with(r#"[Nekomoe kissaten&LoliHouse] Boku no Kokoro no Yabai Yatsu - 20 [WebRip 1080p HEVC-10bit AAC ASSx2].mkv"#)
-  );
-
-  let test_tag = "test_tag".to_string();
-
-  downloader.add_torrent_tags(vec![torrent_hash.clone()], vec![test_tag.clone()]).await?;
-
-  let target_torrent = get_torrent().await?;
-
-  assert!(target_torrent.tags().any(|s| s == test_tag));
-
-  let test_category = format!("test_category_{}", Utc::now().timestamp());
-
-  downloader.set_torrents_category(vec![torrent_hash.clone()], &test_category).await?;
-
-  let target_torrent = get_torrent().await?;
-
-  assert_eq!(Some(test_category.as_str()), target_torrent.category().as_deref());
-
-  let moved_torrent_path = base_save_path.join(format!("moved_{}", Utc::now().timestamp()));
-
-  downloader.move_torrents(vec![torrent_hash.clone()], moved_torrent_path.as_str()).await?;
-
-  let target_torrent = get_torrent().await?;
-
-  let actual_content_path = &target_torrent.torrent.save_path.expect("failed to get actual save path");
-
-  assert!(path_equals_as_file_url(actual_content_path, moved_torrent_path).expect("failed to compare actual torrent path and found expected torrent path"));
-
-  downloader.remove_torrents(vec![torrent_hash.clone()].into()).await?;
-
-  let torrent_infos1 = downloader
-    .query_downloads(QBittorrentSelector::Complex(QBittorrentComplexSelector {
-      query: GetTorrentListArg::builder().filter(QbitTorrentFilter::All).build(),
-    }))
-    .await?;
-
-  assert!(torrent_infos1.is_empty());
-
-  tracing::info!("test finished");
-
-  Ok(())
+#[test]
+fn downloader_qbit_incremental_sync_rid_removals_and_full_update() {
+  let mut data = super::downloader::QBittorrentSyncData::default();
+  let patch = |json| serde_json::from_value::<qbit_rs::model::SyncData>(json).unwrap();
+  data.patch(patch(
+    serde_json::json!({"rid":1,"full_update":true,"torrents":{"a":{"name":"first","progress":0.5}},"tags":["old"],"server_state":{"old":1}}),
+  ));
+  data.patch(patch(
+    serde_json::json!({"rid":2,"torrents":{"a":{"progress":1.0},"b":{"name":"second"}},"tags_removed":["old"],"tags":["new"]}),
+  ));
+  assert_eq!(data.rid, 2);
+  assert_eq!(data.torrents["a"].name.as_deref(), Some("first"));
+  assert_eq!(data.torrents["a"].progress, Some(1.0));
+  assert!(!data.tags.contains("old"));
+  data.patch(patch(serde_json::json!({"rid":3,"torrents_removed":["a"]})));
+  assert!(!data.torrents.contains_key("a"));
+  data.patch(patch(serde_json::json!({"rid":4,"full_update":true,"torrents":{},"server_state":{"new":2}})));
+  assert!(data.torrents.is_empty());
+  assert!(data.tags.is_empty());
+  assert!(!data.server_state.contains_key("old"));
+  assert_eq!(data.rid, 4);
 }

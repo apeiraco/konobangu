@@ -16,7 +16,10 @@ import { ContainerHeader } from "@/components/ui/container-header";
 import { DetailCardSkeleton } from "@/components/ui/detail-card-skeleton";
 import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Separator } from "@/components/ui/separator";
 import { GET_TASKS, RETRY_TASKS } from "@/domains/recorder/schema/tasks";
 import { useInject } from "@/infra/di/inject";
@@ -24,13 +27,7 @@ import {
   apolloErrorToMessage,
   getApolloQueryError,
 } from "@/infra/errors/apollo";
-import {
-  type GetTasksQuery,
-  type GetTasksQueryVariables,
-  type RetryTasksMutation,
-  type RetryTasksMutationVariables,
-  SubscriberTaskStatusEnum,
-} from "@/infra/graphql/gql/graphql";
+import { SubscriberTaskStatusEnum } from "@/infra/graphql/gql/graphql";
 import { IntlService } from "@/infra/intl/intl.service";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { prettyTaskType } from "./-pretty-task-type";
@@ -53,7 +50,7 @@ function TaskDetailRouteComponent() {
     loading,
     error: taskError,
     refetch,
-  } = useQuery<GetTasksQuery, GetTasksQueryVariables>(GET_TASKS, {
+  } = useQuery(GET_TASKS, {
     variables: {
       filter: {
         id: {
@@ -73,11 +70,12 @@ function TaskDetailRouteComponent() {
 
   const task = data?.subscriberTasks?.nodes?.[0];
 
-  const [retryTasks] = useMutation<
-    RetryTasksMutation,
-    RetryTasksMutationVariables
-  >(RETRY_TASKS, {
-    onCompleted: async () => {
+  const [retryTasks] = useMutation(RETRY_TASKS, {
+    onCompleted: async (data) => {
+      if (!data.subscriberTasksRetryOne) {
+        toast.error("Task retry conflicted or was not authorized");
+        return;
+      }
       const refetchResult = await refetch();
       const error = getApolloQueryError(refetchResult);
       if (error) {
@@ -105,11 +103,11 @@ function TaskDetailRouteComponent() {
     };
   }, [task]);
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (taskError) {
+  if (taskError && !data) {
     return <QueryErrorView message={taskError.message} onRetry={refetch} />;
   }
 
@@ -119,6 +117,7 @@ function TaskDetailRouteComponent() {
 
   return (
     <div className="container mx-auto max-w-4xl py-6">
+      <QueryPartialError error={taskError} />
       <ContainerHeader
         title="Task Detail"
         description={`View task #${task.id}`}
@@ -142,9 +141,8 @@ function TaskDetailRouteComponent() {
             </div>
             <div className="flex items-center gap-2">
               {getStatusBadge(task.status)}
-              {task.status ===
-                (SubscriberTaskStatusEnum.Killed ||
-                  SubscriberTaskStatusEnum.Failed) && (
+              {(task.status === SubscriberTaskStatusEnum.Killed ||
+                task.status === SubscriberTaskStatusEnum.Failed) && (
                 <Button
                   variant="ghost"
                   size="sm"
@@ -183,9 +181,9 @@ function TaskDetailRouteComponent() {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-medium text-sm">Priority</Label>
+                <Label className="font-medium text-sm">Generation</Label>
                 <div className="rounded-md bg-muted p-3">
-                  <span className="text-sm">{task.priority}</span>
+                  <span className="text-sm">{task.generation}</span>
                 </div>
               </div>
 
@@ -221,23 +219,26 @@ function TaskDetailRouteComponent() {
               </div>
 
               <div className="space-y-2">
-                <Label className="font-medium text-sm">Lock Time</Label>
+                <Label className="font-medium text-sm">
+                  Cancellation requested
+                </Label>
                 <div className="rounded-md bg-muted p-3">
                   <span className="text-sm">
-                    {task.lockAt
-                      ? intlService.formatDatetimeWithTz(task.lockAt)
+                    {task.cancelRequestedAt
+                      ? intlService.formatDatetimeWithTz(task.cancelRequestedAt)
                       : "-"}
                   </span>
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label className="font-medium text-sm">Lock By</Label>
-                <div className="rounded-md bg-muted p-3">
-                  <code className="text-sm">{task.lockBy || "-"}</code>
-                </div>
-              </div>
             </div>
+
+            {task.job?.subscriptionId != null &&
+              task.subscriptionId === null && (
+                <p className="text-muted-foreground text-sm">
+                  Subscription #{task.job.subscriptionId} has been deleted. The
+                  job payload is retained for history.
+                </p>
+              )}
 
             {/* Job Details */}
             {job && (

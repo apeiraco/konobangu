@@ -17,7 +17,10 @@ import { DetailCardSkeleton } from "@/components/ui/detail-card-skeleton";
 import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import {
   Select,
   SelectContent,
@@ -41,9 +44,6 @@ import { compatFormDefaultValues } from "@/infra/forms/compat";
 import type {
   Credential3rdTypeEnum,
   Credential3rdUpdateInput,
-  GetCredential3rdDetailQuery,
-  UpdateCredential3rdMutation,
-  UpdateCredential3rdMutationVariables,
 } from "@/infra/graphql/gql/graphql";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 
@@ -66,17 +66,17 @@ function FormView({
     setShowPassword((prev) => !prev);
   };
 
-  const [updateCredential, { loading: updating }] = useMutation<
-    UpdateCredential3rdMutation,
-    UpdateCredential3rdMutationVariables
-  >(UPDATE_CREDENTIAL_3RD, {
-    onCompleted,
-    onError: (error) => {
-      toast("Update credential failed", {
-        description: error.message,
-      });
+  const [updateCredential, { loading: updating }] = useMutation(
+    UPDATE_CREDENTIAL_3RD,
+    {
+      onCompleted,
+      onError: (error) => {
+        toast("Update credential failed", {
+          description: error.message,
+        });
+      },
     },
-  });
+  );
 
   const form = useAppForm({
     defaultValues: compatFormDefaultValues<
@@ -240,12 +240,14 @@ function FormView({
 function Credential3rdEditRouteComponent() {
   const { id } = Route.useParams();
 
-  const { loading, error, data, refetch } =
-    useQuery<GetCredential3rdDetailQuery>(GET_CREDENTIAL_3RD_DETAIL, {
+  const { loading, error, data, refetch } = useQuery(
+    GET_CREDENTIAL_3RD_DETAIL,
+    {
       variables: {
         id: Number.parseInt(id, 10),
       },
-    });
+    },
+  );
 
   const credential = data?.credential3rd?.nodes?.[0];
 
@@ -261,11 +263,11 @@ function Credential3rdEditRouteComponent() {
     }
   }, [refetch]);
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (error) {
+  if (error && !data) {
     return <QueryErrorView message={error.message} />;
   }
 
@@ -273,5 +275,10 @@ function Credential3rdEditRouteComponent() {
     return <DetailEmptyView message="Not found certain credential" />;
   }
 
-  return <FormView credential={credential} onCompleted={onCompleted} />;
+  return (
+    <>
+      <QueryPartialError error={error} />
+      <FormView credential={credential} onCompleted={onCompleted} />
+    </>
+  );
 }

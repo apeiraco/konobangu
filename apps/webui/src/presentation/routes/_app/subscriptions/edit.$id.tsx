@@ -18,7 +18,10 @@ import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { FormFieldErrors } from "@/components/ui/form-field-errors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import {
   Select,
   SelectContent,
@@ -46,8 +49,6 @@ import {
   Credential3rdTypeEnum,
   type GetSubscriptionDetailQuery,
   SubscriptionCategoryEnum,
-  type UpdateSubscriptionsMutation,
-  type UpdateSubscriptionsMutationVariables,
 } from "@/infra/graphql/gql/graphql";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { Credential3rdSelectContent } from "./-credential3rd-select";
@@ -72,17 +73,17 @@ function FormView({
 }) {
   const subscriptionService = useInject(SubscriptionService);
 
-  const [updateSubscription, { loading: updating }] = useMutation<
-    UpdateSubscriptionsMutation,
-    UpdateSubscriptionsMutationVariables
-  >(UPDATE_SUBSCRIPTIONS, {
-    onCompleted,
-    onError: (error) => {
-      toast.error("Update subscription failed", {
-        description: error.message,
-      });
+  const [updateSubscription, { loading: updating }] = useMutation(
+    UPDATE_SUBSCRIPTIONS,
+    {
+      onCompleted,
+      onError: (error) => {
+        toast.error("Update subscription failed", {
+          description: error.message,
+        });
+      },
     },
-  });
+  );
 
   // Extract source URL metadata for form initialization
   const sourceUrlMeta = useMemo(
@@ -258,7 +259,7 @@ function FormView({
                             Number.parseInt(e.target.value, 10),
                           )
                         }
-                        placeholder={`Please enter full year (e.g. ${new Date().getFullYear()})`}
+                        placeholder={`Please enter full year (e.g. ${Temporal.Now.plainDateISO().year})`}
                         autoComplete="off"
                       />
                       {field.state.meta.errors && (
@@ -363,12 +364,11 @@ function FormView({
 function SubscriptionEditRouteComponent() {
   const { id } = Route.useParams();
 
-  const { loading, error, data, refetch } =
-    useQuery<GetSubscriptionDetailQuery>(GET_SUBSCRIPTION_DETAIL, {
-      variables: {
-        id: Number.parseInt(id, 10),
-      },
-    });
+  const { loading, error, data, refetch } = useQuery(GET_SUBSCRIPTION_DETAIL, {
+    variables: {
+      filter: { id: { eq: Number.parseInt(id, 10) } },
+    },
+  });
 
   const subscription = data?.subscriptions?.nodes?.[0];
 
@@ -384,11 +384,11 @@ function SubscriptionEditRouteComponent() {
     }
   }, [refetch]);
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (error) {
+  if (error && !data) {
     return <QueryErrorView message={error.message} />;
   }
 
@@ -396,5 +396,10 @@ function SubscriptionEditRouteComponent() {
     return <DetailEmptyView message="Not found certain subscription" />;
   }
 
-  return <FormView subscription={subscription} onCompleted={onCompleted} />;
+  return (
+    <>
+      <QueryPartialError error={error} />
+      <FormView subscription={subscription} onCompleted={onCompleted} />
+    </>
+  );
 }

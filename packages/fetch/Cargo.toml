@@ -3,6 +3,9 @@ name = "fetch"
 version = "0.1.0"
 edition = "2024"
 
+license = "MIT"
+repository = "https://github.com/apeiraco/konobangu"
+publish = false
 [dependencies]
 snafu = { workspace = true }
 bytes = { workspace = true }
@@ -12,7 +15,6 @@ serde_with = { workspace = true }
 lazy_static = { workspace = true }
 serde_json = { workspace = true }
 axum = { workspace = true }
-axum-extra = { workspace = true }
 async-trait = { workspace = true }
 moka = { workspace = true }
 reqwest = { workspace = true }
@@ -35,3 +37,6 @@ reqwest_cookie_store = { version = "0.10", features = ["serde"] }
 http-serde = "2.1.1"
 
 util = { workspace = true }
+
+[lints]
+workspace = true

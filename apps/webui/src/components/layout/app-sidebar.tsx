@@ -11,14 +11,6 @@ import { AppIcon } from "./app-icon";
 import { NavMain } from "./nav-main";
 import { NavUser } from "./nav-user";
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-};
-
 type AppSidebarRootProps = Omit<
   ComponentPropsWithoutRef<typeof Sidebar>,
   "collapsible"
@@ -34,7 +26,7 @@ export const AppSidebar = (props: AppSidebarRootProps) => {
         <NavMain groups={AppNavMainData} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={data.user} />
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

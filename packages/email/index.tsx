@@ -8,7 +8,9 @@ export interface SendOptions {
   react: JSX.Element;
 }
 
-export const konosend = {
+export const konosend: {
+  emails: { send: (props: SendOptions) => Promise<never> };
+} = {
   emails: {
     send: async (_props: SendOptions) => {
       throw new Error("unimplemented");

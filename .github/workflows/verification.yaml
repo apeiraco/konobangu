@@ -1,0 +1,87 @@
+name: Development Verification
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+      - dev
+
+permissions:
+  contents: read
+
+jobs:
+  static:
+    name: Static contracts and tooling
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      - run: mise exec -- just verify static
+
+  ts:
+    name: TypeScript and WebUI
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      AUTH__PROVIDER__TYPE: oidc
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          extra-tools: ''
+      - run: mise exec -- just verify ts
+
+  rust:
+    name: Rust workspace and browser integration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          browser: 'true'
+      - run: mise exec -- just verify rust
+      - name: Retain browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-failure
+          path: temp/verification/browser
+          if-no-files-found: warn
+
+  platforms:
+    name: Artifacts (${{ matrix.os }}, ${{ matrix.target }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - os: ubuntu-24.04
+            target: x86_64-unknown-linux-musl
+          - os: macos-15
+            target: aarch64-apple-darwin
+          - os: windows-2025
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    env:
+      CARGO_BUILD_JOBS: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          extra-tools: rust cargo:cargo-about
+      - name: Tooling on additional host systems
+        if: runner.os != 'Linux'
+        run: mise exec -- just test tooling
+      - run: mise exec -- just platform-check --target ${{ matrix.target }}
+      - name: Retain artifact receipts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: media-${{ matrix.os }}-${{ matrix.target }}
+          path: temp/verification/${{ matrix.target }}
+          if-no-files-found: error

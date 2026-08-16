@@ -4,7 +4,11 @@
     "rootDir": ".",
     "composite": true,
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "outDir": "dist-tsc/app",
+    "tsBuildInfoFile": "dist-tsc/app.tsbuildinfo",
+    "types": []
   },
-  "include": ["bindings"]
+  "include": ["bindings"],
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

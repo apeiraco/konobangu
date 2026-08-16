@@ -19,7 +19,7 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
   tracing::info!("enable testcontainers feature, build testing database service in testcontainers...");
 
   use testcontainers::{ImageExt, runners::AsyncRunner};
-  use testcontainers_ext::{ImageDefaultLogConsumerExt, ImagePruneExistedLabelExt};
+  use testcontainers_ext::ImageDefaultLogConsumerExt;
   use testcontainers_modules::postgres::Postgres;
 
   let container = Postgres::default()
@@ -27,9 +27,7 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
     .with_user("konobangu")
     .with_password("konobangu")
     .with_tag("18-alpine")
-    .with_default_log_consumer()
-    .with_prune_existed_label(env!("CARGO_PKG_NAME"), "postgres", true, false)
-    .await?;
+    .with_default_log_consumer();
 
   let container = container.start().await?;
 
@@ -40,7 +38,7 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
 
   tracing::debug!("testing database service connection string: {}", connection_string);
 
-  let mut db_service = DatabaseService::from_config(DatabaseConfig {
+  let mut db_service = DatabaseService::from_migration_config(DatabaseConfig {
     uri: connection_string,
     enable_logging: true,
     min_connections: 1,
@@ -49,6 +47,8 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
     idle_timeout: 10000,
     acquire_timeout: None,
     auto_migrate: config.auto_migrate,
+    legacy_oidc_issuer: None,
+    migration_database_uri: None,
   })
   .await?;
   db_service.container = Some(container);
@@ -58,7 +58,7 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
 
 #[cfg(not(feature = "testcontainers"))]
 pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig) -> RecorderResult<DatabaseService> {
-  let db_service = DatabaseService::from_config(DatabaseConfig {
+  let db_service = DatabaseService::from_migration_config(DatabaseConfig {
     uri: String::from("postgres://konobangu:konobangu@127.0.0.1:5432/konobangu"),
     enable_logging: true,
     min_connections: 1,
@@ -67,6 +67,8 @@ pub async fn build_testing_database_service(config: TestingDatabaseServiceConfig
     idle_timeout: 10000,
     acquire_timeout: None,
     auto_migrate: config.auto_migrate,
+    legacy_oidc_issuer: None,
+    migration_database_uri: None,
   })
   .await?;
 

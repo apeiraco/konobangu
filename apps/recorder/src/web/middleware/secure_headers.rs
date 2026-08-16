@@ -4,16 +4,16 @@
 //! (e.g., "github") and the ability to override or define custom headers.
 
 use std::{
-    collections::{BTreeMap, HashMap},
-    sync::{Arc, OnceLock},
-    task::{Context, Poll},
+  collections::{BTreeMap, HashMap},
+  sync::{Arc, OnceLock},
+  task::{Context, Poll},
 };
 
 use axum::{
-    Router,
-    body::Body,
-    http::{HeaderName, HeaderValue, Request},
-    response::Response,
+  Router,
+  body::Body,
+  http::{HeaderName, HeaderValue, Request},
+  response::Response,
 };
 use futures::future::BoxFuture;
 use serde::{Deserialize, Serialize};
@@ -25,10 +25,10 @@ use crate::{app::AppContextTrait, errors::RecorderResult, web::middleware::Middl
 
 static PRESETS: OnceLock<HashMap<String, BTreeMap<String, String>>> = OnceLock::new();
 fn get_presets() -> &'static HashMap<String, BTreeMap<String, String>> {
-    PRESETS.get_or_init(|| {
-        let json_data = include_str!("secure_headers.json");
-        serde_json::from_str(json_data).unwrap()
-    })
+  PRESETS.get_or_init(|| {
+    let json_data = include_str!("secure_headers.json");
+    serde_json::from_str(json_data).unwrap()
+  })
 }
 /// Sets a predefined or custom set of secure headers.
 ///
@@ -78,232 +78,200 @@ fn get_presets() -> &'static HashMap<String, BTreeMap<String, String>> {
 /// For the list of presets and their content look at [secure_headers.json](https://github.com/loco-rs/loco/blob/master/src/controller/middleware/secure_headers.rs)
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct SecureHeader {
-    #[serde(default)]
-    pub enable: bool,
-    #[serde(default = "default_preset")]
-    pub preset: String,
-    #[serde(default)]
-    pub overrides: Option<BTreeMap<String, String>>,
+  #[serde(default)]
+  pub enable: bool,
+  #[serde(default = "default_preset")]
+  pub preset: String,
+  #[serde(default)]
+  pub overrides: Option<BTreeMap<String, String>>,
 }
 
 impl Default for SecureHeader {
-    fn default() -> Self {
-        serde_json::from_value(json!({})).unwrap()
-    }
+  fn default() -> Self {
+    serde_json::from_value(json!({})).unwrap()
+  }
 }
 
 fn default_preset() -> String {
-    "github".to_string()
+  "github".to_string()
 }
 
 impl MiddlewareLayer for SecureHeader {
-    /// Returns the name of the middleware
-    fn name(&self) -> &'static str {
-        "secure_headers"
-    }
+  /// Returns the name of the middleware
+  fn name(&self) -> &'static str {
+    "secure_headers"
+  }
 
-    /// Returns whether the middleware is enabled or not
-    fn is_enabled(&self) -> bool {
-        self.enable
-    }
+  /// Returns whether the middleware is enabled or not
+  fn is_enabled(&self) -> bool {
+    self.enable
+  }
 
-    fn config(&self) -> serde_json::Result<serde_json::Value> {
-        serde_json::to_value(self)
-    }
+  fn config(&self) -> serde_json::Result<serde_json::Value> {
+    serde_json::to_value(self)
+  }
 
-    /// Applies the secure headers layer to the application router
-    fn apply(
-        &self,
-        app: Router<Arc<dyn AppContextTrait>>,
-    ) -> RecorderResult<Router<Arc<dyn AppContextTrait>>> {
-        Ok(app.layer(SecureHeaders::new(self)?))
-    }
+  /// Applies the secure headers layer to the application router
+  fn apply(&self, app: Router<Arc<dyn AppContextTrait>>) -> RecorderResult<Router<Arc<dyn AppContextTrait>>> {
+    Ok(app.layer(SecureHeaders::new(self)?))
+  }
 }
 
 impl SecureHeader {
-    /// Converts the configuration into a list of headers.
-    ///
-    /// Applies the preset headers and any custom overrides.
-    fn as_headers(&self) -> RecorderResult<Vec<(HeaderName, HeaderValue)>> {
-        let mut headers = vec![];
+  /// Converts the configuration into a list of headers.
+  ///
+  /// Applies the preset headers and any custom overrides.
+  fn as_headers(&self) -> RecorderResult<Vec<(HeaderName, HeaderValue)>> {
+    let mut headers = vec![];
 
-        let preset = &self.preset;
-        if let Some(p) = get_presets().get(preset) {
-            Self::push_headers(&mut headers, p)?;
-            if let Some(overrides) = &self.overrides {
-                Self::push_headers(&mut headers, overrides)?;
-            }
-            Ok(headers)
-        } else {
-            whatever!("secure_headers: a preset named `{preset}` does not exist")
-        }
+    let preset = &self.preset;
+    if let Some(p) = get_presets().get(preset) {
+      Self::push_headers(&mut headers, p)?;
+      if let Some(overrides) = &self.overrides {
+        Self::push_headers(&mut headers, overrides)?;
+      }
+      Ok(headers)
+    } else {
+      whatever!("secure_headers: a preset named `{preset}` does not exist")
     }
+  }
 
-    /// Helper function to push headers into a mutable vector.
-    ///
-    /// This function takes a map of header names and values, converting them
-    /// into valid HTTP headers and adding them to the provided `headers`
-    /// vector.
-    fn push_headers(
-        headers: &mut Vec<(HeaderName, HeaderValue)>,
-        hm: &BTreeMap<String, String>,
-    ) -> RecorderResult<()> {
-        for (k, v) in hm {
-            headers.push((
-                HeaderName::from_bytes(k.clone().as_bytes())?,
-                HeaderValue::from_str(v.clone().as_str())?,
-            ));
-        }
-        Ok(())
+  /// Helper function to push headers into a mutable vector.
+  ///
+  /// This function takes a map of header names and values, converting them
+  /// into valid HTTP headers and adding them to the provided `headers`
+  /// vector.
+  fn push_headers(headers: &mut Vec<(HeaderName, HeaderValue)>, hm: &BTreeMap<String, String>) -> RecorderResult<()> {
+    for (k, v) in hm {
+      headers.push((HeaderName::from_bytes(k.clone().as_bytes())?, HeaderValue::from_str(v.clone().as_str())?));
     }
+    Ok(())
+  }
 }
 
 /// The [`SecureHeaders`] layer which wraps around the service and injects
 /// security headers
 #[derive(Clone, Debug)]
 pub struct SecureHeaders {
-    headers: Vec<(HeaderName, HeaderValue)>,
+  headers: Vec<(HeaderName, HeaderValue)>,
 }
 
 impl SecureHeaders {
-    /// Creates a new [`SecureHeaders`] instance with the provided
-    /// configuration.
-    ///
-    /// # Errors
-    /// Returns an error if any header values are invalid.
-    pub fn new(config: &SecureHeader) -> RecorderResult<Self> {
-        Ok(Self {
-            headers: config.as_headers()?,
-        })
-    }
+  /// Creates a new [`SecureHeaders`] instance with the provided
+  /// configuration.
+  ///
+  /// # Errors
+  /// Returns an error if any header values are invalid.
+  pub fn new(config: &SecureHeader) -> RecorderResult<Self> {
+    Ok(Self { headers: config.as_headers()? })
+  }
 }
 
 impl<S> Layer<S> for SecureHeaders {
-    type Service = SecureHeadersMiddleware<S>;
+  type Service = SecureHeadersMiddleware<S>;
 
-    /// Wraps the provided service with the secure headers middleware.
-    fn layer(&self, inner: S) -> Self::Service {
-        SecureHeadersMiddleware {
-            inner,
-            layer: self.clone(),
-        }
-    }
+  /// Wraps the provided service with the secure headers middleware.
+  fn layer(&self, inner: S) -> Self::Service {
+    SecureHeadersMiddleware { inner, layer: self.clone() }
+  }
 }
 
 /// The secure headers middleware
 #[derive(Clone, Debug)]
 #[must_use]
 pub struct SecureHeadersMiddleware<S> {
-    inner: S,
-    layer: SecureHeaders,
+  inner: S,
+  layer: SecureHeaders,
 }
 
 impl<S> Service<Request<Body>> for SecureHeadersMiddleware<S>
 where
-    S: Service<Request<Body>, Response = Response> + Send + 'static,
-    S::Future: Send + 'static,
+  S: Service<Request<Body>, Response = Response> + Send + 'static,
+  S::Future: Send + 'static,
 {
-    type Response = S::Response;
-    type Error = S::Error;
-    type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
+  type Response = S::Response;
+  type Error = S::Error;
+  type Future = BoxFuture<'static, Result<Self::Response, Self::Error>>;
 
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx)
-    }
+  fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+    self.inner.poll_ready(cx)
+  }
 
-    fn call(&mut self, request: Request<Body>) -> Self::Future {
-        let layer = self.layer.clone();
-        let future = self.inner.call(request);
-        Box::pin(async move {
-            let mut response: Response = future.await?;
-            let headers = response.headers_mut();
-            for (k, v) in &layer.headers {
-                headers.insert(k, v.clone());
-            }
-            Ok(response)
-        })
-    }
+  fn call(&mut self, request: Request<Body>) -> Self::Future {
+    let layer = self.layer.clone();
+    let future = self.inner.call(request);
+    Box::pin(async move {
+      let mut response: Response = future.await?;
+      let headers = response.headers_mut();
+      for (k, v) in &layer.headers {
+        headers.insert(k, v.clone());
+      }
+      Ok(response)
+    })
+  }
 }
 
 #[cfg(test)]
 mod tests {
 
-    use axum::{
-        Router,
-        http::{HeaderMap, Method},
-        routing::get,
+  use axum::{
+    Router,
+    http::{HeaderMap, Method},
+    routing::get,
+  };
+  use insta::assert_debug_snapshot;
+  use tower::ServiceExt;
+
+  use super::*;
+  fn normalize_headers(headers: &HeaderMap) -> BTreeMap<String, String> {
+    headers
+      .iter()
+      .map(|(k, v)| {
+        let key = k.to_string();
+        let value = v.to_str().unwrap_or("").to_string();
+        (key, value)
+      })
+      .collect()
+  }
+  #[tokio::test]
+  async fn can_set_headers() {
+    let config = SecureHeader {
+      enable: true,
+      preset: "github".to_string(),
+      overrides: None,
     };
-    use insta::assert_debug_snapshot;
-    use tower::ServiceExt;
+    let app = Router::new().route("/", get(|| async {})).layer(SecureHeaders::new(&config).unwrap());
 
-    use super::*;
-    fn normalize_headers(headers: &HeaderMap) -> BTreeMap<String, String> {
-        headers
-            .iter()
-            .map(|(k, v)| {
-                let key = k.to_string();
-                let value = v.to_str().unwrap_or("").to_string();
-                (key, value)
-            })
-            .collect()
-    }
-    #[tokio::test]
-    async fn can_set_headers() {
-        let config = SecureHeader {
-            enable: true,
-            preset: "github".to_string(),
-            overrides: None,
-        };
-        let app = Router::new()
-            .route("/", get(|| async {}))
-            .layer(SecureHeaders::new(&config).unwrap());
+    let req = Request::builder().uri("/").method(Method::GET).body(Body::empty()).unwrap();
+    let response = app.oneshot(req).await.unwrap();
+    assert_debug_snapshot!(normalize_headers(response.headers()));
+  }
 
-        let req = Request::builder()
-            .uri("/")
-            .method(Method::GET)
-            .body(Body::empty())
-            .unwrap();
-        let response = app.oneshot(req).await.unwrap();
-        assert_debug_snapshot!(normalize_headers(response.headers()));
-    }
+  #[tokio::test]
+  async fn can_override_headers() {
+    let mut overrides = BTreeMap::new();
+    overrides.insert("X-Download-Options".to_string(), "foobar".to_string());
+    overrides.insert("New-Header".to_string(), "baz".to_string());
 
-    #[tokio::test]
-    async fn can_override_headers() {
-        let mut overrides = BTreeMap::new();
-        overrides.insert("X-Download-Options".to_string(), "foobar".to_string());
-        overrides.insert("New-Header".to_string(), "baz".to_string());
+    let config = SecureHeader {
+      enable: true,
+      preset: "github".to_string(),
+      overrides: Some(overrides),
+    };
+    let app = Router::new().route("/", get(|| async {})).layer(SecureHeaders::new(&config).unwrap());
 
-        let config = SecureHeader {
-            enable: true,
-            preset: "github".to_string(),
-            overrides: Some(overrides),
-        };
-        let app = Router::new()
-            .route("/", get(|| async {}))
-            .layer(SecureHeaders::new(&config).unwrap());
+    let req = Request::builder().uri("/").method(Method::GET).body(Body::empty()).unwrap();
+    let response = app.oneshot(req).await.unwrap();
+    assert_debug_snapshot!(normalize_headers(response.headers()));
+  }
 
-        let req = Request::builder()
-            .uri("/")
-            .method(Method::GET)
-            .body(Body::empty())
-            .unwrap();
-        let response = app.oneshot(req).await.unwrap();
-        assert_debug_snapshot!(normalize_headers(response.headers()));
-    }
+  #[tokio::test]
+  async fn default_is_github_preset() {
+    let config = SecureHeader::default();
+    let app = Router::new().route("/", get(|| async {})).layer(SecureHeaders::new(&config).unwrap());
 
-    #[tokio::test]
-    async fn default_is_github_preset() {
-        let config = SecureHeader::default();
-        let app = Router::new()
-            .route("/", get(|| async {}))
-            .layer(SecureHeaders::new(&config).unwrap());
-
-        let req = Request::builder()
-            .uri("/")
-            .method(Method::GET)
-            .body(Body::empty())
-            .unwrap();
-        let response = app.oneshot(req).await.unwrap();
-        assert_debug_snapshot!(normalize_headers(response.headers()));
-    }
+    let req = Request::builder().uri("/").method(Method::GET).body(Body::empty()).unwrap();
+    let response = app.oneshot(req).await.unwrap();
+    assert_debug_snapshot!(normalize_headers(response.headers()));
+  }
 }

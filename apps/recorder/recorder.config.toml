@@ -1,83 +1,84 @@
-# Application logging configuration
-[logger]
-# Enable or disable logging.
-enable = true
-# Enable pretty backtrace (sets RUST_BACKTRACE=1)
-pretty_backtrace = true
-level = "info"
-# Log level, options: trace, debug, info, warn or error.
-# Define the logging format. options: compact, pretty or Json
-format = "compact"
-# By default the logger has filtering only logs that came from your code or logs that came from `loco` framework. to see all third party libraries
-# Uncomment the line below to override to see all third party libraries you can enable this config and override the logger filters.
-# override_filter: trace
-
-# Web server configuration
+# Credentials belong in canonical environment variables or file secrets.
 [server]
-# Port on which the server will listen. the server binding is 0.0.0.0:{PORT}
-port = 5001
 binding = "0.0.0.0"
-# The UI hostname or IP address that mailers will point to.
-host = '{{ get_env(name="HOST", default="localhost") }}'
-# Out of the box middleware configuration. to disable middleware you can changed the `enable` field to `false` of comment the middleware block
+port = 5001
+host = "localhost" # Override with SERVER__HOST.
 
-# Enable Etag cache header middleware
 [server.middlewares.etag]
 enable = true
-
-# Generating a unique request ID and enhancing logging with additional information such as the start and completion of request processing, latency, status code, and other request details.
 [server.middlewares.request_id]
 enable = true
-
 [server.middlewares.logger]
 enable = true
-
-# when your code is panicked, the request still returns 500 status code.
 [server.middlewares.catch_panic]
 enable = true
-
-# Timeout for incoming requests middleware. requests that take more time from the configuration will cute and 408 status code will returned.
+# Milliseconds; disabled unless explicitly enabled.
 [server.middlewares.timeout_request]
 enable = false
-# Duration time in milliseconds.
 timeout = 5000
-
-# Set the value of the [`Access-Control-Allow-Origin`][mdn] header
-# allow_origins:
-#   - https://konobangu.com
-# Set the value of the [`Access-Control-Allow-Headers`][mdn] header
-# allow_headers:
-# - Content-Type
-# Set the value of the [`Access-Control-Allow-Methods`][mdn] header
-# allow_methods:
-#   - POST
-# Set the value of the [`Access-Control-Max-Age`][mdn] header in seconds
-# max_age: 3600
 [server.middlewares.cors]
 enable = true
-
+# For credentialed cross-origin access, use explicit origins, headers and methods.
+# allow_origins = ["https://webui.example.com"]
+# allow_headers = ["content-type", "x-csrf-token"]
+# allow_methods = ["GET", "POST", "OPTIONS"]
+# allow_credentials = true
+# max_age = 3600 # Seconds.
 [server.middlewares.compression]
 enable = true
 
-# Database Configuration
-[database]
-# Database connection URI
-uri = '{{ get_env(name="DATABASE_URL", default="postgres://konobangu:konobangu@localhost:5432/konobangu") }}'
-# When enabled, the sql query will be logged.
-enable_logging = true
-# Set the timeout duration when acquiring a connection.
-connect_timeout = 500
-# Set the idle duration before closing a connection.
-idle_timeout = 500
-# Minimum number of connections for a pool.
+[logger]
+# Console logging; file output is enabled separately below.
+enable = true
+pretty_backtrace = true
+# off, error, warn, info, debug, trace; format: compact, pretty, json.
+level = "info"
+format = "compact"
+# Valid RUST_LOG takes precedence; otherwise use this filter or the module defaults.
+# override_filter = "recorder=debug,tower_http=info,sea_orm=warn"
+
+# Optional rolling file output. Uncomment the whole table to enable it.
+# Paths are relative to the process working directory, not this configuration file.
+# [logger.file_appender]
+# enable = true
+# non_blocking = true
+# level = "info" # Further restricts events allowed by the global filter.
+# format = "json"
+# rotation = "daily" # minutely, hourly, daily, never.
+# dir = "./logs"
+# filename_prefix = "recorder"
+# filename_suffix = "log"
+# max_log_files = 7
+
+# Keep the existing development pool behavior; field regrouping is not tuning.
+[database.pool]
+# SQL logging is a separate switch; logger filters can still suppress SQL events.
+log_queries = true
 min_connections = 1
-# Maximum number of connections for a pool.
 max_connections = 10
-# Run migration up when application loaded
-auto_migrate = true
+connect_timeout_ms = 500
+idle_timeout_ms = 500
+
+# Startup runs owner migrations before opening capability-restricted runtime pools.
+# Optional migration.url selects a separate owner credential.
+[database.migration]
+auto_run = true
 
 [storage]
-data_dir = './data'
+data_dir = "./data"
+
+# Media defaults follow the compiled codec capabilities; see documentation 015.
+[media.encoding.webp]
+quality = 80
+
+[media.execution]
+deadline_seconds = 30
+queue_capacity = 8
+working_set_bytes = 536870912
+concurrency = 1
+
+# media.auto_optimize_formats inherits JXL + WebP (WebP in trimmed builds).
+# JPXL preset is fixed in code; AVIF remains explicit API only.
 
 [mikan]
 base_url = "https://mikanani.me/"
@@ -90,5 +91,6 @@ leaky_bucket_refill_tokens = 1
 leaky_bucket_refill_interval = 500
 
 [graphql]
+# Omit limits to inherit the default policy.
 # depth_limit = inf
 # complexity_limit = inf

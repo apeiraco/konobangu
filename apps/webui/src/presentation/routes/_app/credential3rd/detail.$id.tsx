@@ -16,11 +16,14 @@ import { DetailCardSkeleton } from "@/components/ui/detail-card-skeleton";
 import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Separator } from "@/components/ui/separator";
 import { GET_CREDENTIAL_3RD_DETAIL } from "@/domains/recorder/schema/credential3rd";
 import { useInject } from "@/infra/di/inject";
-import type { GetCredential3rdDetailQuery } from "@/infra/graphql/gql/graphql";
+
 import { IntlService } from "@/infra/intl/intl.service";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { Credential3rdCheckAvailableViewDialogContent } from "./-check-available";
@@ -39,14 +42,11 @@ function Credential3rdDetailRouteComponent() {
 
   const [showPassword, setShowPassword] = useState(false);
 
-  const { loading, error, data } = useQuery<GetCredential3rdDetailQuery>(
-    GET_CREDENTIAL_3RD_DETAIL,
-    {
-      variables: {
-        id: Number.parseInt(id, 10),
-      },
+  const { loading, error, data } = useQuery(GET_CREDENTIAL_3RD_DETAIL, {
+    variables: {
+      id: Number.parseInt(id, 10),
     },
-  );
+  });
 
   const handleEnterEditMode = () => {
     navigate({
@@ -63,11 +63,11 @@ function Credential3rdDetailRouteComponent() {
 
   const credential = data?.credential3rd?.nodes?.[0];
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (error) {
+  if (error && !data) {
     return <QueryErrorView message={error.message} />;
   }
 
@@ -77,6 +77,7 @@ function Credential3rdDetailRouteComponent() {
 
   return (
     <div className="container mx-auto max-w-4xl py-6">
+      <QueryPartialError error={error} />
       <ContainerHeader
         title="Credential Detail"
         description={`View credential #${credential.id}`}

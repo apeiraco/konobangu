@@ -3,10 +3,7 @@ mod subscription;
 
 pub(crate) use base::register_subscriber_task_type;
 use sea_orm::{DeriveActiveEnum, DeriveDisplay, EnumIter, FromJsonQueryResult};
-pub use subscription::{
-    SyncOneSubscriptionFeedsFullTask, SyncOneSubscriptionFeedsIncrementalTask,
-    SyncOneSubscriptionSourcesTask,
-};
+pub use subscription::{SyncOneSubscriptionFeedsFullTask, SyncOneSubscriptionFeedsIncrementalTask, SyncOneSubscriptionSourcesTask};
 
 macro_rules! register_subscriber_task_types {
     (

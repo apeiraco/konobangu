@@ -56,7 +56,7 @@ macro_rules! register_subscriber_task_type {
                 Self {
                     $($field_name: input.$field_name,)*
                     cron_id: input.cron_id,
-                    subscriber_id: input.subscriber_id.unwrap_or(subscriber_id),
+                    subscriber_id,
                 }
             }
         }

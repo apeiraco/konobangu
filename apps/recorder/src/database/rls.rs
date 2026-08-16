@@ -28,7 +28,7 @@
 //! 3. Call `bind_subscriber_to_transaction` before executing subscriber-scoped
 //!    queries (Phase 3 — done, integrated in `graphql_handler`)
 
-use sea_orm::{ConnectionTrait, DbErr, ExecResult};
+use sea_orm::{ConnectionTrait, DatabaseTransaction, DbErr, ExecResult};
 
 /// Binds the subscriber identity to the current transaction using
 /// `SET LOCAL app.subscriber_id`.
@@ -55,14 +55,9 @@ use sea_orm::{ConnectionTrait, DbErr, ExecResult};
 /// // RLS policies can use: current_setting('app.subscriber_id')::integer
 /// txn.commit().await?;
 /// ```
-pub async fn bind_subscriber_to_transaction(
-    db: &impl ConnectionTrait,
-    subscriber_id: i32,
-) -> Result<ExecResult, DbErr> {
-    db.execute_unprepared(&format!(
-        "SET LOCAL app.subscriber_id = '{subscriber_id}'"
-    ))
-    .await
+pub async fn bind_subscriber_to_transaction(db: &DatabaseTransaction, subscriber_id: i32) -> Result<ExecResult, DbErr> {
+  super::roles::set_local_role(db, super::roles::APP_SCOPED_ACCESS_ROLE).await?;
+  db.execute_unprepared(&format!("SET LOCAL app.subscriber_id = '{subscriber_id}'")).await
 }
 
 /// Retrieves the current subscriber_id from the database session.
@@ -71,34 +66,32 @@ pub async fn bind_subscriber_to_transaction(
 ///
 /// Returns `None` if the setting is not set (empty string).
 #[allow(dead_code)]
-pub async fn get_current_subscriber_id(
-    db: &impl ConnectionTrait,
-) -> Result<Option<i32>, DbErr> {
-    use sea_orm::FromQueryResult;
+pub async fn get_current_subscriber_id(db: &impl ConnectionTrait) -> Result<Option<i32>, DbErr> {
+  use sea_orm::FromQueryResult;
 
-    #[derive(Debug, FromQueryResult)]
-    struct SettingResult {
-        value: Option<String>,
+  #[derive(Debug, FromQueryResult)]
+  struct SettingResult {
+    value: Option<String>,
+  }
+
+  let result = db
+    .query_one_raw(sea_orm::Statement::from_string(
+      sea_orm::DatabaseBackend::Postgres,
+      "SELECT current_setting('app.subscriber_id', true) AS value",
+    ))
+    .await?;
+
+  if let Some(row) = result {
+    let setting = SettingResult::from_query_result(&row, "")?;
+    match setting.value {
+      None => Ok(None),
+      Some(v) if v.is_empty() => Ok(None),
+      Some(v) => v
+        .parse::<i32>()
+        .map(Some)
+        .map_err(|e| DbErr::Custom(format!("Invalid subscriber_id setting: {e}"))),
     }
-
-    let result = db
-        .query_one_raw(sea_orm::Statement::from_string(
-            sea_orm::DatabaseBackend::Postgres,
-            "SELECT current_setting('app.subscriber_id', true) AS value",
-        ))
-        .await?;
-
-    if let Some(row) = result {
-        let setting = SettingResult::from_query_result(&row, "")?;
-        match setting.value {
-            None => Ok(None),
-            Some(v) if v.is_empty() => Ok(None),
-            Some(v) => v
-                .parse::<i32>()
-                .map(Some)
-                .map_err(|e| DbErr::Custom(format!("Invalid subscriber_id setting: {e}"))),
-        }
-    } else {
-        Ok(None)
-    }
+  } else {
+    Ok(None)
+  }
 }

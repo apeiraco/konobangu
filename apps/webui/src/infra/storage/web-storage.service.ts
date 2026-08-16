@@ -1,11 +1,12 @@
-import { Injectable, inject } from "@outposts/injection-js";
+import { inject } from "injection-js";
 import { FeatureNotAvailablePlatformError } from "@/infra/platform/errors";
 import { DOCUMENT } from "@/infra/platform/injection";
 
-@Injectable()
 export class LocalStorageService {
   document = inject(DOCUMENT);
-  storage = this.document.defaultView?.localStorage;
+  get storage() {
+    return this.document.defaultView?.localStorage;
+  }
 
   setItem(key: string, value: string) {
     if (!this.storage) {
@@ -22,10 +23,11 @@ export class LocalStorageService {
   }
 }
 
-@Injectable()
 export class SessionStorageService {
   document = inject(DOCUMENT);
-  storage = this.document.defaultView?.sessionStorage;
+  get storage() {
+    return this.document.defaultView?.sessionStorage;
+  }
 
   setItem(key: string, value: string) {
     if (!this.storage) {

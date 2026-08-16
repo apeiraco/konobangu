@@ -1,31 +1,20 @@
 {
   "name": "@konobangu/testing-torrents",
-  "version": "0.0.2",
+  "version": "0.1.0",
   "description": "Kono bangumi? Testing Torrents",
   "main": "main.ts",
   "type": "module",
-  "scripts": {
-    "start": "node main.ts"
-  },
   "dependencies": {
-    "@fastify/static": "^9.0.0",
-    "bittorrent-tracker": "^11.2.2",
-    "fastify": "^5.8.2",
-    "webtorrent": "^2.8.5"
+    "@fastify/static": "^10.1.4",
+    "bittorrent-tracker": "^11.2.3",
+    "fastify": "^5.12.5",
+    "webtorrent": "^3.0.21"
   },
   "devDependencies": {
     "@types/create-torrent": "^6.1.1",
-    "@types/node": "^25.5.0",
-    "@types/webtorrent": "^0.110.1",
-    "typescript": "^5.9.3"
+    "@types/node": "^26.6.2",
+    "@types/webtorrent": "^3.0.0",
+    "typescript": "^7.0.2"
   },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "bufferutil",
-      "esbuild",
-      "node-datachannel",
-      "utf-8-validate",
-      "utp-native"
-    ]
-  }
+  "private": true
 }

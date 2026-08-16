@@ -172,12 +172,7 @@ out
 # Nuxt.js build / generate output
 .nuxt
 dist
-
-# Gatsby files
 .cache/
-# Comment in the public line in if your project uses Gatsby and not Next.js
-# https://nextjs.org/blog/next-9-1#public-directory-support
-# public
 
 # vuepress build output
 .vuepress/dist
@@ -223,7 +218,8 @@ index.d.ts.map
 /.angular
 /*.session.sql
 
-/temp
+/temp/*
+!/temp/.gitkeep
 /rustc-ice-*
 
 # Misc
@@ -272,3 +268,15 @@ __pycache__/
 *.spec
 pip-log.txt
 pip-delete-this-directory.txt
+
+# Keep the maintained musl builder while ignoring generated build outputs.
+!/build/
+/build/*
+!/build/musl/
+/build/musl/*
+!/build/musl/Dockerfile
+
+# tsc reference outputs are never public bundle artifacts.
+**/dist-tsc/
+apps/email-playground/.react-email/
+apps/email-playground/out/

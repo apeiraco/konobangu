@@ -1,25 +1,28 @@
 import { useMutation, useQuery } from "@apollo/client/react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import {
-  type ColumnDef,
-  getCoreRowModel,
-  getPaginationRowModel,
-  type PaginationState,
-  type SortingState,
-  useReactTable,
-  type VisibilityState,
-} from "@tanstack/react-table";
+import { useTable } from "@tanstack/react-table";
 import { RefreshCw } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ContainerHeader } from "@/components/ui/container-header";
+import { DataTableColumnHeader } from "@/components/ui/data-table-column-header";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
+import {
+  type DataTableColumnDef,
+  serverOrder,
+  useClampServerPage,
+  useServerTableState,
+} from "@/components/ui/data-table-state";
 import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { DropdownMenuActions } from "@/components/ui/dropdown-menu-actions";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import { Input } from "@/components/ui/input";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   DELETE_TASKS,
@@ -32,15 +35,7 @@ import {
   apolloErrorToMessage,
   getApolloQueryError,
 } from "@/infra/errors/apollo";
-import {
-  type DeleteTasksMutation,
-  type DeleteTasksMutationVariables,
-  type GetTasksQuery,
-  type GetTasksQueryVariables,
-  type RetryTasksMutation,
-  type RetryTasksMutationVariables,
-  SubscriberTaskStatusEnum,
-} from "@/infra/graphql/gql/graphql";
+import { SubscriberTaskStatusEnum } from "@/infra/graphql/gql/graphql";
 import { IntlService } from "@/infra/intl/intl.service";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { useDebouncedSkeleton } from "@/presentation/hooks/use-debounded-skeleton";
@@ -54,15 +49,11 @@ export const Route = createFileRoute("/_app/tasks/manage")({
   } satisfies RouteStateDataOption,
 });
 
-function TaskManageRouteComponent() {
+export function TaskManageRouteComponent() {
   const navigate = useNavigate();
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
+  const tableState = useServerTableState({});
+  const { pagination, sorting, search, onSearchChange } = tableState;
 
   const intlService = useInject(IntlService);
 
@@ -71,7 +62,7 @@ function TaskManageRouteComponent() {
     error: tasksError,
     data,
     refetch,
-  } = useQuery<GetTasksQuery, GetTasksQueryVariables>(GET_TASKS, {
+  } = useQuery(GET_TASKS, {
     variables: {
       pagination: {
         page: {
@@ -79,10 +70,12 @@ function TaskManageRouteComponent() {
           limit: pagination.pageSize,
         },
       },
-      filter: {},
-      orderBy: {
-        runAt: "DESC",
-      },
+      filter: search ? { id: { contains: search } } : {},
+      orderBy: serverOrder(
+        sorting,
+        ["id", "runAt", "status", "taskType", "attempts"],
+        "runAt",
+      ),
     },
     pollInterval: 5000, // Auto-refresh every 5 seconds
   });
@@ -91,11 +84,12 @@ function TaskManageRouteComponent() {
 
   const tasks = data?.subscriberTasks;
 
-  const [deleteTasks] = useMutation<
-    DeleteTasksMutation,
-    DeleteTasksMutationVariables
-  >(DELETE_TASKS, {
-    onCompleted: async () => {
+  const [deleteTasks] = useMutation(DELETE_TASKS, {
+    onCompleted: async (result) => {
+      if (!result.subscriberTasksDelete) {
+        toast.error("Task cancellation conflicted or was not authorized");
+        return;
+      }
       const refetchResult = await refetch();
       const error = getApolloQueryError(refetchResult);
       if (error) {
@@ -104,7 +98,7 @@ function TaskManageRouteComponent() {
         });
         return;
       }
-      toast.success("Tasks deleted");
+      toast.success("Task cancellation or archive recorded");
     },
     onError: (error) => {
       toast.error("Failed to delete tasks", {
@@ -113,12 +107,21 @@ function TaskManageRouteComponent() {
     },
   });
 
-  const [retryTasks] = useMutation<
-    RetryTasksMutation,
-    RetryTasksMutationVariables
-  >(RETRY_TASKS, {
-    onCompleted: () => {
-      toast.success("Tasks retried");
+  const [retryTasks] = useMutation(RETRY_TASKS, {
+    onCompleted: async (data) => {
+      if (!data.subscriberTasksRetryOne) {
+        toast.error("Task retry conflicted or was not authorized");
+        return;
+      }
+      const result = await refetch();
+      const error = getApolloQueryError(result);
+      if (error) {
+        toast.error("Failed to refresh tasks", {
+          description: apolloErrorToMessage(error),
+        });
+        return;
+      }
+      toast.success("Task retried");
     },
     onError: (error) => {
       toast.error("Failed to retry tasks", {
@@ -128,7 +131,7 @@ function TaskManageRouteComponent() {
   });
 
   const columns = useMemo(() => {
-    const cs: ColumnDef<TaskDto>[] = [
+    const cs: DataTableColumnDef<TaskDto>[] = [
       {
         header: "ID",
         accessorKey: "id",
@@ -147,37 +150,30 @@ function TaskManageRouteComponent() {
     return cs;
   }, []);
 
-  const table = useReactTable({
-    data: useMemo(() => (tasks?.nodes ?? []) as TaskDto[], [tasks]),
+  const table = useTable({
+    ...tableState.tableOptions,
+    data: useMemo(() => tasks?.nodes ?? [], [tasks]),
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    onPaginationChange: setPagination,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
     pageCount: tasks?.paginationInfo?.pages,
     rowCount: tasks?.paginationInfo?.total,
     enableColumnPinning: true,
-    autoResetPageIndex: true,
-    manualPagination: true,
-    state: {
-      pagination,
-      sorting,
-      columnVisibility,
-    },
     initialState: {
       columnPinning: {
-        right: ["actions"],
+        start: [],
+        end: ["actions"],
       },
     },
   });
 
-  if (tasksError) {
+  useClampServerPage(tableState, tasks?.paginationInfo?.pages, loading);
+
+  if (tasksError && !data) {
     return <QueryErrorView message={tasksError.message} onRetry={refetch} />;
   }
 
   return (
     <div className="container mx-auto max-w-4xl space-y-4 px-4">
+      <QueryPartialError error={tasksError} />
       <ContainerHeader
         title="Tasks Management"
         description="Manage your tasks"
@@ -188,6 +184,21 @@ function TaskManageRouteComponent() {
         }
       />
 
+      <div className="flex items-center gap-2 py-2">
+        <Input
+          aria-label="Filter records"
+          value={search}
+          onChange={(event) => onSearchChange(event.target.value)}
+          placeholder="Filter records"
+        />
+        {table.getColumn("id") && (
+          <DataTableColumnHeader
+            column={table.getColumn("id")!}
+            title="Sort by ID"
+          />
+        )}
+      </div>
+
       <div className="space-y-3">
         {showSkeleton &&
           Array.from(new Array(10)).map((_, index) => (
@@ -195,14 +206,14 @@ function TaskManageRouteComponent() {
           ))}
 
         {!showSkeleton && table.getRowModel().rows?.length > 0 ? (
-          table.getRowModel().rows.map((row, index) => {
+          table.getRowModel().rows.map((row) => {
             const task = row.original;
             return (
               <div
                 className="space-y-3 rounded-lg border bg-card p-4"
-                key={`${task.id}-${index}`}
+                key={row.id}
               >
-                {/* Header with status and priority */}
+                {/* Header */}
                 <div className="flex items-center justify-between gap-2">
                   <div className="font-mono text-muted-foreground text-xs">
                     # {task.id}
@@ -215,7 +226,7 @@ function TaskManageRouteComponent() {
                 </div>
                 <div className="mt-1 flex items-center gap-2">
                   {getStatusBadge(task.status)}
-                  <Badge variant="outline">Priority: {task.priority}</Badge>
+                  <Badge variant="outline">Generation: {task.generation}</Badge>
                   <div className="mr-0 ml-auto">
                     <DropdownMenuActions
                       id={task.id}
@@ -239,9 +250,8 @@ function TaskManageRouteComponent() {
                         })
                       }
                     >
-                      {task.status ===
-                        (SubscriberTaskStatusEnum.Killed ||
-                          SubscriberTaskStatusEnum.Failed) && (
+                      {(task.status === SubscriberTaskStatusEnum.Killed ||
+                        task.status === SubscriberTaskStatusEnum.Failed) && (
                         <DropdownMenuItem
                           onSelect={() =>
                             retryTasks({
@@ -286,12 +296,16 @@ function TaskManageRouteComponent() {
                     </span>
                   </div>
 
-                  {/* Lock at */}
+                  {/* Cancellation */}
                   <div className="text-sm">
-                    <span className="text-muted-foreground">Lock at: </span>
+                    <span className="text-muted-foreground">
+                      Cancel requested:{" "}
+                    </span>
                     <span>
-                      {task.lockAt
-                        ? intlService.formatDatetimeWithTz(task.lockAt)
+                      {task.cancelRequestedAt
+                        ? intlService.formatDatetimeWithTz(
+                            task.cancelRequestedAt,
+                          )
                         : "-"}
                     </span>
                   </div>
@@ -302,12 +316,9 @@ function TaskManageRouteComponent() {
                   <div className="text-sm">
                     <span className="text-muted-foreground">Job: </span>
                     <br />
-                    <span
-                      className="whitespace-pre-wrap"
-                      dangerouslySetInnerHTML={{
-                        __html: JSON.stringify(task.job, null, 2),
-                      }}
-                    />
+                    <span className="whitespace-pre-wrap">
+                      {JSON.stringify(task.job, null, 2)}
+                    </span>
                   </div>
                 )}
 

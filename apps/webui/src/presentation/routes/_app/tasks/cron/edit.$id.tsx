@@ -20,7 +20,10 @@ import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { FormFieldErrors } from "@/components/ui/form-field-errors";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { useAppForm } from "@/components/ui/tanstack-form";
@@ -33,9 +36,6 @@ import { compatFormDefaultValues, type NonNull } from "@/infra/forms/compat";
 import type {
   CronUpdateInput,
   GetCronsQuery,
-  GetCronsQueryVariables,
-  UpdateCronsMutation,
-  UpdateCronsMutationVariables,
 } from "@/infra/graphql/gql/graphql";
 import type { RouteStateDataOption } from "@/infra/routes/traits";
 import { getStatusBadge } from "./-status-badge";
@@ -78,10 +78,7 @@ function FormView({
   cron: CronDetailDto;
   onCompleted: VoidFunction;
 }) {
-  const [updateCron, { loading: updating }] = useMutation<
-    UpdateCronsMutation,
-    UpdateCronsMutationVariables
-  >(UPDATE_CRONS, {
+  const [updateCron, { loading: updating }] = useMutation(UPDATE_CRONS, {
     onCompleted,
     onError: (error) => {
       toast.error("Update cron task failed", {
@@ -387,10 +384,7 @@ function FormView({
 function CronEditRouteComponent() {
   const { id } = Route.useParams();
 
-  const { loading, error, data, refetch } = useQuery<
-    GetCronsQuery,
-    GetCronsQueryVariables
-  >(GET_CRONS, {
+  const { loading, error, data, refetch } = useQuery(GET_CRONS, {
     variables: {
       filter: {
         id: {
@@ -421,11 +415,11 @@ function CronEditRouteComponent() {
     }
   }, [refetch]);
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (error) {
+  if (error && !data) {
     return <QueryErrorView message={error.message} />;
   }
 
@@ -433,5 +427,10 @@ function CronEditRouteComponent() {
     return <DetailEmptyView message="Not found cron" />;
   }
 
-  return <FormView cron={cron as CronDetailDto} onCompleted={onCompleted} />;
+  return (
+    <>
+      <QueryPartialError error={error} />
+      <FormView cron={cron as CronDetailDto} onCompleted={onCompleted} />
+    </>
+  );
 }

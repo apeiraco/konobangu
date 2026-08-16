@@ -1,78 +1,40 @@
-import "@abraham/reflection";
-import { type Injector, ReflectiveInjector } from "@outposts/injection-js";
-import { createRouter, RouterProvider } from "@tanstack/react-router";
-import {
-  InjectorContextVoidInjector,
-  InjectorProvider,
-} from "oidc-client-rx/adapters/react";
-import { Suspense } from "react";
-import { createRoot } from "react-dom/client";
-import { provideAuth, setupAuthContext } from "@/app/auth/context";
-import { AppNotFoundComponent } from "@/components/layout/app-not-found";
-import { providePlatform } from "@/infra/platform/context";
-import { provideStorages } from "@/infra/storage/context";
-import { provideStyles } from "@/infra/styles/context";
-import { routeTree } from "@/presentation/routeTree.gen";
-import "./app.css";
-import { ApolloProvider } from "@apollo/client/react";
-import { provideRecorder } from "@/domains/recorder";
-import { graphqlContextFromInjector, provideGraphql } from "@/infra/graphql";
-import { provideIntl } from "@/infra/intl";
+import { createBootstrap } from "./app/bootstrap";
 
-// Create a new router instance
-const router = createRouter({
-  routeTree,
-  defaultPreload: "intent",
-  defaultStaleTime: 5000,
-  scrollRestoration: true,
-  defaultNotFoundComponent: AppNotFoundComponent,
-  notFoundMode: "root",
-  context: {
-    injector: InjectorContextVoidInjector,
-  },
-});
-
-// Register the router instance for type safety
-declare module "@tanstack/react-router" {
-  interface Register {
-    router: typeof router;
+const bootstrap = createBootstrap(() => import("./app/entry"));
+const container = document.getElementById("app");
+function stop() {
+  window.removeEventListener("pagehide", onPageHide);
+  bootstrap.dispose();
+}
+function onPageHide(event: PageTransitionEvent) {
+  if (!event.persisted) stop();
+}
+window.addEventListener("pagehide", onPageHide);
+async function start() {
+  try {
+    container?.replaceChildren();
+    await bootstrap.start();
+  } catch {
+    if (!container) return;
+    const message = document.createElement("p");
+    message.textContent =
+      "Unable to start Konobangu. Please retry or refresh the page.";
+    const retry = document.createElement("button");
+    retry.textContent = "Retry";
+    // Reload resets a rejected ESM import cache and all composition-root state.
+    retry.onclick = () => window.location.reload();
+    container.replaceChildren(message, retry);
   }
 }
-
-const injector: Injector = ReflectiveInjector.resolveAndCreate([
-  ...providePlatform(),
-  ...provideStorages(),
-  ...provideAuth(router),
-  ...provideStyles(),
-  ...provideGraphql(),
-  ...provideRecorder(),
-  ...provideIntl(),
-]);
-
-setupAuthContext(injector);
-
-const rootElement = document.getElementById("root");
-
-const { graphqlService } = graphqlContextFromInjector(injector);
-
-const App = () => {
-  return (
-    <InjectorProvider injector={injector}>
-      <Suspense>
-        <ApolloProvider client={graphqlService._apollo}>
-          <RouterProvider
-            router={router}
-            context={{
-              injector,
-            }}
-          />
-        </ApolloProvider>
-      </Suspense>
-    </InjectorProvider>
-  );
-};
-
-if (rootElement) {
-  const root = createRoot(rootElement);
-  root.render(<App />);
+void start();
+if (import.meta.hot) {
+  // Accept root dependencies without re-evaluating main and starting another root.
+  import.meta.hot.accept(["./app/bootstrap", "./app/entry"], () => {
+    try {
+      stop();
+    } finally {
+      window.location.reload();
+    }
+  });
+  import.meta.hot.dispose(stop);
 }

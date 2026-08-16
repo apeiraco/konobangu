@@ -1,7 +1,7 @@
-import { gql } from "@apollo/client";
+import { gql } from "@/infra/graphql/gql";
 import type { GetCronsQuery } from "@/infra/graphql/gql/graphql";
 
-export const GET_CRONS = gql`
+export const GET_CRONS = gql(`
 query GetCrons($filter: CronFilterInput!, $orderBy: CronOrderInput!, $pagination: PaginationInput!) {
     cron(pagination: $pagination, filter: $filter, orderBy: $orderBy) {
         nodes {
@@ -32,10 +32,9 @@ query GetCrons($filter: CronFilterInput!, $orderBy: CronOrderInput!, $pagination
                     maxAttempts,
                     runAt,
                     lastError,
-                    lockAt,
-                    lockBy,
-                    doneAt,
-                    priority,
+                    generation,
+        cancelRequestedAt,
+                                doneAt,
                     subscription {
                         displayName
                         sourceUrl
@@ -49,17 +48,17 @@ query GetCrons($filter: CronFilterInput!, $orderBy: CronOrderInput!, $pagination
         }
     }
   }
-`;
+`);
 
 export type CronDto = GetCronsQuery["cron"]["nodes"][number];
 
-export const DELETE_CRONS = gql`
+export const DELETE_CRONS = gql(`
     mutation DeleteCrons($filter: CronFilterInput!) {
         cronDelete(filter: $filter)
     }
-`;
+`);
 
-export const UPDATE_CRONS = gql`
+export const UPDATE_CRONS = gql(`
     mutation UpdateCrons($filter: CronFilterInput!, $data: CronUpdateInput!) {
         cronUpdate(filter: $filter, data: $data) {
            id
@@ -80,9 +79,9 @@ export const UPDATE_CRONS = gql`
             subscriberTaskCron
         }
     }
-`;
+`);
 
-export const INSERT_CRON = gql`
+export const INSERT_CRON = gql(`
     mutation InsertCron($data: CronInsertInput!) {
         cronCreateOne(data: $data) {
             id
@@ -103,4 +102,4 @@ export const INSERT_CRON = gql`
             subscriberTaskCron
         }
     }
-`;
+`);

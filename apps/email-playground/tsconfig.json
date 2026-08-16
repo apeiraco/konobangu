@@ -5,9 +5,17 @@
     "jsx": "react-jsx",
     "jsxImportSource": "react",
     "module": "ESNext",
-    "moduleResolution": "bundler"
+    "moduleResolution": "bundler",
+    "rootDir": ".",
+    "outDir": "dist-tsc/app",
+    "tsBuildInfoFile": "dist-tsc/app.tsbuildinfo",
+    "types": ["react", "node"]
   },
-  "references": [{ "path": "../../packages/email" }],
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "references": [
+    {
+      "path": "../../packages/email"
+    }
+  ],
+  "include": ["emails/**/*.ts", "emails/**/*.tsx", "vite.config.ts"],
+  "exclude": ["node_modules", "dist", "dist-tsc"]
 }

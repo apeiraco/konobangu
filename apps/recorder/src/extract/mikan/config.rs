@@ -4,6 +4,6 @@ use url::Url;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MikanConfig {
-    pub http_client: HttpClientConfig,
-    pub base_url: Url,
+  pub http_client: HttpClientConfig,
+  pub base_url: Url,
 }

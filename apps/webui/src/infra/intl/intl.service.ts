@@ -1,53 +1,30 @@
-import { inject } from "@outposts/injection-js";
+import { inject } from "injection-js";
 import { DOCUMENT } from "../platform/injection";
+import { formatInstant, parseGraphqlDatetime } from "../time/instant";
+
+export { parseGraphqlDatetime } from "../time/instant";
 
 export class IntlService {
   document = inject(DOCUMENT);
-
   get timezone() {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
+    return Temporal.Now.timeZoneId();
   }
-
   formatTimestamp(timestamp: number, options?: Intl.DateTimeFormatOptions) {
-    const defaultOptions: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-      ...options,
-    };
-
-    return new Intl.DateTimeFormat(
+    return formatInstant(
+      Temporal.Instant.fromEpochMilliseconds(timestamp),
+      options,
       this.document.defaultView?.navigator.language,
-      {
-        ...defaultOptions,
-        ...options,
-      },
-    ).format(new Date(timestamp));
+    );
   }
-
   formatDatetimeWithTz(datetime: string, options?: Intl.DateTimeFormatOptions) {
-    const defaultOptions: Intl.DateTimeFormatOptions = {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      hour: "2-digit",
-      minute: "2-digit",
-      second: "2-digit",
-      hour12: false,
-      timeZoneName: "short",
-      ...options,
-    };
-
-    return new Intl.DateTimeFormat(
-      this.document.defaultView?.navigator.language,
-      {
-        ...defaultOptions,
-        ...options,
-      },
-    ).format(new Date(datetime));
+    try {
+      return formatInstant(
+        parseGraphqlDatetime(datetime),
+        { timeZoneName: "short", ...options },
+        this.document.defaultView?.navigator.language,
+      );
+    } catch {
+      return "Invalid timestamp";
+    }
   }
 }

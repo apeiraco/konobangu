@@ -1,7 +1,0 @@
----
-source: tests/models/subscribers.rs
-expression: non_existing_subscriber_results
----
-Err(
-    EntityNotFound,
-)

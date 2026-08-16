@@ -1,8 +1,17 @@
-import type { Injector, Provider } from "@outposts/injection-js";
+import type {
+  SecuritydeptInjectorTrait as Injector,
+  SecuritydeptProvider as Provider,
+} from "@securitydept/client";
 import { GraphQLService } from "./graphql.service";
 
 export function provideGraphql(): Provider[] {
-  return [GraphQLService];
+  return [
+    {
+      provide: GraphQLService,
+      useFactory: () => new GraphQLService(),
+      deps: [],
+    },
+  ];
 }
 
 export interface GraphQLContext {

@@ -1,0 +1,120 @@
+[project]
+version = "0.1.0"
+display_name = "Konobangu"
+description = "Self-hosted bangumi subscription and recording service."
+license = "MIT"
+repository_url = "https://github.com/apeiraco/konobangu"
+
+[tooling.typescript]
+config = "tsconfig.json"
+
+[release]
+tag_prefix = "v"
+output_directory = "temp/release"
+binary = "recorder-cli"
+cargo_package = "recorder"
+changelog = "CHANGELOG.md"
+
+[[node_package]]
+name = "docs"
+manifest = "apps/docs/package.json"
+versioned = false
+publish = false
+
+[[node_package]]
+name = "email-playground"
+manifest = "apps/email-playground/package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "proxy"
+manifest = "apps/proxy/package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "recorder"
+manifest = "apps/recorder/package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "webui"
+manifest = "apps/webui/package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "konobangu"
+manifest = "package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "@konobangu/email"
+manifest = "packages/email/package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "@konobangu/testing"
+manifest = "packages/testing/package.json"
+versioned = true
+publish = false
+
+[[node_package]]
+name = "@konobangu/testing-torrents"
+manifest = "packages/testing-torrents/package.json"
+versioned = true
+publish = false
+
+[[rust_package]]
+name = "testing-torrents"
+manifest = "packages/testing-torrents/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "util"
+manifest = "packages/util/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "util-derive"
+manifest = "packages/util-derive/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "fetch"
+manifest = "packages/fetch/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "downloader"
+manifest = "packages/downloader/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "recorder"
+manifest = "apps/recorder/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "proxy"
+manifest = "apps/proxy/Cargo.toml"
+publish = false
+
+[[rust_package]]
+name = "animeta"
+manifest = "packages/animeta/Cargo.toml"
+publish = false
+
+[[python_package]]
+name = "konobangu"
+manifest = "pyproject.toml"
+publish = false
+
+[[python_package]]
+name = "konobangu-animeta"
+manifest = "packages/animeta-py/pyproject.toml"
+publish = false

@@ -27,7 +27,10 @@ import { DetailEmptyView } from "@/components/ui/detail-empty-view";
 import { Dialog, DialogTrigger } from "@/components/ui/dialog";
 import { Img } from "@/components/ui/img";
 import { Label } from "@/components/ui/label";
-import { QueryErrorView } from "@/components/ui/query-error-view";
+import {
+  QueryErrorView,
+  QueryPartialError,
+} from "@/components/ui/query-error-view";
 import { Separator } from "@/components/ui/separator";
 import { UPDATE_CRONS } from "@/domains/recorder/schema/cron";
 import { DELETE_FEED, INSERT_FEED } from "@/domains/recorder/schema/feeds";
@@ -40,18 +43,9 @@ import {
   getApolloQueryError,
 } from "@/infra/errors/apollo";
 import {
-  type DeleteFeedMutation,
-  type DeleteFeedMutationVariables,
-  type DeleteTasksMutation,
-  type DeleteTasksMutationVariables,
   FeedSourceEnum,
   FeedTypeEnum,
-  type GetSubscriptionDetailQuery,
-  type InsertFeedMutation,
-  type InsertFeedMutationVariables,
   SubscriptionCategoryEnum,
-  type UpdateCronsMutation,
-  type UpdateCronsMutationVariables,
 } from "@/infra/graphql/gql/graphql";
 import { IntlService } from "@/infra/intl/intl.service";
 import { prettyTaskType } from "../tasks/-pretty-task-type";
@@ -83,7 +77,7 @@ function SubscriptionDetailRouteComponent() {
     loading,
     error: subscriptionError,
     refetch,
-  } = useQuery<GetSubscriptionDetailQuery>(GET_SUBSCRIPTION_DETAIL, {
+  } = useQuery(GET_SUBSCRIPTION_DETAIL, {
     variables: {
       filter: {
         id: {
@@ -102,10 +96,7 @@ function SubscriptionDetailRouteComponent() {
     });
   };
 
-  const [insertFeed] = useMutation<
-    InsertFeedMutation,
-    InsertFeedMutationVariables
-  >(INSERT_FEED, {
+  const [insertFeed] = useMutation(INSERT_FEED, {
     onCompleted: async () => {
       const result = await refetch();
       const error = getApolloQueryError(result);
@@ -124,10 +115,7 @@ function SubscriptionDetailRouteComponent() {
     },
   });
 
-  const [deleteFeed] = useMutation<
-    DeleteFeedMutation,
-    DeleteFeedMutationVariables
-  >(DELETE_FEED, {
+  const [deleteFeed] = useMutation(DELETE_FEED, {
     onCompleted: async () => {
       const result = await refetch();
       const error = getApolloQueryError(result);
@@ -146,10 +134,7 @@ function SubscriptionDetailRouteComponent() {
     },
   });
 
-  const [deleteTask] = useMutation<
-    DeleteTasksMutation,
-    DeleteTasksMutationVariables
-  >(DELETE_TASKS, {
+  const [deleteTask] = useMutation(DELETE_TASKS, {
     onCompleted: async () => {
       const result = await refetch();
       const error = getApolloQueryError(result);
@@ -168,10 +153,7 @@ function SubscriptionDetailRouteComponent() {
     },
   });
 
-  const [updateCron] = useMutation<
-    UpdateCronsMutation,
-    UpdateCronsMutationVariables
-  >(UPDATE_CRONS, {
+  const [updateCron] = useMutation(UPDATE_CRONS, {
     onCompleted: async () => {
       const result = await refetch();
       const error = getApolloQueryError(result);
@@ -208,11 +190,11 @@ function SubscriptionDetailRouteComponent() {
     ],
   );
 
-  if (loading) {
+  if (loading && !data) {
     return <DetailCardSkeleton />;
   }
 
-  if (subscriptionError) {
+  if (subscriptionError && !data) {
     return <QueryErrorView message={subscriptionError.message} />;
   }
 
@@ -222,6 +204,7 @@ function SubscriptionDetailRouteComponent() {
 
   return (
     <div className="container mx-auto max-w-4xl py-6">
+      <QueryPartialError error={subscriptionError} />
       <ContainerHeader
         title="Subscription Detail"
         description={`View subscription #${subscription.id}`}

@@ -128,7 +128,7 @@ export interface CronValidationResult {
 }
 
 export interface CronNextRun {
-  date: Date;
+  date: Temporal.Instant;
   timestamp: number;
   formatted: string;
   relative: string;

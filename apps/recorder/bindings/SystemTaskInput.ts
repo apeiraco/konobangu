@@ -2,6 +2,4 @@
 import type { EchoTaskInput } from "./EchoTaskInput";
 import type { OptimizeImageTaskInput } from "./OptimizeImageTaskInput";
 
-export type SystemTaskInput =
-  | ({ taskType: "optimize_image" } & OptimizeImageTaskInput)
-  | ({ taskType: "test" } & EchoTaskInput);
+export type SystemTaskInput = { "taskType": "optimize_image" } & OptimizeImageTaskInput | { "taskType": "test" } & EchoTaskInput;

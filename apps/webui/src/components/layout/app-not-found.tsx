@@ -1,15 +1,11 @@
-import {
-  type AnyRoute,
-  type ParsedLocation,
-  redirect,
-} from "@tanstack/react-router";
+import { type ParsedLocation, redirect } from "@tanstack/react-router";
 import { ProLink } from "../ui/pro-link";
 
 export function guardRouteIndexAsNotFound(
-  this: AnyRoute,
-  { location }: { location: ParsedLocation<any> },
+  path: string,
+  { location }: { location: Pick<ParsedLocation, "pathname"> },
 ) {
-  if (location.pathname.replace(/\/+$/, "") === this.id) {
+  if (location.pathname.replace(/\/+$/, "") === path) {
     throw redirect({
       href: "/404",
       replace: true,

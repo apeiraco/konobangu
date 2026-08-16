@@ -1,12 +1,8 @@
-use std::{ops::Deref, sync::Arc};
+use std::sync::Arc;
 
 use async_graphql::dynamic::{Field, FieldFuture, FieldValue, InputValue, Scalar, TypeRef};
 use convert_case::Case;
-use sea_orm::{
-  ActiveModelBehavior, ColumnTrait, ConnectionTrait, EntityTrait, Iterable, QueryFilter, QuerySelect, QueryTrait,
-  prelude::Expr,
-  sea_query::{ExprTrait, Query},
-};
+use sea_orm::{ColumnTrait, EntityTrait, Iterable, QueryFilter, QuerySelect};
 use seaography::{
   Builder as SeaographyBuilder, BuilderContext, EntityColumnId, EntityInputBuilder, EntityObjectBuilder, SeaographyError, prepare_active_model,
 };
@@ -29,7 +25,6 @@ use crate::{
       },
     },
   },
-  migrations::defs::{ApalisJobs, ApalisSchema},
   models::system_tasks,
   task::SystemTaskTrait,
 };
@@ -39,8 +34,7 @@ fn skip_columns_for_entity_input(context: &mut BuilderContext) {
     if matches!(column, system_tasks::Column::Job) {
       continue;
     }
-    GraphqlColumnKey::of::<system_tasks::Entity>(context, &column)
-      .push_insert_skip(context);
+    GraphqlColumnKey::of::<system_tasks::Entity>(context, &column).push_insert_skip(context);
   }
 }
 
@@ -85,6 +79,9 @@ where
 }
 
 pub fn register_system_tasks_to_schema_context(context: &mut BuilderContext) {
+  crate::graphql::infra::text_enum::register::<system_tasks::Entity, system_tasks::SystemTaskStatus>(context, &system_tasks::Column::Status);
+  crate::graphql::infra::text_enum::register::<system_tasks::Entity, system_tasks::SystemTaskType>(context, &system_tasks::Column::TaskType);
+
   restrict_subscriber_for_entity::<system_tasks::Entity>(context, &system_tasks::Column::SubscriberId);
   restrict_system_tasks_for_entity::<system_tasks::Entity>(context, &system_tasks::Column::Job);
 
@@ -107,29 +104,34 @@ pub fn register_system_tasks_to_schema_builder(mut builder: SeaographyBuilder) -
       .push(generate_entity_default_basic_entity_object::<system_tasks::Entity>(builder_context));
   }
   {
-    // Custom delete mutation — deletes from apalis jobs table
+    // Cancellation keeps a tombstone so delayed queue envelopes cannot
+    // resurrect work.
     let delete_field_name = get_entity_delete_mutation_field_name::<system_tasks::Entity>(builder_context);
     let delete_mutation = generate_entity_filtered_mutation_field::<system_tasks::Entity, _, _>(
       builder_context,
       delete_field_name,
       TypeRef::named_nn(TypeRef::INT),
-      Arc::new(|_resolver_ctx, app_ctx, filters| {
+      Arc::new(|resolver_ctx, _app_ctx, filters| {
         Box::pin(async move {
-          let db = app_ctx.db();
-
-          let select_subquery = system_tasks::Entity::find().select_only().column(system_tasks::Column::Id).filter(filters);
-
-          let delete_query = Query::delete()
-            .from_table((ApalisSchema::Schema, ApalisJobs::Table))
-            .and_where(Expr::col(ApalisJobs::Id).in_subquery(select_subquery.into_query()))
-            .to_owned();
-
-          let db_backend = db.deref().get_database_backend();
-          let delete_statement = db_backend.build(&delete_query);
-
-          let result = db.execute_raw(delete_statement).await?;
-
-          Ok::<_, RecorderError>(Some(FieldValue::value(result.rows_affected() as i64)))
+          let operation = resolver_ctx.data::<crate::database::operation::IdentityOperation>()?;
+          operation
+            .run(move |db| {
+              Box::pin(async move {
+                let ids = system_tasks::Entity::find()
+                  .select_only()
+                  .column(system_tasks::Column::Id)
+                  .filter(filters)
+                  .into_tuple::<String>()
+                  .all(db)
+                  .await?;
+                let mut affected = 0;
+                for id in ids {
+                  affected += crate::task::operation::cancel_or_archive(db, &id).await?;
+                }
+                Ok::<_, RecorderError>(Some(FieldValue::value(affected as i64)))
+              })
+            })
+            .await
         })
       }),
     );
@@ -141,29 +143,33 @@ pub fn register_system_tasks_to_schema_builder(mut builder: SeaographyBuilder) -
       builder_context,
       entity_retry_one_mutation_name,
       TypeRef::named_nn(get_entity_basic_type_name::<system_tasks::Entity>(builder_context)),
-      Arc::new(|_resolver_ctx, app_ctx, filters| {
+      Arc::new(|resolver_ctx, _app_ctx, filters| {
         Box::pin(async move {
-          let db = app_ctx.db();
+          let operation = resolver_ctx.data::<crate::database::operation::IdentityOperation>()?;
+          operation
+            .run(move |db| {
+              Box::pin(async move {
+                let job_id = system_tasks::Entity::find()
+                  .filter(filters)
+                  .select_only()
+                  .column(system_tasks::Column::Id)
+                  .into_tuple::<String>()
+                  .one(db)
+                  .await?
+                  .ok_or_else(RecorderError::from_entity_not_found::<system_tasks::Entity>)?;
 
-          let job_id = system_tasks::Entity::find()
-            .filter(filters)
-            .select_only()
-            .column(system_tasks::Column::Id)
-            .into_tuple::<String>()
-            .one(db)
-            .await?
-            .ok_or_else(RecorderError::from_entity_not_found::<system_tasks::Entity>)?;
+                crate::task::operation::retry(db, &job_id).await?;
 
-          let task = app_ctx.task();
-          task.retry_subscriber_task(job_id.clone()).await?;
+                let task_model = system_tasks::Entity::find()
+                  .filter(system_tasks::Column::Id.eq(&job_id))
+                  .one(db)
+                  .await?
+                  .ok_or_else(RecorderError::from_entity_not_found::<system_tasks::Entity>)?;
 
-          let task_model = system_tasks::Entity::find()
-            .filter(system_tasks::Column::Id.eq(&job_id))
-            .one(db)
-            .await?
-            .ok_or_else(RecorderError::from_entity_not_found::<system_tasks::Entity>)?;
-
-          Ok::<_, RecorderError>(Some(FieldValue::owned_any(task_model)))
+                Ok::<_, RecorderError>(Some(FieldValue::owned_any(task_model)))
+              })
+            })
+            .await
         })
       }),
     );
@@ -174,7 +180,7 @@ pub fn register_system_tasks_to_schema_builder(mut builder: SeaographyBuilder) -
       .inputs
       .push(generate_entity_default_insert_input_object::<system_tasks::Entity>(builder_context));
 
-    // Custom create_one mutation — creates via task service
+    // Business record and outbox participate in the operation transaction.
     let create_one_field_name = get_entity_create_one_mutation_field_name::<system_tasks::Entity>(builder_context);
     let create_one_mutation = Field::new(
       create_one_field_name,
@@ -200,33 +206,23 @@ pub fn register_system_tasks_to_schema_builder(mut builder: SeaographyBuilder) -
           let entity_object_builder = EntityObjectBuilder { context: builder_context };
           let active_model: Result<system_tasks::ActiveModel, _> = prepare_active_model(&entity_input_builder, &entity_object_builder, &input_object);
 
-          let app_ctx = resolve_context.data::<Arc<dyn crate::app::AppContextTrait>>()?;
-          let task_service = app_ctx.task();
-
-          let active_model = active_model?;
-
-          let db = app_ctx.db();
-
-          let active_model = active_model.before_save(db, true).await?;
-
-          let mut task = active_model.job.unwrap();
-
-          // Inject subscriber_id from auth context (since input_conversion
-          // can no longer access ResolverContext in seaography 2.0).
-          // SystemTask uses Option<i32> for subscriber_id.
+          let mut task = active_model?.job.unwrap();
           let auth_subscriber_id = resolve_context.data::<AuthUserInfo>()?.subscriber_auth.subscriber_id;
           task.set_subscriber_id(Some(auth_subscriber_id));
-
-          let task_id = task_service.add_system_task(task).await?.to_string();
-
-          let db = app_ctx.db();
-
-          let task = system_tasks::Entity::find()
-            .filter(system_tasks::Column::Id.eq(&task_id))
-            .one(db)
-            .await?
-            .ok_or_else(RecorderError::from_entity_not_found::<system_tasks::Entity>)?;
-
+          task.set_cron_id(None);
+          let operation = resolve_context.data::<crate::database::operation::IdentityOperation>()?;
+          let task = operation
+            .run(move |db| {
+              Box::pin(async move {
+                let id = crate::task::operation::enqueue(db, crate::task::SYSTEM_TASK_APALIS_NAME, &task).await?;
+                system_tasks::Entity::find()
+                  .filter(system_tasks::Column::Id.eq(id))
+                  .one(db)
+                  .await?
+                  .ok_or_else(RecorderError::from_entity_not_found::<system_tasks::Entity>)
+              })
+            })
+            .await?;
           Ok(Some(FieldValue::owned_any(task)))
         })
       },

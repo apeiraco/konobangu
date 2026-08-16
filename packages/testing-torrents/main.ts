@@ -13,7 +13,7 @@ const TRACKER_PORT = parseInt(process.env.TRACKER_PORT || "6081", 10);
 const SEEDING_PORT = parseInt(process.env.SEEDING_PORT || "6082", 10);
 const STATIC_API_PATH = "/api/static";
 const LOCAL_IP = "127.0.0.1";
-const WORKSPACE_PATH = "workspace";
+const WORKSPACE_PATH = process.env.WORKSPACE_PATH || "workspace";
 const TRACKER_URL = `http://${LOCAL_IP}:${TRACKER_PORT}/announce`;
 const API_BASE_URL = `http://${LOCAL_IP}:${API_PORT}${STATIC_API_PATH}/`;
 
@@ -22,7 +22,7 @@ const app = Fastify({ logger: true });
 
 // Mount static file service, mapping ./workspace directory to /api/static route
 app.register(fastifyStatic, {
-  root: path.join(process.cwd(), WORKSPACE_PATH),
+  root: path.resolve(WORKSPACE_PATH),
   prefix: STATIC_API_PATH,
 });
 
@@ -73,8 +73,11 @@ async function startTracker(): Promise<void> {
 
 // Tracker and WebTorrent client
 const webTorrent = new WebTorrent({
-  // @ts-expect-error
   torrentPort: SEEDING_PORT,
+  dht: false,
+  lsd: false,
+  natUpnp: false,
+  natPmp: false,
 });
 
 // Generate mock file
@@ -92,15 +95,16 @@ async function generateMockFile(filePath: string, size: number) {
 async function seedTorrent(
   torrentPath: string,
   contentFolder: string,
+  webSeedURL = API_BASE_URL,
 ): Promise<Torrent> {
   return new Promise((resolve) => {
     const torrent = webTorrent.seed(
       contentFolder,
       {
         announceList: [[TRACKER_URL]], // Specify tracker URL
-        private: false,
+        private: true,
         createdBy: "Konobangu Testing Torrents",
-        urlList: [API_BASE_URL],
+        urlList: [webSeedURL],
       },
       async (t) => {
         await fsp.writeFile(torrentPath, t.torrentFile);
@@ -133,7 +137,12 @@ app.post<{ Body: RequestSchema }>("/api/torrents/mock", async (req, _reply) => {
 
   const torrentPath = path.join(WORKSPACE_PATH, `${id}.torrent`);
 
-  const torrent = await seedTorrent(torrentPath, idFolder);
+  const singleFile = fileList.length === 1 ? fileList[0] : undefined;
+  const torrent = await seedTorrent(
+    torrentPath,
+    singleFile ? path.join(idFolder, singleFile.path) : idFolder,
+    singleFile ? `${API_BASE_URL}${id}/` : API_BASE_URL,
+  );
   const magnetUrl = `magnet:?xt=urn:btih:${torrent.infoHash}&tr=${TRACKER_URL}`;
 
   return {

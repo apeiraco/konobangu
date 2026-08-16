@@ -3,6 +3,7 @@ import { buildVirtualBranchRouteOptions } from "@/infra/routes/utils";
 
 export const Route = createFileRoute("/_app/tasks/cron")(
   buildVirtualBranchRouteOptions({
+    path: "/tasks/cron",
     title: "Cron",
   }),
 );
