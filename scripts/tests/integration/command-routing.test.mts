@@ -10,6 +10,7 @@ import {
 } from "node:fs";
 import { delimiter, join } from "node:path";
 import { test } from "node:test";
+import { releaseMetadataSnapshot } from "../../commands/release.mts";
 import { CommandError, root, run } from "../../lib/process.mts";
 
 // Exercise the real Just -> CLI -> runner boundary without invoking builds.
@@ -362,6 +363,36 @@ test("native Just forwarding preserves release paths without evaluating shell co
   assert.doesNotMatch(
     result.stderr,
     /not recognized|command not found|unexpected token/i,
+  );
+});
+
+test("release plan exports the source selection and metadata hash to GitHub", () => {
+  using temporary = mkdtempDisposableSync(join(root, "temp/plan-output-"));
+  const output = join(temporary.path, "github-output");
+  writeFileSync(output, "existing=value\n");
+  run("just", ["release", "plan", "--format", "github-output"], {
+    capture: true,
+    env: { GITHUB_OUTPUT: output },
+  });
+  const values = Object.fromEntries(
+    readFileSync(output, "utf8")
+      .trim()
+      .split(/\r?\n/)
+      .map((line) => {
+        const separator = line.indexOf("=");
+        return [line.slice(0, separator), line.slice(separator + 1)];
+      }),
+  );
+  assert.equal(values.existing, "value");
+  const plan = JSON.parse(values.release_plan);
+  const snapshot = releaseMetadataSnapshot();
+  assert.deepEqual(plan.artifacts, snapshot.artifacts);
+  assert.equal(plan.metadata_sha256, snapshot.sha256);
+  for (const [key, selected] of Object.entries(snapshot.artifacts))
+    assert.equal(values[key], String(selected));
+  assert.equal(
+    plan.source_sha,
+    run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim(),
   );
 });
 

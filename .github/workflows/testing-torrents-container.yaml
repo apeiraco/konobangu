@@ -1,39 +1,79 @@
 name: Testing Torrents Container
 
 on:
-    workflow_dispatch:
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      source_sha:
+        description: Tested source commit selected by the release orchestrator.
+        required: true
+        type: string
+    outputs:
+      image_digest:
+        value: ${{ jobs.build-container.outputs.digest }}
+      source_sha:
+        value: ${{ jobs.plan.outputs.source_sha }}
+      metadata_sha256:
+        value: ${{ jobs.plan.outputs.metadata_sha256 }}
 
-env:
-    REGISTRY: ghcr.io
-    ORG: apeiraco
-    PROJECT: konobangu
+permissions:
+  contents: read
 
 jobs:
-    build-container:
-        runs-on: ubuntu-latest
-        permissions:
-            contents: read
-            packages: write
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
-            - name: Set up Docker Buildx
-              uses: docker/setup-buildx-action@v3
-            - name: Log in to GHCR
-              uses: docker/login-action@v3
-              with:
-                  registry: ${{ env.REGISTRY }}
-                  username: ${{ github.actor }}
-                  password: ${{ secrets.GITHUB_TOKEN }}
-            - name: Set up QEMU
-              uses: docker/setup-qemu-action@v3
-            - name: Build and push Docker image
-              uses: docker/build-push-action@v5
-              with:
-                  context: "packages/testing-torrents"
-                  file: "packages/testing-torrents/Dockerfile"
-                  push: true
-                  platforms: linux/amd64,linux/arm64
-                  tags: "${{ env.REGISTRY }}/${{ env.ORG }}/${{ env.PROJECT }}-testing-torrents:latest"
-                  cache-from: type=gha
-                  cache-to: type=gha,mode=max
+  plan:
+    if: github.ref == 'refs/heads/release'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      enabled: ${{ steps.plan.outputs.testing_torrents_image }}
+      source_sha: ${{ steps.plan.outputs.source_sha }}
+      metadata_sha256: ${{ steps.plan.outputs.metadata_sha256 }}
+      version: ${{ steps.plan.outputs.version }}
+      tags: ${{ steps.plan.outputs.testing_torrents_image_tags }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+      - uses: ./.github/actions/setup
+        with:
+          extra-tools: ''
+      - id: plan
+        run: mise exec -- just release plan --format github-output
+
+  build-container:
+    needs: plan
+    if: needs.plan.outputs.enabled == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment: stable-release
+    outputs:
+      digest: ${{ steps.image.outputs.digest }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.plan.outputs.source_sha }}
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/setup-qemu-action@v3
+      - id: image
+        uses: docker/build-push-action@v5
+        with:
+          context: packages/testing-torrents
+          file: packages/testing-torrents/Dockerfile
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ needs.plan.outputs.tags }}
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ needs.plan.outputs.source_sha }}
+            org.opencontainers.image.version=${{ needs.plan.outputs.version }}
+            io.apeiraco.konobangu.release-metadata-sha256=${{ needs.plan.outputs.metadata_sha256 }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

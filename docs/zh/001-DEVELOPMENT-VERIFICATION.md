@@ -34,6 +34,16 @@ Node 依赖使用 pnpm；Rust 使用 Cargo；Python 使用 uv workspace。开发
 
 允许的 lint 例外限定于具体 OIDC handler 与共享 fixture；其它有效 rustc/Clippy 和 Cargo manifest 告警失败。查看原始 proc-macro/linker 日志；-D warnings 不覆盖全部诊断来源。保留测试 IdP 的内存 adapter/TTL 提示、Docker 与许可证工具的诊断，不过滤日志伪造零告警。前端 bundle 阈值与初始/polyfill/editor 加载由配置及浏览器断言共同检查。
 
+### GitHub 流水线
+
+默认分支为 `master`。验证运行于目标为 `master` 或 `release` 的 PR，以及这些分支的推送。仅推送 `dev` 不触发验证；创建或更新它到上述目标的 PR 仍会触发。PR 分支过滤器匹配目标分支，见 [GitHub 事件说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)。
+
+`Verification report` 是唯一必需状态检查，汇总 static、TypeScript、Rust 和平台任务。失败、取消或跳过任一阶段均不能通过。新的 PR/主分支推送取消过时验证；release 推送保留各轮运行，使发布能够绑定精确候选。
+
+文档在 `master` 上的输入变化时构建部署，也支持手动构建；部署由 `github-pages` 限定为 `master`。testing-torrents publisher 读取已提交 metadata 的 opt-in 开关并检出固定源码，支持 workflow_call 和 release 分支手动入口，导出 digest；它发布的是测试 fixture 镜像。应用发布当前使用下述本地发布工具，自动发布设计见 [roadmap](roadmap/001-SHORT-TERM-ROADMAP.md#发布自动化)。
+
+`aitiotekt-infra/meta/github-repositories.yml` 定义 `apeiraco/konobangu` 的声明式设置：Actions 默认只读、要求 `Verification report` 的 release 分支保护、`stable-release` 审批环境，以及允许 `master`、域名为 `konobangu.apeiraco.com` 的 `github-pages`。稳定发布审批仅允许 `release` 分支，允许单维护者自审、禁止管理员跳过审批。版本 tag 是 dispatch 发布流程的产物，不是部署来源。Maintain/Admin 直推可绕过 PR/检查规则，独立 safety 规则仍禁止强推和删除；workflow 必须对直推候选执行完整门禁。基础设施设置须通过其 inspect/pull/plan/apply 流程单独应用；清单不会创建分支或 workflow 文件，版本仍由项目元数据管理，不复制进基础设施环境变量。
+
 ## 职责与目录
 
 根 `justfile` 只维护全局设置、argv 适配和 imports；`justfiles/` 按 setup/dev/build/quality/test/release/tools 拆分。Just 直接表达原生命令与固定顺序，自带 if 选择固定 scope；复杂操作进入受 TypeScript/Biome 覆盖的 CLI。纯转发统一使用 `recipe_args`，Unix 使用原生 positional argv，Windows 使用 PowerShell 7.5+ CommandWithArgs 和 argv 数组，显式保留 LASTEXITCODE。cross-spawn 处理 Windows 命令 shim，不将参数重建为 shell 字符串。
@@ -84,6 +94,8 @@ Python 包目前没有测试；已配置 pytest 收集 *.test.py/*.spec.py，并
 本次重构后的首次发布前，直接修改已有迁移定义；定义改变后重建隔离测试数据库，中间实现不增加兼容迁移。
 
 ## 平台制品与发布
+
+`release.artifacts` 独立选择 bundle、运行镜像和 testing-torrents。通过 `just release plan` 查看源码/配置哈希与选择，`--format github-output` 将同一数据提供给 CI；空选择只验证、不发布。这些开关不裁剪测试，也不授予权限。Bundle 发布检查回执中的 metadata 哈希/选择；镜像发布与最终 manifest 遵循[发布自动化契约](roadmap/001-SHORT-TERM-ROADMAP.md#metadata-选择与发布历史)。
 
 JPXL、静态 WebP 和 aws-lc 保留真实原生构建前置条件，codec 源码由上游维护并锁定 Git commit，不嵌入源码树；不设置 target-cpu=native。Windows 使用静态 CRT；musl 制品无 ELF interpreter/NEEDED；GNU 制品记录 glibc ABI 边界；macOS 仅允许系统 dylib/framework。各目标共用 build-release/platform-check 接口；已有制品可以直接检查，无需再次构建。媒体功能和并行语义见 [015](004-MEDIA-AND-CONFIGURATION.md)。
 

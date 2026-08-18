@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.1.0
 
 ### Added
 
@@ -20,6 +20,8 @@
 - Preserve generated binding formatting and use native Node ESM path metadata in tooling.
 - Use Vite email previews/exports, Playwright-owned fixtures and unit/integration/e2e test directories; share task migration identifiers in Rust.
 - Share resource-based verification stages between Just and CI; isolate browser fixture builds and use one TypeScript reference graph for output management.
+- Restrict verification to default/release branch pushes and their PRs; expose one aggregate branch-protection check.
+- Select bundle/runtime/fixture publication through committed metadata, with source/config hashes in release plans and bundle receipts.
 - Consolidate CLI/Just tooling and generated output; restore Zellij sessions, use kebab-case executables, and group configuration by service with explicit units.
 
 ### Fixed
@@ -27,6 +29,7 @@
 - Preserve authorization, cache validators and Range behavior when negotiating image formats.
 - Keep task publication, cancellation, retries and deletion behind transaction and lease fences.
 - Install locked CLI dependencies before invoking tools in clean CI checkouts; apply file logging thresholds.
+- Preserve manifest line endings in release metadata updates and accept CRLF release notes.
 
 ### Removed
 

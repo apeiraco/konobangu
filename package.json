@@ -2,6 +2,7 @@
   "name": "konobangu",
   "version": "0.1.0",
   "description": "Self-hosted bangumi subscription and recording service.",
+  "homepage": "https://konobangu.apeiraco.com",
   "license": "MIT",
   "type": "module",
   "repository": {

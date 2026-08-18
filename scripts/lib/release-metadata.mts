@@ -10,6 +10,15 @@ export type ManagedPackage = {
   publish: false;
   versioned?: boolean;
 };
+export type ReleaseArtifacts = {
+  bundles: boolean;
+  runtime_image: boolean;
+  testing_torrents_image: boolean;
+};
+export type ReleaseMetadataSnapshot = {
+  sha256: string;
+  artifacts: ReleaseArtifacts;
+};
 export type Metadata = {
   tooling: { typescript: { config: string } };
   project: {
@@ -25,6 +34,7 @@ export type Metadata = {
     binary: string;
     cargo_package: string;
     changelog: string;
+    artifacts: ReleaseArtifacts;
   };
   node_package: ManagedPackage[];
   rust_package: ManagedPackage[];
@@ -43,9 +53,13 @@ export function projectPath(base: string, path: string): string {
   return target;
 }
 export function loadMetadata(base = root): Metadata {
-  const metadata = parse(
+  return parseMetadata(
     readFileSync(resolve(base, "konobangu-metadata.toml"), "utf8"),
-  ) as unknown as Metadata;
+    base,
+  );
+}
+export function parseMetadata(source: string, base = root): Metadata {
+  const metadata = parse(source) as unknown as Metadata;
   releaseVersion(metadata.project.version);
   projectPath(base, metadata.tooling.typescript.config);
   for (const key of [
@@ -74,6 +88,25 @@ export function loadMetadata(base = root): Metadata {
   projectPath(base, metadata.release.changelog);
   if (!/^[\w-]+$/.test(metadata.release.binary))
     throw new Error("Invalid release binary");
+  const artifacts = metadata.release.artifacts;
+  const artifactKeys = ["bundles", "runtime_image", "testing_torrents_image"];
+  if (
+    !artifacts ||
+    Array.isArray(artifacts) ||
+    Object.keys(artifacts).length !== artifactKeys.length ||
+    artifactKeys.some(
+      (key) => typeof artifacts[key as keyof ReleaseArtifacts] !== "boolean",
+    )
+  )
+    throw new Error(
+      "release.artifacts requires boolean bundles, runtime_image and testing_torrents_image fields",
+    );
+  // Keep metadata snapshots comparable after JSON serialization of receipts.
+  metadata.release.artifacts = {
+    bundles: artifacts.bundles,
+    runtime_image: artifacts.runtime_image,
+    testing_torrents_image: artifacts.testing_torrents_image,
+  };
   return metadata;
 }
 export function packageVersion(source: string, section: string): string {
@@ -83,6 +116,10 @@ export function packageVersion(source: string, section: string): string {
     throw new Error(`Missing ${section}.version`);
   return version;
 }
+// Git may check out release manifests with CRLF on Windows.
+function newline(source: string): string {
+  return source.includes("\r\n") ? "\r\n" : "\n";
+}
 export function replaceTomlVersion(
   source: string,
   section: string,
@@ -91,7 +128,7 @@ export function replaceTomlVersion(
   let replaced = false;
   let active = false;
   const result = source
-    .split("\n")
+    .split(/\r?\n/)
     .map((line) => {
       if (/^\s*\[/.test(line)) active = line.trim() === `[${section}]`;
       if (active && /^version\s*=/.test(line)) {
@@ -100,7 +137,7 @@ export function replaceTomlVersion(
       }
       return line;
     })
-    .join("\n");
+    .join(newline(source));
   if (!replaced) throw new Error(`Missing ${section}.version`);
   return result;
 }
@@ -124,7 +161,14 @@ export function versionEdits(base: string, version: string) {
       };
     }
     data.private = true;
-    edits.push({ path, source, next: `${JSON.stringify(data, null, 2)}\n` });
+    edits.push({
+      path,
+      source,
+      next: `${JSON.stringify(data, null, 2)}\n`.replaceAll(
+        "\n",
+        newline(source),
+      ),
+    });
   }
   for (const [entries, section] of [
     [metadata.rust_package, "package"],
@@ -167,7 +211,7 @@ function syncRustMetadata(source: string, metadata: Metadata): string {
     publish: "false",
   };
   const seen = new Set<string>();
-  const lines = source.split("\n");
+  const lines = source.split(/\r?\n/);
   const result: string[] = [];
   for (const line of lines) {
     if (/^\s*\[/.test(line)) {
@@ -187,12 +231,12 @@ function syncRustMetadata(source: string, metadata: Metadata): string {
   if (active)
     for (const [key, value] of Object.entries(fields))
       if (!seen.has(key)) result.push(`${key} = ${value}`);
-  return result.join("\n");
+  return result.join(newline(source));
 }
 
 export function releaseNotes(changelog: string, version: string): string {
   releaseVersion(version);
-  const lines = changelog.split("\n");
+  const lines = changelog.split(/\r?\n/);
   const start = lines.findIndex(
     (line) => line === `## ${version}` || line.startsWith(`## ${version} - `),
   );

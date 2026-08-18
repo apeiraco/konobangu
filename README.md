@@ -6,15 +6,15 @@ Self-hosted bangumi (anime) subscription and recording service: it watches confi
 
 ## Install and run
 
-Konobangu ships as a single `recorder-cli` executable that embeds the WebUI and both image codecs; it needs PostgreSQL 16+ and an OIDC provider (or a single-administrator Basic mode) for authentication. No public release has been tagged yet — see the [roadmap](docs/en/roadmap/001-SHORT-TERM-ROADMAP.md) for release status. Until then, build from source:
+The application bundle pairs one `recorder-cli` executable with a `webui/` directory. Image codecs and TLS are compiled into the executable; the WebUI is served from disk. It needs PostgreSQL 16+ and an OIDC provider (or a single-administrator Basic mode) for authentication. No public release has been tagged yet — see the [roadmap](docs/en/roadmap/001-SHORT-TERM-ROADMAP.md) for release status. Until then, prepare a verified bundle from source:
 
 ```sh
 mise install                                   # Node, pnpm, Rust, just and other pinned tools
 just setup                                      # frozen installs, workspace checks and git hooks
-just build-release --target native              # or a cross target; see the development guide
+just release prepare --target native            # verifies and builds the complete application bundle
 ```
 
-Provide a `recorder.config.toml` next to the executable (or pass `--config-file`) with at least a database owner URL and one authentication provider; see [configuration](docs/en/004-MEDIA-AND-CONFIGURATION.md#configuration-sources) and [authentication](docs/en/002-AUTHENTICATION-DECISION.md#configuration-and-roles) for every field, including file-backed secrets for passwords and connection strings:
+Work from the prepared platform directory under `temp/release/0.1.0/`. Provide a `recorder.config.toml` next to the executable (or pass `--config-file`) with at least a database owner URL and one authentication provider; see [configuration](docs/en/004-MEDIA-AND-CONFIGURATION.md#configuration-sources) and [authentication](docs/en/002-AUTHENTICATION-DECISION.md#configuration-and-roles) for every field, including file-backed secrets for passwords and connection strings:
 
 ```toml
 [database]

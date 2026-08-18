@@ -1,10 +1,18 @@
-import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from "node:fs";
 import { basename, dirname, join, relative, resolve } from "node:path";
 import { sha256 } from "../lib/artifacts.mts";
 import { root, run } from "../lib/process.mts";
 import { stageBundle, verifyBundleFiles } from "../lib/release-bundle.mts";
 import {
   loadMetadata,
+  type Metadata,
+  parseMetadata,
+  type ReleaseMetadataSnapshot,
   releaseNotes,
   versionEdits,
 } from "../lib/release-metadata.mts";
@@ -40,27 +48,98 @@ export function setReleaseVersion(version: string) {
   }
   checkReleaseVersion();
 }
-export function releasePlan() {
-  const metadata = loadMetadata();
-  console.log(
-    JSON.stringify(
-      {
-        version: metadata.project.version,
-        tag: `${metadata.release.tag_prefix}${metadata.project.version}`,
-        repository: metadata.project.repository_url,
-        output: metadata.release.output_directory,
-        registry_publish: false,
-        platforms: ["windows-msvc", "macos", "linux-gnu", "linux-musl"],
-        checks: [
-          "release version check",
-          "verify",
-          "platform-check --target TARGET",
-        ],
-      },
-      null,
-      2,
-    ),
+function releaseMetadataSource(base = root) {
+  const source = readFileSync(join(base, "konobangu-metadata.toml"), "utf8");
+  return {
+    metadata: parseMetadata(source, base),
+    // Git checkout line endings must not change cross-platform source identity.
+    sha256: createHash("sha256")
+      .update(source.replaceAll("\r\n", "\n"))
+      .digest("hex"),
+  };
+}
+export function releaseMetadataSnapshot(base = root): ReleaseMetadataSnapshot {
+  const { metadata, sha256: metadataHash } = releaseMetadataSource(base);
+  return {
+    sha256: metadataHash,
+    artifacts: metadata.release.artifacts,
+  };
+}
+export function releasePlanData(metadata: Metadata, sourceSha: string) {
+  const repository = metadata.project.repository_url.match(
+    /^https:\/\/github\.com\/([\w.-]+\/[\w.-]+)$/,
+  )?.[1];
+  if (!repository)
+    throw new Error("Expected a canonical GitHub repository URL");
+  const artifacts = metadata.release.artifacts;
+  const version = metadata.project.version;
+  const images = Object.fromEntries(
+    [
+      ["runtime_image", `ghcr.io/${repository.toLowerCase()}`],
+      [
+        "testing_torrents_image",
+        `ghcr.io/${repository.toLowerCase()}-testing-torrents`,
+      ],
+    ]
+      .filter(([key]) => artifacts[key as keyof typeof artifacts])
+      .map(([key, image]) => [
+        key,
+        {
+          image,
+          tags: [`${image}:${version}`, `${image}:sha-${sourceSha}`],
+          latest_tag: version.includes("-") ? null : `${image}:latest`,
+        },
+      ]),
   );
+  return {
+    version,
+    tag: `${metadata.release.tag_prefix}${version}`,
+    source_sha: sourceSha,
+    repository: metadata.project.repository_url,
+    output: metadata.release.output_directory,
+    package_registry_publish: false,
+    artifacts,
+    has_artifacts: Object.values(artifacts).some(Boolean),
+    images,
+  };
+}
+export function releasePlan(format: "json" | "github-output" = "json") {
+  const { metadata, sha256: metadataHash } = releaseMetadataSource();
+  const plan = {
+    ...releasePlanData(
+      metadata,
+      run("git", ["rev-parse", "HEAD"], { capture: true }).stdout.trim(),
+    ),
+    metadata_sha256: metadataHash,
+    dirty: Boolean(
+      run("git", ["status", "--porcelain"], { capture: true }).stdout.trim(),
+    ),
+  };
+  if (format === "json") console.log(JSON.stringify(plan, null, 2));
+  else {
+    const output = process.env.GITHUB_OUTPUT;
+    if (!output) throw new Error("github-output requires GITHUB_OUTPUT");
+    const values = {
+      version: plan.version,
+      source_sha: plan.source_sha,
+      metadata_sha256: plan.metadata_sha256,
+      has_artifacts: plan.has_artifacts,
+      release_plan: JSON.stringify(plan),
+      ...plan.artifacts,
+      ...Object.fromEntries(
+        Object.entries(plan.images).flatMap(([key, image]) => [
+          [`${key}_tags`, image.tags.join(",")],
+          [`${key}_latest_tag`, image.latest_tag ?? ""],
+        ]),
+      ),
+    };
+    appendFileSync(
+      output,
+      `${Object.entries(values)
+        .map(([key, value]) => `${key}=${value}`)
+        .join("\n")}\n`,
+    );
+  }
 }
 // Metadata and verified artifact staging form one release operation; Just owns the actual gates.
 export function prepareRelease(target: BuildTarget) {
@@ -93,6 +172,7 @@ function bundleRelease(target: BuildTarget, verified = false) {
     version: metadata.project.version,
     target,
     verified,
+    release_metadata: releaseMetadataSnapshot(),
     revision: run("git", ["rev-parse", "HEAD"], {
       capture: true,
     }).stdout.trim(),
@@ -105,6 +185,8 @@ function bundleRelease(target: BuildTarget, verified = false) {
 export function tagRelease(execute: boolean) {
   checkReleaseVersion();
   const metadata = loadMetadata();
+  if (!Object.values(metadata.release.artifacts).some(Boolean))
+    throw new Error("No release artifacts are enabled in metadata");
   const tag = `${metadata.release.tag_prefix}${metadata.project.version}`;
   releaseNotes(
     readFileSync(join(root, metadata.release.changelog), "utf8"),
@@ -134,6 +216,8 @@ export function tagRelease(execute: boolean) {
 export function publishRelease(directory: string, execute: boolean) {
   checkReleaseVersion();
   const metadata = loadMetadata();
+  if (!metadata.release.artifacts.bundles)
+    throw new Error("Bundle publication is disabled in release.artifacts");
   const output = resolve(root, directory);
   const expected = join(
     root,
@@ -145,7 +229,7 @@ export function publishRelease(directory: string, execute: boolean) {
     throw new Error(
       "Select a platform bundle beneath the current version release directory",
     );
-  const receipt = verifyBundleFiles(output);
+  const receipt = verifyBundleFiles(output, releaseMetadataSnapshot());
   const revision = run("git", ["rev-parse", "HEAD"], {
     capture: true,
   }).stdout.trim();
@@ -223,3 +307,5 @@ export function publishRelease(directory: string, execute: boolean) {
     notesFile,
   ]);
 }
+
+import { createHash } from "node:crypto";

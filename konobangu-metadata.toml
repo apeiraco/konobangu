@@ -15,6 +15,12 @@ binary = "recorder-cli"
 cargo_package = "recorder"
 changelog = "CHANGELOG.md"
 
+# Publication intent is versioned with the release source commit.
+[release.artifacts]
+bundles = true
+runtime_image = true
+testing_torrents_image = false
+
 [[node_package]]
 name = "docs"
 manifest = "apps/docs/package.json"

@@ -6,15 +6,15 @@
 
 ## 安装与运行
 
-Konobangu 以单个 `recorder-cli` 可执行文件交付，内嵌 WebUI 和两种图片编码器；运行需要 PostgreSQL 16+，以及用于认证的 OIDC provider，或面向单管理员的 Basic 模式。尚未发布带 tag 的公开版本，发布状态见[路线图](roadmap/001-SHORT-TERM-ROADMAP.md)。目前从源码构建：
+应用 bundle 包含一个 `recorder-cli` 可执行文件和 `webui/` 目录。图片编码器与 TLS 编译进可执行文件，WebUI 从磁盘托管。运行需要 PostgreSQL 16+，以及用于认证的 OIDC provider，或面向单管理员的 Basic 模式。尚未发布带 tag 的公开版本，发布状态见[路线图](roadmap/001-SHORT-TERM-ROADMAP.md)。目前从源码生成已验收 bundle：
 
 ```sh
 mise install                       # Node, pnpm, Rust, just and other pinned tools
 just setup                         # frozen installs, workspace checks and git hooks
-just build-release --target native # or a cross target; see the development guide
+just release prepare --target native # verifies and builds the complete application bundle
 ```
 
-将 `recorder.config.toml` 放在可执行文件旁，或通过 `--config-file` 指定，至少提供数据库 owner URL 和一个认证 provider。全部字段见[配置](004-MEDIA-AND-CONFIGURATION.md#配置来源)与[认证](002-AUTHENTICATION-DECISION.md#配置与数据库角色)，包括通过文件提供密码和连接串等秘密配置的方式：
+在 `temp/release/0.1.0/` 下生成的平台目录中操作。将 `recorder.config.toml` 放在可执行文件旁，或通过 `--config-file` 指定，至少提供数据库 owner URL 和一个认证 provider。全部字段见[配置](004-MEDIA-AND-CONFIGURATION.md#配置来源)与[认证](002-AUTHENTICATION-DECISION.md#配置与数据库角色)，包括通过文件提供密码和连接串等秘密配置的方式：
 
 ```toml
 [database]

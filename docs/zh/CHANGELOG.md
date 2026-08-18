@@ -1,6 +1,6 @@
 # 更新记录
 
-## 未发布
+## 0.1.0
 
 ### 新增
 
@@ -20,6 +20,8 @@
 - 保留生成 bindings 的格式，Node 工具使用原生 ESM 路径元数据。
 - 使用 Vite 邮件预览与导出、Playwright 管理 fixtures、unit/integration/e2e 测试目录，并共享 Rust 任务迁移标识符。
 - Just 与 CI 共享按资源划分的验证阶段，隔离浏览器 fixture 构建，并以同一 TypeScript 引用图管理输出。
+- 验证仅由默认/release 分支推送及目标为这两个分支的 PR 触发，提供统一分支保护汇总检查。
+- 通过已提交 metadata 选择 bundle/运行镜像/fixture 发布，发布计划与 bundle 回执记录源码/配置哈希。
 - 整理 CLI/Just 工具和生成输出，恢复 Zellij sessions，使用 kebab-case 可执行文件名，配置按服务分组并标明单位。
 
 ### 修复
@@ -27,6 +29,7 @@
 - 图片格式协商时保留授权、缓存 validator 与 Range 行为。
 - 任务发布、取消、重试和删除受事务与租约 fence 保护。
 - 干净 CI 检出先安装锁定 CLI 依赖再运行工具，并应用文件日志阈值。
+- 发布元数据更新保留清单换行格式，发布说明支持 CRLF。
 
 ### 移除
 

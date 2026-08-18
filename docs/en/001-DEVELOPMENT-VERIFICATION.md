@@ -34,6 +34,16 @@ Stages follow resources and must not overlap. New tests belong in existing Cargo
 
 Lint exceptions are scoped to specific OIDC handlers and shared fixtures; other effective rustc/Clippy and Cargo manifest warnings fail. Inspect raw proc-macro/linker logs because -D warnings does not cover every diagnostic source. Preserve test IdP memory-adapter/TTL messages, Docker and license-tool diagnostics instead of filtering logs to claim zero warnings. Frontend bundle budgets and initial/polyfill/editor loading are checked through configuration and browser assertions.
 
+### GitHub workflows
+
+The default branch is `master`. Verification runs for pull requests targeting `master` or `release`, and pushes to those branches. A push to `dev` alone does not run verification; opening or updating its pull request to either target does. PR branch filters select the destination branch, as described in [GitHub's event reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+
+`Verification report` is the single required status check, aggregating the static, TypeScript, Rust and platform jobs. Failed, cancelled or skipped stages cannot pass it. New PR/mainline pushes supersede obsolete verification runs; release pushes retain their runs so publication can bind to an exact candidate.
+
+Documentation deploys from `master` when its inputs change, with manual build support; deployment is restricted to `master` through `github-pages`. The testing-torrents publisher consumes the committed metadata opt-in flag and a pinned source, supports workflow_call and manual invocation on release, and exports its digest; it publishes a fixture image, not the application. Application releases currently use the local release tools below; automatic publication is specified in the [roadmap](roadmap/001-SHORT-TERM-ROADMAP.md#release-automation).
+
+`aitiotekt-infra/meta/github-repositories.yml` owns the declarative settings for `apeiraco/konobangu`: read-only default Actions permissions, release branch protection requiring `Verification report`, the `stable-release` approval environment, and `github-pages` allowing `master` with `konobangu.apeiraco.com`. Stable approval allows only the `release` branch, allows the single maintainer's self-review and disables administrator bypass. Version tags are outputs of the dispatched release workflow, not deployment sources. Maintain/Admin direct pushes bypass the PR/check rules; separate safety rules still prohibit force-push and deletion. Workflows must validate the candidate even after a direct push. Apply infrastructure settings separately through its inspect/pull/plan/apply lifecycle; the manifest does not create branches or workflow files. Release versions stay in project metadata, not infrastructure environment variables.
+
 ## Ownership and organization
 
 The root `justfile` owns global settings, argv adaptation and imports. `justfiles/` separates setup/dev/build/quality/test/release/tools. Just expresses native commands and fixed sequences, using its own if expressions for fixed scopes; complex operations belong in the typechecked and linted CLI. Pure forwarding uses `recipe_args`: native positional argv on Unix, PowerShell 7.5+ CommandWithArgs and argv arrays on Windows, preserving LASTEXITCODE explicitly. cross-spawn handles Windows command shims without reconstructing arguments as shell strings.
@@ -84,6 +94,8 @@ The Python package has no tests yet. Its pytest configuration recognizes *.test.
 Before the first release after this refactor, edit existing migrations directly. Recreate isolated test databases when definitions change; intermediate implementations do not need compatibility migrations.
 
 ## Platform artifacts and release
+
+`release.artifacts` selects bundles, the runtime image and testing-torrents independently. Use `just release plan` to inspect the source/config hash and selection; `--format github-output` exports the same data to CI. An empty selection runs verification without publication. These switches do not change test coverage or grant permissions. Bundle publication checks the recorded metadata hash/selection; image publication and final manifests follow the [release automation contract](roadmap/001-SHORT-TERM-ROADMAP.md#metadata-selection-and-publication-history).
 
 JPXL, static WebP and aws-lc retain their actual native prerequisites. Codec source stays upstream with pinned Git commits, without source trees in this repository; do not set target-cpu=native. Windows uses static CRT; musl artifacts have no ELF interpreter/NEEDED; GNU records its glibc ABI boundary; macOS permits system dylibs/frameworks only. Targets share build-release/platform-check, and existing artifacts can be checked without rebuilding. See [015](004-MEDIA-AND-CONFIGURATION.md) for media and parallel execution semantics.
 

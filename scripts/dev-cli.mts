@@ -107,7 +107,14 @@ export function createCli() {
   const release = cli
     .command("release")
     .description("Unified version and release management");
-  release.command("plan").action(releasePlan);
+  release
+    .command("plan")
+    .addOption(
+      new Option("--format <format>")
+        .choices(["json", "github-output"])
+        .default("json"),
+    )
+    .action((options) => releasePlan(options.format));
   const version = release.command("version");
   version.command("check").action(checkReleaseVersion);
   version.command("set <version>").action(setReleaseVersion);

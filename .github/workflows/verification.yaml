@@ -2,13 +2,20 @@ name: Development Verification
 
 on:
   pull_request:
+    branches:
+      - master
+      - release
   push:
     branches:
       - master
-      - dev
+      - release
 
 permissions:
   contents: read
+
+concurrency:
+  group: verification-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/release' }}
 
 jobs:
   static:
@@ -77,11 +84,31 @@ jobs:
       - name: Tooling on additional host systems
         if: runner.os != 'Linux'
         run: mise exec -- just test tooling
-      - run: mise exec -- just platform-check --target ${{ matrix.target }}
+      - id: platform-check
+        run: mise exec -- just platform-check --target ${{ matrix.target }}
       - name: Retain artifact receipts
-        if: always()
+        if: always() && steps.platform-check.outcome != 'skipped'
         uses: actions/upload-artifact@v4
         with:
           name: media-${{ matrix.os }}-${{ matrix.target }}
           path: temp/verification/${{ matrix.target }}
           if-no-files-found: error
+
+  verification-report:
+    name: Verification report
+    if: always()
+    needs: [static, ts, rust, platforms]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Require every verification stage
+        env:
+          STATIC_RESULT: ${{ needs.static.result }}
+          TS_RESULT: ${{ needs.ts.result }}
+          RUST_RESULT: ${{ needs.rust.result }}
+          PLATFORMS_RESULT: ${{ needs.platforms.result }}
+        run: |
+          test "$STATIC_RESULT" = success
+          test "$TS_RESULT" = success
+          test "$RUST_RESULT" = success
+          test "$PLATFORMS_RESULT" = success

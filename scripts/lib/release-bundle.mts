@@ -7,7 +7,9 @@ import {
   writeFileSync,
 } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { isDeepStrictEqual } from "node:util";
 import { sha256 } from "./artifacts.mts";
+import type { ReleaseMetadataSnapshot } from "./release-metadata.mts";
 
 export function bundleHashes(directory: string): Record<string, string> {
   const hashes: Record<string, string> = {};
@@ -36,6 +38,7 @@ export function stageBundle(options: {
   revision: string;
   dirty: boolean;
   target: string;
+  release_metadata: ReleaseMetadataSnapshot;
   verified?: boolean;
 }) {
   rmSync(options.output, { recursive: true, force: true });
@@ -53,6 +56,7 @@ export function stageBundle(options: {
     version: options.version,
     target: options.target,
     revision: options.revision,
+    release_metadata: options.release_metadata,
     dirty: options.dirty,
     artifact_name: basename(options.artifact),
     artifact_sha256: sha256(options.artifact),
@@ -66,11 +70,19 @@ export function stageBundle(options: {
   );
   return receipt;
 }
-export function verifyBundleFiles(directory: string) {
+export function verifyBundleFiles(
+  directory: string,
+  releaseMetadata?: ReleaseMetadataSnapshot,
+) {
   const receipt = JSON.parse(
     readFileSync(join(directory, "release.json"), "utf8"),
   );
   const actual = bundleHashes(directory);
+  if (
+    releaseMetadata &&
+    !isDeepStrictEqual(receipt.release_metadata, releaseMetadata)
+  )
+    throw new Error("Release metadata differs from the prepared bundle");
   const expected = receipt.files as Record<string, string>;
   if (
     !expected ||
