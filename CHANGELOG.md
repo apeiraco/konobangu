@@ -30,6 +30,7 @@
 - Keep task publication, cancellation, retries and deletion behind transaction and lease fences.
 - Install locked CLI dependencies before invoking tools in clean CI checkouts; apply file logging thresholds.
 - Preserve manifest line endings in release metadata updates and accept CRLF release notes.
+- Handle qBittorrent duplicate-add conflicts through server hash verification; pin the integration image by digest.
 
 ### Removed
 

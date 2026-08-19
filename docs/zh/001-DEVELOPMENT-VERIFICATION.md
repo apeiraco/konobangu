@@ -30,6 +30,8 @@ Node 依赖使用 pnpm；Rust 使用 Cargo；Python 使用 uv workspace。开发
 
 `test rust` 默认执行 workspace 的库、binary、集成与 playground 示例，再执行 Cargo 在 all-targets 中排除的 doctest。显式 Cargo 参数替换默认选择，适合定位包、feature、test target 或名称过滤器；Vitest/Node 使用各自原生过滤参数。`test browser` 使用真实 oidc-provider 和 Chromium 验证认证、polyfill 与生命周期。任意 runner 失败即停止并保留原始失败码；默认 Rust 执行顺序由 Just 管理。缺少 Docker 或构建前置条件应直接失败。
 
+qBittorrent 生命周期 fixture 在 `packages/downloader/tests/integration/qbit-lifecycle.test.rs` 固定多平台镜像 tag/digest。升级时显式更新该引用，并在 Docker Desktop 与原生 Linux 运行 downloader suite，覆盖认证、重复添加、sync、暂停/恢复、实际传输、保留/删除文件、超时与停机。WebAPI 2.14 可能以 HTTP 409 表示重复添加；适配器查询服务器，仅在该次提交的全部 hash 都存在时接受冲突。Mock 测试覆盖文件/magnet 冲突、过期本地缓存、批量部分缺失和其它 API 错误。[上游 API 变更](https://github.com/qbittorrent/qBittorrent/blob/master/WebAPI_Changelog.md#2140)
+
 `lint rust` 检查 workspace 和所有有效 recorder backend/codec 配置，all-targets 且 -D warnings；不使用 --all-features，因为 Rayon/Chili 互斥。`test media` 验证各配置的编解码、生命周期、HTTP 和制品 smoke，不再按业务功能建立验收组。原生平台任务运行宿主矩阵；容器任务只构建并验证目标制品，避免重复宿主矩阵。Windows/macOS/Linux 与 Docker 都必须有实际构建和运行证据。
 
 允许的 lint 例外限定于具体 OIDC handler 与共享 fixture；其它有效 rustc/Clippy 和 Cargo manifest 告警失败。查看原始 proc-macro/linker 日志；-D warnings 不覆盖全部诊断来源。保留测试 IdP 的内存 adapter/TTL 提示、Docker 与许可证工具的诊断，不过滤日志伪造零告警。前端 bundle 阈值与初始/polyfill/editor 加载由配置及浏览器断言共同检查。

@@ -1,9 +1,8 @@
-#[cfg(feature = "testcontainers")]
 #[tokio::test(flavor = "multi_thread")]
 async fn downloader_rqbit_local_file_lifecycle_repeated_add_delete_modes_shutdown() -> anyhow::Result<()> {
   use std::{str::FromStr, sync::Arc, time::Duration};
 
-  use crate::{
+  use downloader::{
     bittorrent::source::{HashTorrentSource, TorrentFileSource},
     core::{DownloadSimpleState, DownloadStateTrait, DownloadTaskTrait},
     rqbit::downloader::{RqbitDownloader, RqbitDownloaderCreation},

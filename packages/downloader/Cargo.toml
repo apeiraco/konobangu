@@ -11,6 +11,16 @@ default = []
 # Enable integration tests; their container dependencies remain development-only.
 testcontainers = []
 
+[[test]]
+name = "qbit-lifecycle"
+path = "tests/integration/qbit-lifecycle.test.rs"
+required-features = ["testcontainers"]
+
+[[test]]
+name = "rqbit-lifecycle"
+path = "tests/integration/rqbit-lifecycle.test.rs"
+required-features = ["testcontainers"]
+
 [dependencies]
 futures = { workspace = true }
 tokio = { workspace = true }
@@ -45,6 +55,7 @@ testcontainers-ext = { workspace = true }
 testing-torrents = { workspace = true }
 serde_json = { workspace = true }
 reqwest = { workspace = true }
+mockito = { workspace = true }
 tracing-subscriber = { workspace = true }
 
 [lints]

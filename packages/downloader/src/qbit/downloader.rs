@@ -237,6 +237,37 @@ impl QBittorrentDownloader {
     Ok(())
   }
 
+  async fn add_torrent_idempotently(&self, argument: AddTorrentArg, hashes: &HashSet<String>) -> Result<(), DownloaderError> {
+    let error = match self.client.add_torrent(&argument).await {
+      Ok(()) => return Ok(()),
+      Err(error) => error,
+    };
+    let conflict = match &error {
+      qbit_rs::Error::ApiError(qbit_rs::ApiError::TorrentAddFailed) => true,
+      // qbit-rs maps the file endpoint's 409, but URL submissions still
+      // expose the raw status through its generic response handling.
+      qbit_rs::Error::UnknownHttpCode(code) => code.as_u16() == 409,
+      _ => false,
+    };
+    if !conflict {
+      return Err(error.into());
+    }
+    // Since WebAPI 2.14, duplicate submissions can return 409. The same
+    // response also covers real failures, so verify every hash on the server
+    // instead of accepting the status or trusting a potentially stale cache.
+    let existing = self
+      .client
+      .get_torrent_list(GetTorrentListArg {
+        hashes: Some(hashes.iter().join("|")),
+        ..Default::default()
+      })
+      .await?;
+    if !hashes.iter().all(|hash| existing.iter().any(|torrent| torrent.hash.as_ref() == Some(hash))) {
+      return Err(error.into());
+    }
+    self.sync_data().await
+  }
+
   #[instrument(level = "debug", skip(self))]
   pub async fn set_torrents_category(&self, hashes: Vec<String>, category: &str) -> Result<(), DownloaderError> {
     {
@@ -407,16 +438,25 @@ impl DownloaderTrait for QBittorrentDownloader {
 
     let sources = creation.sources;
     let hashes = HashSet::from_iter(sources.iter().map(|s| s.hash_info().to_string()));
-    let (urls_source, files_source) = {
+    let (urls_source, files_source, url_hashes, file_hashes) = {
       let mut urls = vec![];
       let mut files = vec![];
+      let mut url_hashes = HashSet::new();
+      let mut file_hashes = HashSet::new();
       for s in sources {
+        let hash = s.hash_info().into_owned();
         match s {
-          HashTorrentSource::MagnetUrl(MagnetUrlSource { url, .. }) => urls.push(Url::parse(&url)?),
-          HashTorrentSource::TorrentFile(TorrentFileSource { payload, filename, .. }) => files.push(TorrentFile {
-            filename,
-            data: payload.into(),
-          }),
+          HashTorrentSource::MagnetUrl(MagnetUrlSource { url, .. }) => {
+            urls.push(Url::parse(&url)?);
+            url_hashes.insert(hash);
+          }
+          HashTorrentSource::TorrentFile(TorrentFileSource { payload, filename, .. }) => {
+            files.push(TorrentFile {
+              filename,
+              data: payload.into(),
+            });
+            file_hashes.insert(hash);
+          }
         }
       }
       (
@@ -430,6 +470,8 @@ impl DownloaderTrait for QBittorrentDownloader {
         } else {
           Some(TorrentSource::TorrentFiles { torrents: files })
         },
+        url_hashes,
+        file_hashes,
       )
     };
 
@@ -444,29 +486,33 @@ impl DownloaderTrait for QBittorrentDownloader {
 
     if let Some(source) = urls_source {
       self
-        .client
-        .add_torrent(AddTorrentArg {
-          source,
-          savepath: save_path.clone(),
-          auto_torrent_management: Some(false),
-          category: category.clone(),
-          tags: tags.clone(),
-          ..Default::default()
-        })
+        .add_torrent_idempotently(
+          AddTorrentArg {
+            source,
+            savepath: save_path.clone(),
+            auto_torrent_management: Some(false),
+            category: category.clone(),
+            tags: tags.clone(),
+            ..Default::default()
+          },
+          &url_hashes,
+        )
         .await?;
     }
 
     if let Some(source) = files_source {
       self
-        .client
-        .add_torrent(AddTorrentArg {
-          source,
-          savepath: save_path,
-          auto_torrent_management: Some(false),
-          category,
-          tags,
-          ..Default::default()
-        })
+        .add_torrent_idempotently(
+          AddTorrentArg {
+            source,
+            savepath: save_path,
+            auto_torrent_management: Some(false),
+            category,
+            tags,
+            ..Default::default()
+          },
+          &file_hashes,
+        )
         .await?;
     }
     self

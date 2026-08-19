@@ -2900,6 +2900,7 @@ dependencies = [
  "librqbit",
  "librqbit-core",
  "merge-struct",
+ "mockito",
  "qbit-rs",
  "quirks_path",
  "reqwest 0.13.5",
