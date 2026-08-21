@@ -17,6 +17,7 @@ concurrency:
   group: verification-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/release' }}
 
+# Each cache key has exactly one read-write owner; every other job restores it.
 jobs:
   static:
     name: Static contracts and tooling
@@ -49,6 +50,11 @@ jobs:
       - uses: ./.github/actions/setup
         with:
           browser: 'true'
+          cache-mode: read-write
+      - uses: ./.github/actions/setup-rust-cache
+        with:
+          shared-key: recorder-${{ runner.os }}-${{ runner.arch }}-debug
+          cache-mode: read-write
       - run: mise exec -- just verify rust
       - name: Retain browser failure evidence
         if: failure()
@@ -66,21 +72,32 @@ jobs:
         include:
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
+            cache_mode: read-only
           - os: ubuntu-24.04
             target: x86_64-unknown-linux-musl
+            cache_mode: read-only
           - os: macos-15
             target: aarch64-apple-darwin
+            cache_mode: read-write
           - os: windows-2025
             target: x86_64-pc-windows-msvc
+            cache_mode: read-write
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     env:
       CARGO_BUILD_JOBS: 3
     steps:
       - uses: actions/checkout@v4
+      # Only one job per runner platform owns the shared pnpm store; the Linux
+      # targets consume the one the Rust job writes.
       - uses: ./.github/actions/setup
         with:
           extra-tools: rust cargo:cargo-about
+          cache-mode: ${{ matrix.cache_mode }}
+      - uses: ./.github/actions/setup-rust-cache
+        with:
+          shared-key: recorder-${{ matrix.target }}-release
+          cache-mode: read-write
       - name: Tooling on additional host systems
         if: runner.os != 'Linux'
         run: mise exec -- just test tooling

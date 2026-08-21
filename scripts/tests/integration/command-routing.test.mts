@@ -234,10 +234,9 @@ test("build, platform and prepare options reject unknown values before native wo
   using fixture = runnerFixture();
   for (const args of [
     ["build-release", "--target", "not-a-target"],
-    ["build-release", "--backend", "not-a-backend"],
+    ["build-release", "--backend", "rayon"],
     ["platform-check", "--target", "not-a-target"],
     ["release", "prepare", "--target", "not-a-target"],
-    ["release", "prepare", "--backend", "serial"],
   ]) {
     const result = run("just", args, {
       capture: true,
@@ -273,30 +272,6 @@ test("media smoke honors an absolute Cargo target directory on every platform", 
   );
   assert.match(result.stderr, /ENOENT/);
 });
-test("media conflict validation rejects unrelated build failures and missing conflicts", () => {
-  using fixture = runnerFixture();
-  for (const [exit, stderr, expected] of [
-    ["0", "", 1],
-    ["17", "unrelated compiler failure", 1],
-    ["17", "media backends are mutually exclusive", 0],
-  ] as const) {
-    const result = run(
-      process.execPath,
-      ["scripts/dev-cli.mts", "media", "check-conflict"],
-      {
-        capture: true,
-        check: false,
-        env: {
-          ...fixture.env,
-          ROUTING_CARGO_EXIT: exit,
-          ROUTING_CARGO_STDERR: stderr,
-        },
-      },
-    );
-    assert.equal(result.code, expected, result.stderr);
-  }
-});
-
 test("release preparation stops at a failed Just gate before platform checks or staging", () => {
   // Resolve the real executor before installing a shim for the nested acceptance invocation.
   const actualJust = process.env.PATH?.split(delimiter)
@@ -317,20 +292,24 @@ test("release preparation stops at a failed Just gate before platform checks or 
   assert.equal(result.code, 17, result.stderr);
   assert.deepEqual(fixture.calls(), [["just", "verify"]]);
 });
-test("native feature failure prevents platform artifact construction", () => {
-  using fixture = runnerFixture(["rustc", "just", "cargo"]);
+test("a failed native build prevents platform artifact verification", () => {
+  using fixture = runnerFixture(["rustc", "just", "cargo", "docker"]);
   const result = run(
     process.execPath,
     ["scripts/dev-cli.mts", "platform-check"],
     {
       capture: true,
       check: false,
-      env: { ...fixture.env, ROUTING_JUST_EXIT: "17" },
+      env: { ...fixture.env, ROUTING_CARGO_EXIT: "17" },
     },
   );
   assert.equal(result.code, 17, result.stderr);
-  assert(fixture.calls().some((call) => call[0] === "just"));
-  assert(!fixture.calls().some((call) => call[0] === "cargo"));
+  assert(fixture.calls().some((call) => call[0] === "cargo"));
+  // Verification follows a real artifact, and the compilation feature matrix is
+  // not per-target work, so no target repeats it through Just.
+  assert(
+    !fixture.calls().some((call) => call[0] === "docker" || call[0] === "just"),
+  );
 });
 test("container artifact construction does not repeat host feature tests", () => {
   using fixture = runnerFixture(["rustc", "just", "docker"]);

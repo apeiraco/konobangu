@@ -42,6 +42,7 @@ _verify-rust:
     just lint rust
     node scripts/dev-cli.mts bindings snapshot temp/verification/bindings-before.json
     just test rust
+    just test media
     just test browser
     node scripts/dev-cli.mts bindings verify temp/verification/bindings-before.json
 
@@ -55,14 +56,13 @@ _verify-ts:
     just lint ts
     just check types
 
-# Backend/codec combinations are distinct compilation configurations.
+# The codec is a compilation choice, not host behavior: no media source is
+# OS-conditional, so one runner owns this. `just test rust` covers the shipped
+# JXL + WebP build, leaving the trimmed WebP-only build to cover every
+# not(feature = "jxl") branch in the library, its test binaries and real codecs.
 [private]
-_test-media-matrix: (_test-media-backend "jxl,media-par-rayon,test-utils" "rayon/jxl") (_test-media-backend "media-par-rayon,test-utils" "rayon/webp") (_test-media-backend "jxl,media-par-chili,test-utils" "chili/jxl") (_test-media-backend "media-par-chili,test-utils" "chili/webp") (_test-media-backend "jxl,test-utils" "serial/jxl") (_test-media-backend "test-utils" "serial/webp")
-    node scripts/dev-cli.mts media check-conflict
-
-[private]
-_test-media-backend features output:
-    cargo test -p recorder --locked --no-default-features --features {{features}} --lib media::
-    cargo test -p recorder --locked --no-default-features --features {{features}} --test media_executor --test config_media --test media_delivery --test media_http
-    cargo build -p recorder --locked --no-default-features --features {{features}} --bin recorder-cli
-    node scripts/dev-cli.mts media smoke {{output}}
+_test-media-trimmed:
+    cargo test -p recorder --locked --no-default-features --features test-utils --lib media::
+    cargo test -p recorder --locked --no-default-features --features test-utils --test media_executor --test config_media --test media_delivery --test media_http
+    cargo build -p recorder --locked --no-default-features --bin recorder-cli
+    node scripts/dev-cli.mts media smoke webp

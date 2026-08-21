@@ -1,6 +1,6 @@
 # 004 — 图片与部署配置
 
-JXL/WebP 共用有界进程内队列。后台协调线程取当前就绪的至多 N 项，通过 par-core join 执行；每个完成项立即交付。正常构建默认生成 JXL + WebP，自动 AVIF 拒绝。静态显示与 [R8 渐进体验](roadmap/001-SHORT-TERM-ROADMAP.md) 分开验收。
+JXL/WebP 共用一个有界队列、一个自有 Rayon pool 和一份 admission 预算。获得 admission 的任务在有空闲 worker 时立即开始，并各自立即交付结果；队列限制等待中的工作量，预算限制并发工作集。正常构建默认生成 JXL + WebP，自动 AVIF 拒绝。静态显示与 [R8 渐进体验](roadmap/001-SHORT-TERM-ROADMAP.md) 分开验收。
 
 JPXL facade 固定 Git rev `1e2004aa0672259279cc24a52d4b8e264f675b77`，Balanced、quality 77、threads 1；开启固定的有界 policy features，单图只有一次 facade 调用。库内策略最多 5 次评分 probe、3 次精确计价，不添加应用层搜索、体积切换或无损兜底。当前输出普通单 pass。WebP 保留 webp 0.3.1/libwebp-sys 0.9.6、quality 80，单任务不启用内部线程。
 
@@ -121,10 +121,10 @@ max_log_files = 7
 | `limits.decode_bytes` | 解码分配 128 MiB |
 | `execution.working_set_bytes` | JXL/WebP 共用 admission 估算预算 512 MiB，含排队源字节、解码/缩放、codec 与输出；不等于 RSS 硬上限 |
 | `limits.output_bytes` | 每项输出 64 MiB |
-| `execution.concurrency` / `execution.queue_capacity` | 同时执行 1 / 排队 8；serial 有效并发固定 1 |
+| `execution.concurrency` / `execution.queue_capacity` | 同时执行 1 / 排队 8；concurrency 决定编码 pool 的线程数 |
 | `execution.deadline_seconds` | 等待与结果有效期 30 秒，最大 300 秒 |
 
-超时/取消丢弃迟到结果；进入同步 codec 后不能强杀线程，实际任务结束前仍占用容量与预算。解码、规范化及编码之间检查取消；排队取消项跳过。shutdown 停止 admission、取消未执行项，在 Tokio worker 之外等待真实工作完成；服务退出路径调用该 shutdown。各 join 分支内部捕获 panic，之后可继续调度。OOM、abort、native 崩溃仍影响服务进程，估算预算不能提供逐任务 OS 隔离。
+超时/取消丢弃迟到结果；进入同步 codec 后不能强杀线程，实际任务结束前仍占用容量与预算。已完成或跳过的任务先释放工作集预算，再通知调用方；调用方收到完成结果时，该任务已不再占用预算。解码、规范化及编码之间检查取消；排队取消项跳过。shutdown 停止 admission、取消未执行项，在 Tokio worker 之外等待真实工作完成；服务退出路径调用该 shutdown。各 join 分支内部捕获 panic，之后可继续调度。OOM、abort、native 崩溃仍影响服务进程，估算预算不能提供逐任务 OS 隔离。
 
 仅优化静态 8-bit SDR RGB/RGBA，应用 EXIF orientation。嵌入 ICC、PNG cICP/HDR 标记、无 sRGB 声明的 gamma/chromaticities、动画或其它位深受控失败；接受隐式与显式 sRGB。任何失败保留原图。
 
@@ -163,7 +163,7 @@ location /api/static/ {
 
 ## 构建与部署
 
-[开发验证](001-DEVELOPMENT-VERIFICATION.md) 是三个 backend、平台构建和门禁的权威入口。recorder 单可执行文件包含 JPXL Rust 编码与 libwebp/sharpyuv、aws-lc 等静态原生依赖；项目及 JPXL 均为 MIT，发行附带实际依赖许可证。源码仅来自 Cargo 固定 Git/registry 缓存，仓库不复制 codec 源码。
+[开发验证](001-DEVELOPMENT-VERIFICATION.md) 是编译配置、平台构建和门禁的权威入口。recorder 单可执行文件包含 JPXL Rust 编码与 libwebp/sharpyuv、aws-lc 等静态原生依赖；项目及 JPXL 均为 MIT，发行附带实际依赖许可证。源码仅来自 Cargo 固定 Git/registry 缓存，仓库不复制 codec 源码。
 
 生产需要配置/数据及 HTTPS CA 信任，不需要外部 codec。离线 `recorder-cli media-smoke --output OUTPUT` 可通过真实适配器生成两种封面；可加 `--input IMAGE`。它不初始化数据库、secret 或网络，也不使用旧 worker 协议。正常构建默认 JXL + WebP；`--no-default-features` 默认 WebP，包括 `[]` 的显式格式列表始终有效。静态默认不依赖 R8 门禁。
 

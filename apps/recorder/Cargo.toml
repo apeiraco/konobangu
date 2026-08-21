@@ -9,7 +9,7 @@ license = "MIT"
 repository = "https://github.com/apeiraco/konobangu"
 publish = false
 [features]
-default = ["jxl", "media-par-rayon"]
+default = ["jxl"]
 playground = ["test-utils"]
 testcontainers = [
   "dep:testcontainers",
@@ -20,8 +20,6 @@ testcontainers = [
   "testcontainers-modules/postgres",
 ]
 jxl = ["dep:jpxl", "dep:jpxl-encode-policy"]
-media-par-rayon = ["par-core/rayon", "dep:rayon"]
-media-par-chili = ["par-core/chili", "dep:chili"]
 tracing-test = ["dep:tracing-test"]
 test-utils = ["tracing-test", "dep:mockito", "dep:tracing-tree"]
 
@@ -240,6 +238,7 @@ path = "tests/integration/media_http.spec.rs"
 [[test]]
 name = "media_delivery"
 path = "tests/integration/media_delivery.spec.rs"
+required-features = ["test-utils"]
 
 [[test]]
 name = "mod"
@@ -257,17 +256,8 @@ default-features = false
 features = ["g5-bounded-entropy", "one-shot-controller", "corrected-stop", "flagged-median-start", "reserve-coupled-band", "case-predictor"]
 optional = true
 
-[dependencies.par-core]
-version = "=2.0.0"
-default-features = false
-
 [dependencies.rayon]
 version = "1.11.0"
-optional = true
-
-[dependencies.chili]
-version = "=0.2.1"
-optional = true
 
 [[example]]
 name = "media_browser_server"

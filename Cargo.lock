@@ -1543,12 +1543,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "chili"
-version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d001a06f3969c49af3bdf308e9aaa1a477e77d2460357ce9e1248c6a9dcc4c0"
-
-[[package]]
 name = "chrono"
 version = "0.4.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6851,17 +6845,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "par-core"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e96cbd21255b7fb29a5d51ef38a779b517a91abd59e2756c039583f43ef4c90f"
-dependencies = [
- "chili",
- "once_cell",
- "rayon",
-]
-
-[[package]]
 name = "parcel_selectors"
 version = "0.28.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -8548,7 +8531,6 @@ dependencies = [
  "base64 0.23.1",
  "bollard",
  "bytes",
- "chili",
  "chrono",
  "chrono-tz",
  "clap",
@@ -8588,7 +8570,6 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "opendal",
- "par-core",
  "paste",
  "percent-encoding",
  "png",

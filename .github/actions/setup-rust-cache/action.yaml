@@ -1,0 +1,26 @@
+name: Setup Rust cache
+description: Restore Cargo outputs with explicit single-writer ownership.
+
+inputs:
+  shared-key:
+    description: >
+      Stable cache scope for this runner and build profile. Exactly one job may
+      own a key as read-write; rust-cache already adds its own Rust environment
+      and lockfile hashes, so do not repeat them here.
+    required: true
+  cache-mode:
+    description: Use read-write for the single owner, read-only for consumers, or none.
+    required: false
+    default: read-only
+
+runs:
+  using: composite
+  steps:
+    - name: Restore Cargo build cache
+      if: inputs.cache-mode != 'none'
+      uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
+      with:
+        shared-key: ${{ inputs.shared-key }}
+        cache-workspace-crates: true
+        cache-on-failure: true
+        save-if: ${{ inputs.cache-mode == 'read-write' }}

@@ -39,6 +39,7 @@ impl MediaService {
   pub fn is_legacy_image_format(&self, ext: &str) -> bool {
     matches!(ext, "jpeg" | "jpg" | "png")
   }
+  #[cfg(any(test, feature = "test-utils"))]
   pub fn available_permits(&self) -> usize {
     self.executor.available_permits()
   }

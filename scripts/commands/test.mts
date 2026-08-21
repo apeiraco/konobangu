@@ -50,7 +50,7 @@ export function testSuite(suite = "all", args: string[] = []) {
       break;
     }
     case "media":
-      run("just", ["_test-media-matrix"]);
+      run("just", ["_test-media-trimmed"]);
       break;
     case "all":
       run("just", ["_test-all"]);

@@ -1,17 +1,15 @@
-//! One bounded queue, one coordinator, and a shared admission budget.
+//! One bounded queue, one owned Rayon pool, and a shared admission budget.
 use std::{
   panic::{AssertUnwindSafe, catch_unwind},
   sync::{
-    Arc, Mutex,
+    Arc,
     atomic::{AtomicBool, AtomicUsize, Ordering},
   },
-  thread::JoinHandle,
 };
 
 use bytes::Bytes;
-use tokio::sync::{OwnedSemaphorePermit, Semaphore, mpsc, oneshot};
+use tokio::sync::{OwnedSemaphorePermit, Semaphore, oneshot};
 
-use super::parallel::Backend;
 use crate::{
   errors::RecorderResult,
   media::{MediaConfig, invalid_options},
@@ -22,18 +20,22 @@ struct Job {
   operation: Operation,
   cancelled: Arc<AtomicBool>,
   response: oneshot::Sender<RecorderResult<Bytes>>,
+  /// Released once the job starts, so the queue bounds waiting work only.
+  slot: OwnedSemaphorePermit,
+  /// Held until the codec actually returns, even if its caller left.
   _budget: OwnedSemaphorePermit,
 }
 #[derive(Debug)]
 struct State {
   stopped: AtomicBool,
+  /// Running jobs, for test observability only; admission is the budget.
   active: AtomicUsize,
   concurrency: usize,
 }
 #[derive(Debug)]
 pub struct MediaExecutor {
-  sender: Mutex<Option<mpsc::Sender<Job>>>,
-  thread: Mutex<Option<JoinHandle<()>>>,
+  pool: rayon::ThreadPool,
+  queue: Arc<Semaphore>,
   budget: Arc<Semaphore>,
   budget_limit: u32,
   state: Arc<State>,
@@ -41,144 +43,203 @@ pub struct MediaExecutor {
 impl MediaExecutor {
   pub fn new(config: &MediaConfig) -> RecorderResult<Self> {
     config.validate()?;
-    let concurrency = Backend::concurrency(config.encode_concurrency);
-    let backend = Backend::new(concurrency)?;
-    let state = Arc::new(State {
-      stopped: AtomicBool::new(false),
-      active: AtomicUsize::new(0),
-      concurrency,
-    });
-    let (sender, mut receiver) = mpsc::channel(config.encode_queue_capacity);
-    let owner = state.clone();
-    let thread = std::thread::Builder::new()
-      .name("media-coordinator".into())
-      .spawn(move || {
-        while let Some(job) = receiver.blocking_recv() {
-          let mut batch = vec![job];
-          // Dispatch whatever is ready. Waiting for a full batch delays a lone
-          // job.
-          while batch.len() < concurrency {
-            match receiver.try_recv() {
-              Ok(job) => batch.push(job),
-              Err(_) => break,
-            }
-          }
-          backend.install(|| run_batch(batch, &owner));
-        }
-      })
-      .map_err(|_| invalid_options("Media coordinator initialization failed"))?;
+    let concurrency = config.encode_concurrency;
     Ok(Self {
-      sender: Mutex::new(Some(sender)),
-      thread: Mutex::new(Some(thread)),
+      pool: rayon::ThreadPoolBuilder::new()
+        .num_threads(concurrency)
+        .thread_name(|index| format!("media-cpu-{index}"))
+        .build()
+        .map_err(|_| invalid_options("Media encoder pool initialization failed"))?,
+      queue: Arc::new(Semaphore::new(config.encode_queue_capacity)),
       budget: Arc::new(Semaphore::new(config.encode_working_set_bytes as usize)),
       budget_limit: config.encode_working_set_bytes as u32,
-      state,
+      state: Arc::new(State {
+        stopped: AtomicBool::new(false),
+        active: AtomicUsize::new(0),
+        concurrency,
+      }),
     })
   }
   pub(super) async fn execute(&self, estimated_bytes: u64, cancelled: Arc<AtomicBool>, operation: Operation) -> RecorderResult<Bytes> {
     let weight = u32::try_from(estimated_bytes)
       .ok()
       .filter(|n| *n <= self.budget_limit)
-      .ok_or_else(|| invalid_options("Image estimated working set exceeds shared admission budget"))?;
+      .ok_or_else(|| invalid_options("Image estimated working set exceeds shared admission budget"))?
+      // Every admitted job holds real admission, so returning the whole budget
+      // is proof that the pool has drained.
+      .max(1);
+    if self.state.stopped.load(Ordering::Acquire) {
+      return Err(invalid_options("Image encoder is closed"));
+    }
     let budget = self
       .budget
       .clone()
       .try_acquire_many_owned(weight)
-      .map_err(|_| invalid_options("Image encoder admission budget unavailable (closed or backpressure)"))?;
+      .map_err(|_| invalid_options("Image encoder admission budget unavailable (backpressure)"))?;
+    // Waiting for a queue slot is the backpressure boundary; closing the queue
+    // wakes every waiter instead of leaving it parked.
+    let slot = self
+      .queue
+      .clone()
+      .acquire_owned()
+      .await
+      .map_err(|_| invalid_options("Image encoder is closed"))?;
     if self.state.stopped.load(Ordering::Acquire) {
       return Err(invalid_options("Image encoder is closed"));
     }
-    let sender = self
-      .sender
-      .lock()
-      .map_err(|_| invalid_options("Media queue lock poisoned"))?
-      .clone()
-      .ok_or_else(|| invalid_options("Image encoder is closed"))?;
     let (response, receiver) = oneshot::channel();
-    sender
-      .send(Job {
-        operation,
-        cancelled,
-        response,
-        _budget: budget,
-      })
-      .await
-      .map_err(|_| invalid_options("Image encoder is closed"))?;
-    receiver.await.map_err(|_| invalid_options("Media coordinator stopped without a result"))?
+    let state = self.state.clone();
+    self.pool.spawn(move || {
+      run_job(
+        Job {
+          operation,
+          cancelled,
+          response,
+          slot,
+          _budget: budget,
+        },
+        &state,
+      );
+    });
+    receiver.await.map_err(|_| invalid_options("Media encoder stopped without a result"))?
   }
+  /// Idle capacity. Observability only: admission is the budget semaphore, and
+  /// `MediaService` exposes this exclusively to tests.
   pub fn available_permits(&self) -> usize {
     self.state.concurrency.saturating_sub(self.state.active.load(Ordering::Acquire))
   }
+  /// Stops admission and waits for work that already holds admission. A
+  /// synchronous codec cannot be killed, so this waits for it to return.
   pub async fn shutdown(&self) -> RecorderResult<()> {
     self.stop();
-    let thread = self.thread.lock().map_err(|_| invalid_options("Media thread lock poisoned"))?.take();
-    if let Some(thread) = thread {
-      tokio::task::spawn_blocking(move || thread.join())
-        .await
-        .map_err(|_| invalid_options("Media shutdown wait failed"))?
-        .map_err(|_| invalid_options("Media coordinator panicked"))?;
-    }
+    let _drained = self
+      .budget
+      .acquire_many(self.budget_limit)
+      .await
+      .map_err(|_| invalid_options("Media encoder budget closed during shutdown"))?;
     Ok(())
   }
   fn stop(&self) {
     self.state.stopped.store(true, Ordering::Release);
-    self.budget.close();
-    if let Ok(mut sender) = self.sender.lock() {
-      sender.take();
-    }
+    self.queue.close();
   }
 }
 impl Drop for MediaExecutor {
   fn drop(&mut self) {
+    // Queued work is skipped rather than encoded for a receiver that is gone.
+    // Rayon keeps its registry alive until spawned jobs finish, so its threads
+    // drain without blocking whoever dropped the service. Explicit `shutdown`
+    // remains the path that waits for a running codec.
     self.stop();
-    // Explicit application shutdown joins off Tokio. Dropping an embedding
-    // service still drains its coordinator; capacity is never handed to a new
-    // pool.
-    if let Ok(thread) = self.thread.get_mut()
-      && let Some(thread) = thread.take()
-    {
-      let _ = thread.join();
-    }
   }
 }
-fn run_batch(mut jobs: Vec<Job>, state: &State) {
-  if jobs.len() == 1 {
-    run_leaf(jobs.pop().unwrap(), state);
-    return;
-  }
-  let right = jobs.split_off(jobs.len() / 2);
-  par_core::join(
-    || {
-      let _ = catch_unwind(AssertUnwindSafe(|| run_batch(jobs, state)));
-    },
-    || {
-      let _ = catch_unwind(AssertUnwindSafe(|| run_batch(right, state)));
-    },
-  );
-}
-fn run_leaf(job: Job, state: &State) {
-  if state.stopped.load(Ordering::Acquire) || job.cancelled.load(Ordering::Acquire) || job.response.is_closed() {
-    let _ = job.response.send(Err(invalid_options("Media encoding cancelled")));
+fn run_job(job: Job, state: &State) {
+  let Job {
+    operation,
+    cancelled,
+    response,
+    slot,
+    _budget,
+  } = job;
+  // Started work no longer occupies the queue.
+  drop(slot);
+  let abandoned = || state.stopped.load(Ordering::Acquire) || cancelled.load(Ordering::Acquire) || response.is_closed();
+  if abandoned() {
+    drop(operation);
+    drop(_budget);
+    let _ = response.send(Err(invalid_options("Media encoding cancelled")));
     return;
   }
   state.active.fetch_add(1, Ordering::AcqRel);
-  let result = catch_unwind(AssertUnwindSafe(|| (job.operation)(&job.cancelled))).unwrap_or_else(|_| Err(invalid_options("Media encoding panicked")));
+  // Rayon already keeps a panicking job from killing its worker; converting the
+  // panic here also hands the waiting caller an error instead of a closed
+  // channel. OOM, abort and native crashes remain outside this boundary.
+  let result = catch_unwind(AssertUnwindSafe(|| operation(&cancelled))).unwrap_or_else(|_| Err(invalid_options("Media encoding panicked")));
   // A codec owns admission until it actually returns, even if its caller left.
   state.active.fetch_sub(1, Ordering::AcqRel);
-  let result = if state.stopped.load(Ordering::Acquire) || job.cancelled.load(Ordering::Acquire) || job.response.is_closed() {
+  let result = if abandoned() {
     Err(invalid_options("Media encoding cancelled; late result rejected"))
   } else {
     result
   };
-  let _ = job.response.send(result);
+  // Completion can immediately admit another full-budget job on another thread.
+  drop(_budget);
+  let _ = response.send(result);
 }
 
 #[cfg(test)]
 mod tests {
-  use std::time::Duration;
+  use std::{
+    future::Future,
+    task::{Context, Poll, Wake, Waker},
+    time::Duration,
+  };
 
   use super::*;
 
+  #[test]
+  fn completion_notifies_after_releasing_admission() {
+    struct BudgetAtWake {
+      budget: Arc<Semaphore>,
+      observed: AtomicUsize,
+    }
+    impl Wake for BudgetAtWake {
+      fn wake(self: Arc<Self>) {
+        self.observed.store(self.budget.available_permits(), Ordering::Release);
+      }
+    }
+
+    for outcome in ["success", "error", "panic", "cancelled", "stopped"] {
+      let budget = Arc::new(Semaphore::new(4));
+      let queue = Arc::new(Semaphore::new(1));
+      let probe = Arc::new(BudgetAtWake {
+        budget: budget.clone(),
+        observed: AtomicUsize::new(usize::MAX),
+      });
+      let waker = Waker::from(probe.clone());
+      let mut context = Context::from_waker(&waker);
+      let (response, mut receiver) = oneshot::channel();
+      assert!(matches!(std::pin::Pin::new(&mut receiver).poll(&mut context), Poll::Pending));
+      let state = State {
+        stopped: AtomicBool::new(outcome == "stopped"),
+        active: AtomicUsize::new(0),
+        concurrency: 1,
+      };
+      let ran = Arc::new(AtomicBool::new(false));
+      let marker = ran.clone();
+      let job = Job {
+        operation: Box::new(move |_| {
+          marker.store(true, Ordering::Release);
+          match outcome {
+            "panic" => panic!("controlled codec panic"),
+            "error" => Err(invalid_options("controlled codec error")),
+            _ => Ok(Bytes::from_static(b"done")),
+          }
+        }),
+        cancelled: Arc::new(AtomicBool::new(outcome == "cancelled")),
+        response,
+        slot: queue.clone().try_acquire_owned().unwrap(),
+        _budget: budget.clone().try_acquire_many_owned(4).unwrap(),
+      };
+
+      // oneshot wakes synchronously inside send, exposing the notification
+      // boundary without depending on thread scheduling or sleeps.
+      run_job(job, &state);
+      assert_eq!(probe.observed.load(Ordering::Acquire), 4, "{outcome}");
+      assert_eq!(state.active.load(Ordering::Acquire), 0, "{outcome}");
+      assert_eq!(queue.available_permits(), 1, "{outcome}");
+      assert_eq!(ran.load(Ordering::Acquire), !matches!(outcome, "cancelled" | "stopped"));
+      let Poll::Ready(Ok(result)) = std::pin::Pin::new(&mut receiver).poll(&mut context) else {
+        panic!("missing completion for {outcome}");
+      };
+      assert_eq!(result.is_ok(), outcome == "success", "{outcome}");
+      assert!(budget.clone().try_acquire_many_owned(4).is_ok(), "{outcome}");
+    }
+  }
+
+  fn queued(executor: &MediaExecutor, capacity: usize) -> usize {
+    capacity - executor.queue.available_permits()
+  }
   async fn wait_for(mut predicate: impl FnMut() -> bool) {
     tokio::time::timeout(Duration::from_secs(10), async {
       while !predicate() {
@@ -222,12 +283,17 @@ mod tests {
       ..Default::default()
     };
     let executor = Arc::new(MediaExecutor::new(&config).unwrap());
-    let n = Backend::concurrency(2);
-    // A lone ready item starts immediately; no wait to fill the first batch.
+    let n = config.encode_concurrency;
+    let capacity = config.encode_queue_capacity;
+    // An admitted job starts immediately; nothing waits to fill a batch.
     let (first, started, release) = blocked(executor.clone(), 1);
     started.await.unwrap();
+    // A second job runs beside it, and both leave the queue once started.
     let (second, ready2, release2) = blocked(executor.clone(), 1);
-    wait_for(|| executor.sender.lock().unwrap().as_ref().unwrap().capacity() == 1).await;
+    ready2.await.unwrap();
+    wait_for(|| queued(&executor, capacity) == 0).await;
+    assert_eq!(executor.available_permits(), n - 2);
+    // A third job has no free worker, so it waits in the queue.
     let ran_cancelled = Arc::new(AtomicBool::new(false));
     let marker = ran_cancelled.clone();
     let owner = executor.clone();
@@ -243,24 +309,31 @@ mod tests {
         )
         .await
     });
-    wait_for(|| executor.sender.lock().unwrap().as_ref().unwrap().capacity() == 0).await;
+    wait_for(|| queued(&executor, capacity) == 1).await;
     let (fourth, ready4, release4) = blocked(executor.clone(), 1);
-    wait_for(|| executor.budget.available_permits() == 0).await;
-    assert!(!fourth.is_finished(), "full queue applies backpressure");
-    assert_eq!(executor.state.active.load(Ordering::Acquire), 1);
+    // A waiting job holds its queue slot, and admission is taken before it.
+    wait_for(|| queued(&executor, capacity) == 2).await;
+    assert_eq!(executor.budget.available_permits(), 0);
+    assert!(!fourth.is_finished());
+    // The budget is exhausted, so a fifth job is refused instead of queued.
+    assert!(
+      executor
+        .execute(1, Arc::new(AtomicBool::new(false)), Box::new(|_| Ok(Bytes::new())))
+        .await
+        .unwrap_err()
+        .to_string()
+        .contains("backpressure")
+    );
     cancelled.abort();
     let _ = cancelled.await;
     first.abort();
     let _ = first.await;
-    assert_eq!(executor.available_permits(), n - 1, "cancelling a waiter cannot free running capacity");
+    assert_eq!(executor.available_permits(), n - 2, "cancelling a waiter cannot free running capacity");
     release.send(()).unwrap();
-    ready2.await.unwrap();
-    assert!(!ran_cancelled.load(Ordering::Acquire), "queued cancelled task must not run");
-    assert!(executor.state.active.load(Ordering::Acquire) <= n);
+    assert!(!ran_cancelled.load(Ordering::Acquire), "a queued cancelled job must not run");
     release2.send(()).unwrap();
     assert_eq!(second.await.unwrap().unwrap(), Bytes::from_static(b"done"));
     ready4.await.unwrap();
-    assert!(executor.state.active.load(Ordering::Acquire) <= n);
     // A deadline leaves the actual job and its working-set reservation alive.
     assert!(
       tokio::time::timeout(Duration::ZERO, async {
@@ -276,33 +349,18 @@ mod tests {
     assert_eq!(executor.available_permits(), n - 1);
     release4.send(()).unwrap();
     wait_for(|| executor.budget.available_permits() == 4).await;
-    // Ready batches respect N, and a completed leaf is delivered while its
-    // sibling still runs. Both formats enter this same executor path.
-    let (gate, gate_started, open_gate) = blocked(executor.clone(), 1);
-    gate_started.await.unwrap();
-    let (fast, mut fast_started, finish_fast) = blocked(executor.clone(), 1);
-    wait_for(|| executor.sender.lock().unwrap().as_ref().unwrap().capacity() == 1).await;
-    let (slow, mut slow_started, finish_slow) = blocked(executor.clone(), 1);
-    wait_for(|| executor.sender.lock().unwrap().as_ref().unwrap().capacity() == 0).await;
-    open_gate.send(()).unwrap();
-    gate.await.unwrap().unwrap();
-    let fast_first = tokio::select! { _ = &mut fast_started => true, _ = &mut slow_started => false };
-    assert!(executor.state.active.load(Ordering::Acquire) <= n);
-    // Join may execute either branch first, including sequentially. Deliver
-    // that leaf while its sibling is still blocked or has yet to begin.
-    if fast_first {
-      finish_fast.send(()).unwrap();
-      tokio::time::timeout(Duration::from_secs(10), fast).await.unwrap().unwrap().unwrap();
-      assert!(!slow.is_finished());
-      finish_slow.send(()).unwrap();
-      slow.await.unwrap().unwrap();
-    } else {
-      finish_slow.send(()).unwrap();
-      tokio::time::timeout(Duration::from_secs(10), slow).await.unwrap().unwrap().unwrap();
-      assert!(!fast.is_finished());
-      finish_fast.send(()).unwrap();
-      fast.await.unwrap().unwrap();
-    }
+    // A finished job is delivered while its sibling still runs. Both formats
+    // enter this same path.
+    let (fast, fast_started, finish_fast) = blocked(executor.clone(), 1);
+    let (slow, slow_started, finish_slow) = blocked(executor.clone(), 1);
+    fast_started.await.unwrap();
+    slow_started.await.unwrap();
+    finish_fast.send(()).unwrap();
+    tokio::time::timeout(Duration::from_secs(10), fast).await.unwrap().unwrap().unwrap();
+    assert!(!slow.is_finished(), "one result does not wait for its sibling");
+    finish_slow.send(()).unwrap();
+    slow.await.unwrap().unwrap();
+    // An already cancelled job never reaches its operation.
     let pre = Arc::new(AtomicBool::new(true));
     let entered = Arc::new(AtomicBool::new(false));
     let marker = entered.clone();
@@ -320,6 +378,7 @@ mod tests {
         .is_err()
     );
     assert!(!entered.load(Ordering::Acquire));
+    // Cancellation between stages is observed by the running operation.
     let cancel = Arc::new(AtomicBool::new(false));
     let token = cancel.clone();
     let (at_stage, stage_ready) = oneshot::channel();
@@ -350,6 +409,7 @@ mod tests {
     advance.send(()).unwrap();
     assert!(staged.await.unwrap().is_err());
     assert!(!reached_next_stage.load(Ordering::Acquire));
+    // A result produced after cancellation is rejected rather than returned.
     let post = Arc::new(AtomicBool::new(false));
     let token = post.clone();
     assert!(
@@ -367,36 +427,31 @@ mod tests {
         .to_string()
         .contains("late result rejected")
     );
-    // Both join branches catch panics before par-core/Chili restores TLS state.
-    let backend = Backend::new(n).unwrap();
+    // A panicking codec becomes an error and leaves the pool usable.
     for _ in 0..8 {
-      let mut jobs = Vec::new();
-      let mut responses = Vec::new();
-      for panic in [true, false] {
-        let (response, receiver) = oneshot::channel();
-        responses.push(receiver);
-        jobs.push(Job {
-          operation: Box::new(move |_| {
-            if panic {
-              panic!("controlled codec panic");
-            }
-            Ok(Bytes::from_static(b"healthy"))
-          }),
-          cancelled: Arc::new(AtomicBool::new(false)),
-          response,
-          _budget: executor.budget.clone().acquire_owned().await.unwrap(),
-        });
-      }
-      backend.install(|| run_batch(jobs, &executor.state));
-      assert!(responses.remove(0).await.unwrap().is_err());
-      assert_eq!(responses.remove(0).await.unwrap().unwrap(), Bytes::from_static(b"healthy"));
+      assert!(
+        executor
+          .execute(1, Arc::new(AtomicBool::new(false)), Box::new(|_| panic!("controlled codec panic")))
+          .await
+          .unwrap_err()
+          .to_string()
+          .contains("panicked")
+      );
+      assert_eq!(
+        executor
+          .execute(1, Arc::new(AtomicBool::new(false)), Box::new(|_| Ok(Bytes::from_static(b"healthy"))))
+          .await
+          .unwrap(),
+        Bytes::from_static(b"healthy")
+      );
     }
+    // Shutdown stops admission and waits for work that already holds it.
     let (active, started, release) = blocked(executor.clone(), 4);
     started.await.unwrap();
     let owner = executor.clone();
     let shutdown = tokio::spawn(async move { owner.shutdown().await });
     wait_for(|| executor.state.stopped.load(Ordering::Acquire)).await;
-    assert!(!shutdown.is_finished());
+    assert!(!shutdown.is_finished(), "shutdown waits for a running codec");
     assert!(
       executor
         .execute(1, Arc::new(AtomicBool::new(false)), Box::new(|_| Ok(Bytes::new())))

@@ -16,10 +16,8 @@ export function platformCheck(
   filename?: string,
 ) {
   checkPlatformHost(target);
-  if (!filename) {
-    // Container targets validate the target artifact; native jobs own the host matrix.
-    if (!containerTarget(target)) run("just", ["test", "media"]);
-    buildRelease(target);
-  }
+  // Only toolchain, codec execution and artifact shape differ per target; the
+  // feature matrix is a compilation concern that `just test media` owns once.
+  if (!filename) buildRelease(target);
   verifyArtifact(target, filename);
 }

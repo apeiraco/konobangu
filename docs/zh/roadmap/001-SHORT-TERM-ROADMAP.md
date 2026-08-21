@@ -44,7 +44,7 @@ Git 历史证明的是发布意图，不能证明上传成功。release manifest
 | 交付项 | 发布决策 |
 | --- | --- |
 | 应用 bundle | 四个带 target 名称的压缩包：`x86_64-unknown-linux-gnu`、`x86_64-unknown-linux-musl`、`x86_64-pc-windows-msvc`、`aarch64-apple-darwin`。各包含 `recorder-cli`/`.exe`、`webui/`、LICENSE、CHANGELOG、notices 与 source/hash 回执。自动打包补充无 secrets 配置示例，不打包用户数据或凭据。 |
-| 构建 profile | 发布默认 JXL + WebP、Rayon 配置；Chili、串行和 WebP-only 是验证/构建选项，不分别形成发行产品。 |
+| 构建 profile | 发布默认 JXL + WebP 配置，使用唯一的 Rayon 编码 pool；WebP-only 裁剪构建是验证/构建选项，不单独形成发行产品。 |
 | 主运行镜像 | 发布 public `ghcr.io/apeiraco/konobangu`，首批为 `linux/amd64`，复用已验收 musl executable 与同版 WebUI。仅打包一次，使用包含 CA 证书的最小非 root runtime，不含 Cargo、Node 或 codec 构建工具。配置、secrets 和可写应用数据分别挂载；PostgreSQL、IdP 与 BT 客户端仍为外部服务。 |
 | 镜像标签与元数据 | 使用完整版本和 `sha-<source SHA>` 标签，稳定版完成后才移动 `latest`。release manifest 记录镜像 digest。附带 OCI source/revision/version/license labels，关联源仓库，首次发布显式启用 public 可见性。Linux arm64 在具备原生制品验证后再增加。 |
 | 工作区库 | Node 包保持 private，Rust crates 不发布。`email`、`testing`、recorder bindings、`util`、`util-derive`、`fetch`、`downloader` 和 Rust `animeta` 是内部构建依赖，交付应用，不拆为 npm/crates.io 发布。Python `konobangu-animeta` 与模型 demo 属于开发/研究工具，本期不发布 PyPI 包或模型。 |

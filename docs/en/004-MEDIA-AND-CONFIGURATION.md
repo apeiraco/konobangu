@@ -1,6 +1,6 @@
 # 004 — Media and deployment configuration
 
-JXL/WebP share a bounded in-process queue. A coordinator takes up to N currently ready items and uses par-core join; each completed leaf delivers its result immediately. Normal builds generate JXL + WebP; automatic AVIF is rejected. Static display and [R8 progressive rendering](roadmap/001-SHORT-TERM-ROADMAP.md) have separate acceptance criteria.
+JXL/WebP share one bounded queue, one owned Rayon pool and one admission budget. An admitted job starts as soon as a worker is free and delivers its own result immediately; the queue bounds waiting work and the budget bounds concurrent working sets. Normal builds generate JXL + WebP; automatic AVIF is rejected. Static display and [R8 progressive rendering](roadmap/001-SHORT-TERM-ROADMAP.md) have separate acceptance criteria.
 
 The JPXL facade pins Git rev `1e2004aa0672259279cc24a52d4b8e264f675b77`, Balanced, quality 77 and threads 1, with the fixed bounded policy features. Each image receives one facade call. Library policy may use up to five score probes and three exact prices; the application adds no search, size-based format switching or lossless fallback. Output is ordinary single pass. WebP retains webp 0.3.1/libwebp-sys 0.9.6, quality 80, without per-item internal threading.
 
@@ -121,10 +121,10 @@ Relative `dir` resolves against the process working directory. Rotation supports
 | `limits.decode_bytes` | 128 MiB decode allocation |
 | `execution.working_set_bytes` | Shared 512 MiB admission estimate covering queued sources, decode/resize, codec workspace and output; not a hard RSS ceiling |
 | `limits.output_bytes` | 64 MiB per output |
-| `execution.concurrency` / `execution.queue_capacity` | One running / eight queued; serial always has effective concurrency one |
+| `execution.concurrency` / `execution.queue_capacity` | One running / eight queued; concurrency sizes the encoder pool |
 | `execution.deadline_seconds` | 30-second wait/result validity deadline, at most 300 seconds |
 
-Timeout/cancellation rejects late results. A synchronous codec cannot be killed; the real task retains capacity and its budget until completion. Cancellation is checked between decode, normalization and encode; cancelled queued items are skipped. Shutdown stops admission, cancels queued work and waits for actual workers outside Tokio workers; the service exit path calls shutdown. Panics are caught inside each join branch so subsequent jobs can run. OOM, abort and native crashes still affect the service process; admission estimates do not provide per-job OS isolation.
+Timeout/cancellation rejects late results. A synchronous codec cannot be killed; the real task retains capacity and its budget until completion. Completed or skipped jobs release their working-set reservations before notifying callers; an observed completion means that job no longer consumes admission budget. Cancellation is checked between decode, normalization and encode; cancelled queued items are skipped. Shutdown stops admission, cancels queued work and waits for actual workers outside Tokio workers; the service exit path calls shutdown. Panics are caught inside each join branch so subsequent jobs can run. OOM, abort and native crashes still affect the service process; admission estimates do not provide per-job OS isolation.
 
 Only static 8-bit SDR RGB/RGBA is optimized, after EXIF orientation. Embedded ICC, PNG cICP/HDR, gamma/chromaticities without an sRGB declaration, animation and other depths fail under the controlled fallback contract. Implicit and explicit sRGB are accepted. Failures preserve originals.
 
@@ -163,7 +163,7 @@ Real-browser complete display and progressive screenshots are separate checks; c
 
 ## Build and deployment
 
-[Development verification](001-DEVELOPMENT-VERIFICATION.md) owns backend configurations, native platform prerequisites and release checks. The single recorder executable embeds Rust JPXL and static libwebp/sharpyuv, aws-lc and other actual native dependencies. The project and JPXL are MIT; releases include dependency notices. Codec source stays in pinned Cargo Git/registry caches rather than repository copies.
+[Development verification](001-DEVELOPMENT-VERIFICATION.md) owns compilation configurations, native platform prerequisites and release checks. The single recorder executable embeds Rust JPXL and static libwebp/sharpyuv, aws-lc and other actual native dependencies. The project and JPXL are MIT; releases include dependency notices. Codec source stays in pinned Cargo Git/registry caches rather than repository copies.
 
 Deployment needs configuration/data and HTTPS CA trust, without external codecs. Offline `recorder-cli media-smoke --output OUTPUT`, optionally `--input IMAGE`, exercises both production adapters without database, secrets or network initialization. It uses no worker protocol. Normal builds default to JXL + WebP; `--no-default-features` defaults to WebP. Explicit format lists, including `[]`, remain effective. Static defaults do not depend on R8.
 

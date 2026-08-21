@@ -4,7 +4,7 @@ import { assertStaticElf, sha256 } from "../lib/artifacts.mts";
 import { collectLicenses } from "../lib/licenses.mts";
 import { root, run } from "../lib/process.mts";
 
-function buildContainer(backend: "rayon" | "chili" | "serial" = "rayon") {
+function buildContainer() {
   const outputDirectory = resolve(
     root,
     process.env.CARGO_TARGET_DIR ?? "target",
@@ -56,13 +56,6 @@ function buildContainer(backend: "rayon" | "chili" | "serial" = "rayon") {
     "--locked",
     "--bin",
     "recorder-cli",
-    ...(backend === "rayon"
-      ? []
-      : [
-          "--no-default-features",
-          "--features",
-          backend === "chili" ? "jxl,media-par-chili" : "jxl",
-        ]),
   ]);
 }
 export const buildTargets = [
@@ -78,7 +71,6 @@ export const buildTargets = [
 export type BuildTarget = (typeof buildTargets)[number];
 export const containerTarget = (target: BuildTarget) =>
   target === "x86_64-unknown-linux-musl";
-export type MediaBackend = "rayon" | "chili" | "serial";
 export function artifactPath(target: BuildTarget) {
   const base = process.env.CARGO_TARGET_DIR ?? join(root, "target");
   return join(
@@ -91,24 +83,20 @@ export function artifactPath(target: BuildTarget) {
       : "recorder-cli",
   );
 }
-// Keep notices and hashes tied to the exact selected target and backend.
-function collectBuildArtifact(target: BuildTarget, backend: MediaBackend) {
+// Keep notices and hashes tied to the exact selected target.
+function collectBuildArtifact(target: BuildTarget) {
   const artifact = artifactPath(target);
   if (containerTarget(target)) assertStaticElf(readFileSync(artifact));
   collectLicenses(
     join(dirname(artifact), "licenses"),
     target === "native" ? undefined : target,
-    backend,
   );
   console.log(`Recorder SHA-256: ${sha256(artifact)}`);
 }
 
 // Building and collecting notices are one artifact operation across native/container targets.
-export function buildRelease(
-  target: BuildTarget = "native",
-  backend: MediaBackend = "rayon",
-) {
-  if (containerTarget(target)) buildContainer(backend);
+export function buildRelease(target: BuildTarget = "native") {
+  if (containerTarget(target)) buildContainer();
   else
     run("cargo", [
       "build",
@@ -119,14 +107,7 @@ export function buildRelease(
       "recorder",
       "--bin",
       "recorder-cli",
-      ...(backend === "rayon"
-        ? []
-        : [
-            "--no-default-features",
-            "--features",
-            backend === "chili" ? "jxl,media-par-chili" : "jxl",
-          ]),
     ]);
-  collectBuildArtifact(target, backend);
+  collectBuildArtifact(target);
   return artifactPath(target);
 }

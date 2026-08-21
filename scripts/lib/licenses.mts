@@ -8,11 +8,7 @@ import {
 import { join, resolve } from "node:path";
 import { root, run } from "./process.mts";
 
-export function collectLicenses(
-  destination: string,
-  target?: string,
-  backend: "rayon" | "chili" | "serial" = "rayon",
-) {
+export function collectLicenses(destination: string, target?: string) {
   // Only this owned output directory is replaced, never source or dependency files.
   if (resolve(destination) === root || !destination.endsWith("licenses"))
     throw new Error("Expected a release licenses directory");
@@ -28,13 +24,6 @@ export function collectLicenses(
     "generate",
     "--fail",
     "--locked",
-    ...(backend === "rayon"
-      ? []
-      : [
-          "--no-default-features",
-          "--features",
-          backend === "chili" ? "jxl media-par-chili" : "jxl",
-        ]),
     "--manifest-path",
     "apps/recorder/Cargo.toml",
     "--config",

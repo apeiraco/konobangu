@@ -32,7 +32,7 @@ Node 依赖使用 pnpm；Rust 使用 Cargo；Python 使用 uv workspace。开发
 
 qBittorrent 生命周期 fixture 在 `packages/downloader/tests/integration/qbit-lifecycle.test.rs` 固定多平台镜像 tag/digest。升级时显式更新该引用，并在 Docker Desktop 与原生 Linux 运行 downloader suite，覆盖认证、重复添加、sync、暂停/恢复、实际传输、保留/删除文件、超时与停机。WebAPI 2.14 可能以 HTTP 409 表示重复添加；适配器查询服务器，仅在该次提交的全部 hash 都存在时接受冲突。Mock 测试覆盖文件/magnet 冲突、过期本地缓存、批量部分缺失和其它 API 错误。[上游 API 变更](https://github.com/qbittorrent/qBittorrent/blob/master/WebAPI_Changelog.md#2140)
 
-`lint rust` 检查 workspace 和所有有效 recorder backend/codec 配置，all-targets 且 -D warnings；不使用 --all-features，因为 Rayon/Chili 互斥。`test media` 验证各配置的编解码、生命周期、HTTP 和制品 smoke，不再按业务功能建立验收组。原生平台任务运行宿主矩阵；容器任务只构建并验证目标制品，避免重复宿主矩阵。Windows/macOS/Linux 与 Docker 都必须有实际构建和运行证据。
+`lint rust` 检查 workspace 与裁剪后的 recorder，all-targets 且 -D warnings；codec 是唯一的编译期选择，这两个配置即覆盖全部有效组合。媒体编码使用唯一的 Rayon pool，构建时不再选择并行 backend。`test media` 构建 WebP-only 裁剪配置并验证其库、测试二进制与真实编解码，覆盖所有 `not(feature = "jxl")` 分支；`test rust` 覆盖发布所用的 JXL + WebP 构建。两者都是同一阶段的 Cargo 工作，因为 media 源码没有任何按操作系统条件编译的分支。各目标任务只验证平台之间真正不同的部分——原生工具链与链接、真实编解码执行、制品形态——不重复这部分编译覆盖。Windows/macOS/Linux 与 Docker 都必须有实际构建和运行证据。
 
 允许的 lint 例外限定于具体 OIDC handler 与共享 fixture；其它有效 rustc/Clippy 和 Cargo manifest 告警失败。查看原始 proc-macro/linker 日志；-D warnings 不覆盖全部诊断来源。保留测试 IdP 的内存 adapter/TTL 提示、Docker 与许可证工具的诊断，不过滤日志伪造零告警。前端 bundle 阈值与初始/polyfill/editor 加载由配置及浏览器断言共同检查。
 
@@ -40,7 +40,7 @@ qBittorrent 生命周期 fixture 在 `packages/downloader/tests/integration/qbit
 
 默认分支为 `master`。验证运行于目标为 `master` 或 `release` 的 PR，以及这些分支的推送。仅推送 `dev` 不触发验证；创建或更新它到上述目标的 PR 仍会触发。PR 分支过滤器匹配目标分支，见 [GitHub 事件说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)。
 
-`Verification report` 是唯一必需状态检查，汇总 static、TypeScript、Rust 和平台任务。失败、取消或跳过任一阶段均不能通过。新的 PR/主分支推送取消过时验证；release 推送保留各轮运行，使发布能够绑定精确候选。
+`Verification report` 是唯一必需状态检查，汇总 static、TypeScript、Rust、media 矩阵和平台任务。失败、取消或跳过任一阶段均不能通过。新的 PR/主分支推送取消过时验证；release 推送保留各轮运行，使发布能够绑定精确候选。
 
 文档在 `master` 上的输入变化时构建部署，也支持手动构建；部署由 `github-pages` 限定为 `master`。testing-torrents publisher 读取已提交 metadata 的 opt-in 开关并检出固定源码，支持 workflow_call 和 release 分支手动入口，导出 digest；它发布的是测试 fixture 镜像。应用发布当前使用下述本地发布工具，自动发布设计见 [roadmap](roadmap/001-SHORT-TERM-ROADMAP.md#发布自动化)。
 

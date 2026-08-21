@@ -13,17 +13,18 @@ check scope="all":
 [private]
 _lint-all: _lint-rust _lint-ts
 
-# Explicitly enumerate valid feature combinations; --all-features is invalid here.
+# The codec is the only remaining compile-time choice, so the default workspace
+# and the trimmed recorder cover every valid configuration.
 [private]
-_lint-rust: _lint-workspace (_lint-recorder "media-par-rayon") (_lint-recorder "jxl,media-par-chili") (_lint-recorder "media-par-chili") (_lint-recorder "jxl") (_lint-recorder "")
+_lint-rust: _lint-workspace _lint-recorder-trimmed
 
 [private]
 _lint-workspace:
     cargo clippy --workspace --locked --features testcontainers,test-utils,playground --all-targets -- -D warnings
 
 [private]
-_lint-recorder features:
-    cargo clippy -p recorder --locked --no-default-features --features {{if features == "" { "testcontainers,test-utils,playground" } else { features + ",testcontainers,test-utils,playground" }}} --all-targets -- -D warnings
+_lint-recorder-trimmed:
+    cargo clippy -p recorder --locked --no-default-features --features testcontainers,test-utils,playground --all-targets -- -D warnings
 
 [private]
 _lint-ts:

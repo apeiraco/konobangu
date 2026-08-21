@@ -16,7 +16,7 @@
 - Upgrade dependencies; adopt injection-js, SecurityDept RxSignal, Apollo and TanStack Table 9.
 - Name database privileges by application scope, authentication and task control; bootstrap NOLOGIN capabilities from one database URL, derive grants from Rust migration identifiers and consolidate unreleased migrations.
 - Use RFC3339 timestamps and Temporal, loading missing browser capabilities before app startup.
-- Encode covers with pinned JPXL Balanced 77 and static WebP80; share a par-core executor with Rayon, Chili or serial builds. Preserve originals and composite cover transparency on white.
+- Encode covers with pinned JPXL Balanced 77 and static WebP80 through one bounded executor on an owned Rayon pool. Preserve originals and composite cover transparency on white.
 - Preserve generated binding formatting and use native Node ESM path metadata in tooling.
 - Use Vite email previews/exports, Playwright-owned fixtures and unit/integration/e2e test directories; share task migration identifiers in Rust.
 - Share resource-based verification stages between Just and CI; isolate browser fixture builds and use one TypeScript reference graph for output management.
@@ -31,6 +31,7 @@
 - Install locked CLI dependencies before invoking tools in clean CI checkouts; apply file logging thresholds.
 - Preserve manifest line endings in release metadata updates and accept CRLF release notes.
 - Handle qBittorrent duplicate-add conflicts through server hash verification; pin the integration image by digest.
+- Release media admission budgets before delivering completion, preventing spurious backpressure on subsequent jobs.
 
 ### Removed
 

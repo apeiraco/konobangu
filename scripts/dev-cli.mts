@@ -19,7 +19,7 @@ import {
   setReleaseVersion,
   tagRelease,
 } from "./commands/release.mts";
-import { checkMediaConflict, mediaSmoke } from "./commands/rust.mts";
+import { mediaSmoke } from "./commands/rust.mts";
 import { testSuite } from "./commands/test.mts";
 import { cleanTypes, rebuildTypes } from "./commands/types.mts";
 import { CommandError } from "./lib/process.mts";
@@ -70,7 +70,6 @@ export function createCli() {
     .action(testSuite);
   const media = cli.command("media");
   media.command("smoke <output>").action(mediaSmoke);
-  media.command("check-conflict").action(checkMediaConflict);
   const targets: readonly string[] = buildTargets;
   function targetOption() {
     return new Option("--target <target>", "Build target")
@@ -94,13 +93,8 @@ export function createCli() {
   cli
     .command("build-release")
     .addOption(targetOption())
-    .addOption(
-      new Option("--backend <backend>")
-        .choices(["rayon", "chili", "serial"])
-        .default("rayon"),
-    )
     .action((options) => {
-      buildRelease(buildTarget(options.target), options.backend);
+      buildRelease(buildTarget(options.target));
     });
   cli.command("copy-webui").action(copyWebui);
   cli.command("wait-recorder").action(waitRecorder);
