@@ -17,6 +17,7 @@ on:
       - pnpm-lock.yaml
       - pnpm-workspace.yaml
       - mise.toml
+      - mise.ci.toml
       - justfile
       - justfiles/build.just
       - .github/actions/setup/**

@@ -21,7 +21,7 @@ Use pnpm for Node, Cargo for Rust and uv workspace for Python. Configure develop
 | --- | --- |
 | Native entry points | `lint/check/test/build-*` invoke ecosystem tools; runner arguments select individual tests |
 | Gates | `verify` resource stages compose native entries; the checklist is defined only in `justfiles/test.just` |
-| Platform artifacts | `platform-check` owns feature matrices, target builds, dependency checks and actual artifact smoke |
+| Platform artifacts | `platform-check` owns target builds, dependency checks and actual artifact smoke |
 | Release | `release prepare` runs the complete gate and platform verification before bundling and recording receipts |
 
 `verify static` checks metadata, tooling behavior, documentation links, formatting and diffs. `verify rust` uses Cargo/Docker for compilation, complete workspace tests and browser integration. `verify ts` checks declarations, bundler outputs, frontend unit tests, lint and output boundaries. `verify` runs static → rust → ts so Rust bindings and GraphQL generators precede TypeScript consumers. CI invokes the same stages in separate checkouts; the Rust stage rejects binding drift. Browser fixtures build OIDC into isolated directories without changing the release WebUI's authentication configuration.
@@ -39,6 +39,10 @@ Lint exceptions are scoped to specific OIDC handlers and shared fixtures; other 
 ### GitHub workflows
 
 The default branch is `master`. Verification runs for pull requests targeting `master` or `release`, and pushes to those branches. A push to `dev` alone does not run verification; opening or updating its pull request to either target does. PR branch filters select the destination branch, as described in [GitHub's event reference](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request).
+
+Only verification pushes to `master` write shared tooling and Cargo caches; PRs, release runs and documentation jobs restore them read-only. `static` installs the Linux CI tool union from `mise.ci.toml` and saves the mise/pnpm caches before the other stages start. The versioned CI profile participates in mise's cache key; tool versions stay in the root configuration. Consumers activate only `just`, Node, pnpm and their requested extra tools; local development tool selection stays unchanged. Each additional native OS has one platform job owning its mise/pnpm cache. The Rust stage independently owns the browser cache and the debug dependency cache; each platform job owns its target's release dependency cache. Keep incompatible targets and profiles isolated. Every cache remains optional for a cold build.
+
+CI disables Cargo incremental compilation and dev/test debug information. Rust caches retain third-party dependencies, excluding workspace artifacts and Cargo-installed binaries; save only successful default-branch jobs. Docker builds mount the same portable Cargo registry/git sources as host tooling, honoring `CARGO_HOME`, and forward the CI profile settings. Testing-torrents Docker layers use their own `testing-torrents` scope with `mode=min`. Do not add duplicate compile jobs for cache priming. GitHub's repository quota covers current and historical cache entries; inspect compressed sizes and hit rates after workflow runs before expanding cached content. [GitHub cache limits](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#usage-limits-and-eviction-policy)
 
 `Verification report` is the single required status check, aggregating the static, TypeScript, Rust, media matrix and platform jobs. Failed, cancelled or skipped stages cannot pass it. New PR/mainline pushes supersede obsolete verification runs; release pushes retain their runs so publication can bind to an exact candidate.
 
@@ -65,6 +69,8 @@ The CLI owns cohesive filesystem, network, metadata and artifact operations, inc
 recorder bindings retain ts-rs generator formatting and are excluded from Biome lint, formatting and import organization. File-set/content hashes check generation stability; tsc/tsdown still validate types and declarations. Do not format bindings after Rust tests or exports.
 
 Metadata identifies the root TypeScript configuration; its references graph defines project membership, shared by cleanup/layout checks. The monorepo-tsc condition resolves workspace source directly for the editor, Vite, Vitest and React Email. External consumers read bundler outputs. Public exports provide explicit annotations for declaration generation.
+
+Vite's TypeScript checker uses build mode to traverse application references and refresh their `dist-tsc` outputs, including newly generated recorder bindings. Standalone application and browser-fixture builds work from clean outputs without relying on a separate verification stage's declarations.
 
 Incremental builds can retain orphan outputs after source deletion. Release verification cleans declarations and metadata before a forced rebuild, cleaning partial outputs again on failure. Daily `check ts` is incremental; the complete gate does not repeat an empty incremental build after rebuilding. Cleanup removes declared directories only. Legacy cleanup requires map/source evidence and preserves handwritten declarations, secrets, data and receipts; never use git clean -xdf.
 

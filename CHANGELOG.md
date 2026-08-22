@@ -13,6 +13,7 @@
 
 ### Changed
 
+- Populate CI caches from default-branch owners, reuse tooling through stage dependencies, cache compact third-party Cargo artifacts and share container download caches.
 - Upgrade dependencies; adopt injection-js, SecurityDept RxSignal, Apollo and TanStack Table 9.
 - Name database privileges by application scope, authentication and task control; bootstrap NOLOGIN capabilities from one database URL, derive grants from Rust migration identifiers and consolidate unreleased migrations.
 - Use RFC3339 timestamps and Temporal, loading missing browser capabilities before app startup.
@@ -26,6 +27,7 @@
 
 ### Fixed
 
+- Build TypeScript references during Vite checks so standalone browser fixtures work without prebuilt recorder declarations.
 - Preserve authorization, cache validators and Range behavior when negotiating image formats.
 - Keep task publication, cancellation, retries and deletion behind transaction and lease fences.
 - Install locked CLI dependencies before invoking tools in clean CI checkouts; apply file logging thresholds.

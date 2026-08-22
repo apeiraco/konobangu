@@ -34,7 +34,8 @@ export default defineConfig(({ mode }) => {
       tanstackRouter({ target: "react", autoCodeSplitting: true }),
       react(),
       checker({
-        typescript: true,
+        // Fresh bindings require building references before checking the app.
+        typescript: { buildMode: true },
       }),
       monacoEditorPlugin({
         languageWorkers: ["editorWorkerService", "json"],

@@ -75,5 +75,5 @@ jobs:
             org.opencontainers.image.revision=${{ needs.plan.outputs.source_sha }}
             org.opencontainers.image.version=${{ needs.plan.outputs.version }}
             io.apeiraco.konobangu.release-metadata-sha256=${{ needs.plan.outputs.metadata_sha256 }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-from: type=gha,scope=testing-torrents
+          cache-to: type=gha,scope=testing-torrents,mode=min

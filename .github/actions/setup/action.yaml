@@ -2,38 +2,53 @@ name: Repository tooling
 description: Install managed tools, native prerequisites and frozen Node workspaces.
 inputs:
   extra-tools:
-    description: Additional mise tools required by this job.
+    description: Space-separated mise tools to activate alongside just, Node and pnpm.
     default: rust
   browser:
     description: Install Chromium and its host libraries.
     default: 'false'
   cache-mode:
     description: >
-      Ownership of the pnpm store and browser caches. Use read-write for the
+      Ownership of the mise tools and pnpm store. Use read-write for the
       single owner, read-only for consumers, or none to disable cache access.
+    default: read-only
+  browser-cache-mode:
+    description: Independent browser cache ownership for the browser runner.
     default: read-only
 runs:
   using: composite
   steps:
+    - name: Select job tools
+      shell: bash
+      env:
+        EXTRA_TOOLS: ${{ inputs.extra-tools }}
+        CACHE_MODE: ${{ inputs.cache-mode }}
+      run: |
+        echo "MISE_ENV=ci" >> "$GITHUB_ENV"
+        if [[ "$CACHE_MODE" != read-write ]]; then
+          tools="just,node,pnpm${EXTRA_TOOLS:+,${EXTRA_TOOLS// /,}}"
+          echo "MISE_ENABLE_TOOLS=$tools" >> "$GITHUB_ENV"
+        fi
     - uses: jdx/mise-action@c2a87611a18de5b3828c5652fe268e992400cb5c # v4
       with:
         install: true
-        cache: true
-        cache_key_prefix: mise-konobangu-v1
+        cache: ${{ inputs.cache-mode != 'none' }}
+        cache_save: ${{ inputs.cache-mode == 'read-write' }}
+        cache_key_prefix: mise-konobangu-v2
     - name: Linux build prerequisites
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && contains(inputs.extra-tools, 'rust')
       shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install -y build-essential nasm pkg-config libssl-dev
     - name: macOS assembler
-      if: runner.os == 'macOS'
+      if: runner.os == 'macOS' && contains(inputs.extra-tools, 'rust')
       shell: bash
       run: brew install nasm
     - uses: ilammy/msvc-dev-cmd@v1
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && contains(inputs.extra-tools, 'rust')
     - name: Windows assembler
-      if: runner.os == 'Windows'
+      if: runner.os == 'Windows' && contains(inputs.extra-tools, 'rust')
       shell: pwsh
       run: |
         choco install nasm -y --no-progress
@@ -65,7 +80,7 @@ runs:
         path: ${{ steps.pnpm-store.outputs.path }}
         key: ${{ steps.pnpm-cache.outputs.cache-primary-key }}
     - name: Restore the browser fixture
-      if: inputs.browser == 'true' && inputs.cache-mode != 'none'
+      if: inputs.browser == 'true' && inputs.browser-cache-mode != 'none'
       id: browser-cache
       uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
       with:
@@ -80,7 +95,7 @@ runs:
         mise exec -- pnpm --filter webui exec playwright install --with-deps chromium
         mise exec node@24.15.0 -- pnpm dlx playwright@1.51.1 install chromium --only-shell
     - name: Save the browser fixture
-      if: inputs.browser == 'true' && inputs.cache-mode == 'read-write' && steps.browser-cache.outputs.cache-hit != 'true'
+      if: inputs.browser == 'true' && inputs.browser-cache-mode == 'read-write' && steps.browser-cache.outputs.cache-hit != 'true'
       uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
       with:
         path: ~/.cache/ms-playwright

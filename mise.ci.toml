@@ -1,0 +1,3 @@
+# Cache owners install this union; consumers activate their job-specific subset.
+[settings]
+enable_tools = ["just", "node", "pnpm", "rust", "cmake", "cargo:cargo-about"]

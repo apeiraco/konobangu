@@ -17,7 +17,12 @@ concurrency:
   group: verification-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/release' }}
 
-# Each cache key has exactly one read-write owner; every other job restores it.
+# Keep local profiles unchanged; every CI Cargo invocation uses compact artifacts.
+env:
+  CARGO_PROFILE_DEV_DEBUG: '0'
+  CARGO_INCREMENTAL: '0'
+
+# Only default-branch pushes populate caches. PR and release runs consume them.
 jobs:
   static:
     name: Static contracts and tooling
@@ -26,12 +31,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+        with:
+          # The Linux owner installs mise.ci.toml's union for downstream consumers.
+          cache-mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'read-write' || 'read-only' }}
       - run: mise exec -- just verify static
 
   ts:
     name: TypeScript and WebUI
     runs-on: ubuntu-24.04
     timeout-minutes: 20
+    needs: static
     env:
       AUTH__PROVIDER__TYPE: oidc
     steps:
@@ -45,16 +54,18 @@ jobs:
     name: Rust workspace and browser integration
     runs-on: ubuntu-24.04
     timeout-minutes: 90
+    needs: static
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
         with:
           browser: 'true'
-          cache-mode: read-write
+          extra-tools: rust cmake
+          browser-cache-mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'read-write' || 'read-only' }}
       - uses: ./.github/actions/setup-rust-cache
         with:
           shared-key: recorder-${{ runner.os }}-${{ runner.arch }}-debug
-          cache-mode: read-write
+          cache-mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'read-write' || 'read-only' }}
       - run: mise exec -- just verify rust
       - name: Retain browser failure evidence
         if: failure()
@@ -66,6 +77,7 @@ jobs:
 
   platforms:
     name: Artifacts (${{ matrix.os }}, ${{ matrix.target }})
+    needs: static
     strategy:
       fail-fast: false
       matrix:
@@ -88,16 +100,16 @@ jobs:
       CARGO_BUILD_JOBS: 3
     steps:
       - uses: actions/checkout@v4
-      # Only one job per runner platform owns the shared pnpm store; the Linux
-      # targets consume the one the Rust job writes.
+      # Linux consumers wait for static's tool/store cache. Each additional OS
+      # has one native owner, while Cargo profiles remain target-specific.
       - uses: ./.github/actions/setup
         with:
-          extra-tools: rust cargo:cargo-about
-          cache-mode: ${{ matrix.cache_mode }}
+          extra-tools: rust cmake cargo:cargo-about
+          cache-mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && matrix.cache_mode || 'read-only' }}
       - uses: ./.github/actions/setup-rust-cache
         with:
           shared-key: recorder-${{ matrix.target }}-release
-          cache-mode: read-write
+          cache-mode: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'read-write' || 'read-only' }}
       - name: Tooling on additional host systems
         if: runner.os != 'Linux'
         run: mise exec -- just test tooling

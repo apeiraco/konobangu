@@ -13,6 +13,7 @@
 
 ### 调整
 
+- 默认分支独占 CI 缓存写入，阶段间复用工具缓存，保存精简的 Cargo 第三方产物，并共享容器下载缓存。
 - 升级依赖，采用 injection-js、SecurityDept RxSignal、Apollo 和 TanStack Table 9。
 - 按应用作用域、认证和任务控制命名数据库权限；从单个数据库 URL 初始化 NOLOGIN 能力角色，由 Rust 迁移标识符生成授权，合并未发布迁移。
 - 使用 RFC3339 时间戳与 Temporal，在应用启动前加载缺失的浏览器能力。
@@ -26,6 +27,7 @@
 
 ### 修复
 
+- Vite 类型检查构建项目引用，使独立浏览器 fixture 无需预先生成 recorder 声明。
 - 图片格式协商时保留授权、缓存 validator 与 Range 行为。
 - 任务发布、取消、重试和删除受事务与租约 fence 保护。
 - 干净 CI 检出先安装锁定 CLI 依赖再运行工具，并应用文件日志阈值。

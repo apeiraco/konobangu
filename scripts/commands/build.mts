@@ -1,4 +1,5 @@
 import { mkdirSync, readFileSync } from "node:fs";
+import { homedir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import { assertStaticElf, sha256 } from "../lib/artifacts.mts";
 import { collectLicenses } from "../lib/licenses.mts";
@@ -10,7 +11,8 @@ function buildContainer() {
     process.env.CARGO_TARGET_DIR ?? "target",
   );
   const artifact = artifactPath("x86_64-unknown-linux-musl");
-  const cache = join(root, "temp/build/x86_64-unknown-linux-musl/cargo");
+  // Share portable registry/git sources with host tools and the CI Cargo cache.
+  const cache = resolve(process.env.CARGO_HOME || join(homedir(), ".cargo"));
   mkdirSync(cache, { recursive: true });
   mkdirSync(dirname(artifact), { recursive: true });
   run("docker", [
@@ -39,6 +41,11 @@ function buildContainer() {
       : []),
     "-e",
     `CARGO_BUILD_JOBS=${process.env.CARGO_BUILD_JOBS ?? "2"}`,
+    ...["CARGO_INCREMENTAL", "CARGO_PROFILE_DEV_DEBUG"].flatMap((name) =>
+      process.env[name] === undefined
+        ? []
+        : ["-e", `${name}=${process.env[name]}`],
+    ),
     "konobangu-musl-builder:local",
     "cargo",
     "-Zhost-config",

@@ -34,7 +34,8 @@ function runnerFixture(commands = ["cargo", "pnpm", "mise"]) {
     fs.appendFileSync(process.env.ROUTING_LOG, JSON.stringify(args) + "\\n");
     fs.appendFileSync(process.env.ROUTING_LOG + ".cwd", JSON.stringify(process.cwd()) + "\\n");
     if (args[0] === "cargo") process.stderr.write(process.env.ROUTING_CARGO_STDERR || "");
-    process.exit(Number(process.env["ROUTING_" + args[0].toUpperCase() + "_EXIT"] || 0));`,
+    const prefix = "ROUTING_" + args[0].toUpperCase();
+    process.exit(Number(process.env[prefix + "_" + String(args[1]).toUpperCase() + "_EXIT"] || process.env[prefix + "_EXIT"] || 0));`,
   );
   for (const command of commands) {
     const path = join(
@@ -330,6 +331,41 @@ test("container artifact construction does not repeat host feature tests", () =>
   assert.equal(result.code, 17, result.stderr);
   assert(fixture.calls().some((call) => call[0] === "docker"));
   assert(!fixture.calls().some((call) => call[0] === "just"));
+});
+test("container builds share the requested Cargo home and preserve compact profile settings", () => {
+  using fixture = runnerFixture(["rustc", "docker"]);
+  const cargoHome = join(fixture.directory, "cargo home 中文");
+  const result = run(
+    process.execPath,
+    [
+      "scripts/dev-cli.mts",
+      "platform-check",
+      "--target",
+      "x86_64-unknown-linux-musl",
+    ],
+    {
+      capture: true,
+      check: false,
+      env: {
+        ...fixture.env,
+        CARGO_HOME: cargoHome,
+        CARGO_TARGET_DIR: join(fixture.directory, "build outputs"),
+        CARGO_INCREMENTAL: "0",
+        CARGO_PROFILE_DEV_DEBUG: "0",
+        ROUTING_DOCKER_RUN_EXIT: "17",
+      },
+    },
+  );
+  assert.equal(result.code, 17, result.stderr);
+  const invocation = fixture
+    .calls()
+    .find((call) => call[0] === "docker" && call[1] === "run");
+  assert(invocation);
+  assert(invocation.includes(`type=bind,src=${cargoHome},dst=/cache/cargo`));
+  assert(invocation.includes("CARGO_HOME=/cache/cargo"));
+  assert(invocation.includes("CARGO_INCREMENTAL=0"));
+  assert(invocation.includes("CARGO_PROFILE_DEV_DEBUG=0"));
+  assert(existsSync(cargoHome));
 });
 test("native Just forwarding preserves release paths without evaluating shell content", () => {
   const path = `outside/中文 space $(echo unsafe) & "literal" apostrophe's`;

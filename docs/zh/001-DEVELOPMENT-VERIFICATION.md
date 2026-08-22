@@ -21,7 +21,7 @@ Node 依赖使用 pnpm；Rust 使用 Cargo；Python 使用 uv workspace。开发
 | --- | --- |
 | 原生入口 | `lint/check/test/build-*` 调用对应生态工具；runner 参数负责筛选具体测试 |
 | 门禁 | `verify` 的资源阶段组合原生入口，检查清单仅在 `justfiles/test.just` 定义 |
-| 平台制品 | `platform-check` 管理 feature 矩阵、目标构建、依赖检查和实际制品 smoke |
+| 平台制品 | `platform-check` 管理目标构建、依赖检查和实际制品 smoke |
 | 发布 | `release prepare` 运行完整门禁和平台验收，再打包并写回执 |
 
 `verify static` 检查元数据、工具行为、文档链接、格式和 diff；`verify rust` 使用 Cargo/Docker 验证编译、完整 workspace 与浏览器集成；`verify ts` 验证声明、bundler 产物、前端单测、lint 与输出边界。`verify` 按 static → rust → ts 执行，让 Rust bindings 和 GraphQL 生成器先于 TypeScript 消费者。CI 在独立检出中引用同一阶段入口；Rust 阶段拒绝生成 bindings 漂移。浏览器 fixture 使用独立 OIDC 构建目录，不覆盖发行 WebUI 的认证配置。
@@ -39,6 +39,10 @@ qBittorrent 生命周期 fixture 在 `packages/downloader/tests/integration/qbit
 ### GitHub 流水线
 
 默认分支为 `master`。验证运行于目标为 `master` 或 `release` 的 PR，以及这些分支的推送。仅推送 `dev` 不触发验证；创建或更新它到上述目标的 PR 仍会触发。PR 分支过滤器匹配目标分支，见 [GitHub 事件说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#pull_request)。
+
+只有 `master` 推送的验证任务写入共享工具与 Cargo 缓存；PR、release 运行和文档任务均只读恢复。`static` 根据 `mise.ci.toml` 安装 Linux CI 所需工具的合集，保存 mise/pnpm 缓存后，其它阶段才启动。受版本管理的 CI profile 参与 mise 缓存键，工具版本仍由根配置定义。消费者仅启用 `just`、Node、pnpm 和自己声明的额外工具；本地开发工具选择保持不变。其它原生操作系统各由一个平台任务维护 mise/pnpm 缓存。Rust 阶段独立维护浏览器缓存和 debug 依赖缓存，各平台任务维护对应目标的 release 依赖缓存。不同目标与 profile 保持隔离；冷缓存构建必须仍然可用。
+
+CI 关闭 Cargo 增量编译和 dev/test 的 debug 信息。Rust 缓存保留第三方依赖，排除 workspace 产物与 Cargo 安装的工具，仅在默认分支任务成功后保存。Docker 构建与宿主工具共用可移植的 Cargo registry/git 源码，遵循 `CARGO_HOME`，并传递 CI profile 设置。testing-torrents Docker layers 使用独立的 `testing-torrents` scope 与 `mode=min`。不为缓存预热新增重复编译任务。GitHub 仓库配额涵盖当前与历史缓存；扩大缓存范围前，应根据运行后的压缩大小与命中率评估。[GitHub 缓存限制](https://docs.github.com/en/actions/reference/workflows-and-actions/dependency-caching#usage-limits-and-eviction-policy)
 
 `Verification report` 是唯一必需状态检查，汇总 static、TypeScript、Rust、media 矩阵和平台任务。失败、取消或跳过任一阶段均不能通过。新的 PR/主分支推送取消过时验证；release 推送保留各轮运行，使发布能够绑定精确候选。
 
@@ -65,6 +69,8 @@ CLI 管理有完整输入/输出及失败语义的文件、网络、元数据和
 recorder bindings 由 ts-rs 生成，保留生成器原始格式，排除 Biome 的 lint、formatter 和 import 整理。生成一致性通过文件集合/内容哈希检查，类型与声明正确性继续由 tsc/tsdown 检查；不要在 Rust 测试或导出后再次格式化。
 
 metadata 指定 TypeScript 根配置，项目成员由该配置的 references 图定义；cleanup/layout 读取同一图。工作区通过 monorepo-tsc 条件直接解析源码，Vite、Vitest、React Email 使用相同条件；外部包入口读取 bundler 的产物。公开导出为声明生成提供明确类型标注。
+
+Vite 的 TypeScript checker 使用 build mode 遍历应用的项目引用，更新其 `dist-tsc` 产物，包括新生成的 recorder bindings。独立应用构建和浏览器 fixture 构建可从干净产物状态运行，无需依赖其它验收阶段生成的声明。
 
 增量构建可能留下已删除源码对应的输出；发布阶段清理声明与元数据后强制 rebuild，失败再次清理部分输出。日常 `check ts` 使用增量构建，完整门禁不在强制 rebuild 后重复空跑。清理只删除受管目录；legacy 清理仅删除具有 map/源码证据的生成物，保留手写声明、secrets、数据和回执，禁止 git clean -xdf。
 

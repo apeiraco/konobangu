@@ -20,7 +20,9 @@ runs:
       if: inputs.cache-mode != 'none'
       uses: Swatinem/rust-cache@49a0bdc70d2e1b713ca9e2869b211fcce03d3c1c # v2
       with:
+        prefix-key: v1-konobangu-deps
         shared-key: ${{ inputs.shared-key }}
-        cache-workspace-crates: true
-        cache-on-failure: true
+        cache-workspace-crates: false
+        cache-bin: false
+        cache-on-failure: false
         save-if: ${{ inputs.cache-mode == 'read-write' }}
